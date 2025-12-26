@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+.plasmo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+tests/visual/out/
+
+# Ladle build output
+.ladle/build/
+
+# Scraped content (generated)
+rules/scraped/
+
+# Agent context
+agentcontext/
+.claude/
+.gitnexus/
