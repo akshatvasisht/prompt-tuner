@@ -1,8 +1,10 @@
 /**
- * AI Engine - Wrapper for Chrome's window.ai (Gemini Nano) API
+ * AI Engine - Wrapper for Chrome's Built-in AI (Gemini Nano) API
  *
- * Provides a clean interface for checking AI availability and
- * optimizing prompts using the local Gemini Nano model.
+ * Uses the Chrome 138+ stable LanguageModel API for local prompt optimization.
+ * All processing happens on-device for complete privacy.
+ *
+ * @see https://developer.chrome.com/docs/extensions/ai/prompt-api
  */
 
 import { type AIAvailability, type AIOptimizeOptions, PromptTunerError } from "~types"
@@ -11,7 +13,7 @@ import { type AIAvailability, type AIOptimizeOptions, PromptTunerError } from "~
 // Constants
 // =============================================================================
 
-const CHROME_FLAGS_URL = "chrome://flags/#optimization-guide-on-device-model"
+const CHROME_VERSION_INFO = "Requires Chrome 138+ with Gemini Nano enabled"
 
 const SYSTEM_PROMPT_TEMPLATE = `You are an expert prompt engineer. Your task is to rewrite and optimize the user's prompt to be more effective.
 
@@ -30,16 +32,10 @@ Instructions:
 // =============================================================================
 
 /**
- * Gets the window.ai API if available
+ * Checks if the LanguageModel API is available in the current context
  */
-function getAI(): WindowAI | undefined {
-  if (typeof globalThis !== "undefined" && "ai" in globalThis) {
-    return globalThis.ai
-  }
-  if (typeof window !== "undefined" && "ai" in window) {
-    return window.ai
-  }
-  return undefined
+function isLanguageModelAvailable(): boolean {
+  return typeof LanguageModel !== "undefined"
 }
 
 /**
@@ -58,47 +54,53 @@ function formatRulesForPrompt(rules: string[]): string {
 
 /**
  * Checks if the Gemini Nano AI is available in the browser
+ *
+ * Chrome 138+ availability states:
+ * - "available": Model is ready to use
+ * - "downloadable": Model can be downloaded
+ * - "downloading": Model is currently downloading
+ * - "unavailable": Model is not supported on this device
  */
 export async function checkAIAvailability(): Promise<AIAvailability> {
-  const ai = getAI()
-
-  if (!ai) {
+  if (!isLanguageModelAvailable()) {
     return {
       available: false,
-      reason: `Gemini Nano not available. Please enable it at ${CHROME_FLAGS_URL}`,
-    }
-  }
-
-  if (!ai.languageModel) {
-    return {
-      available: false,
-      reason: `Language Model API not available. Please enable it at ${CHROME_FLAGS_URL}`,
+      reason: `LanguageModel API not available. ${CHROME_VERSION_INFO}`,
     }
   }
 
   try {
-    const capabilities = await ai.languageModel.capabilities()
+    const availability = await LanguageModel.availability()
 
-    if (capabilities.available === "no") {
-      return {
-        available: false,
-        reason: "Gemini Nano is not supported on this device or browser.",
-      }
+    switch (availability) {
+      case "available":
+        return { available: true }
+
+      case "downloadable":
+        return {
+          available: false,
+          needsDownload: true,
+          reason: "Gemini Nano model can be downloaded. Visit chrome://components to trigger download.",
+        }
+
+      case "downloading":
+        return {
+          available: false,
+          needsDownload: true,
+          reason: "Gemini Nano model is currently downloading. Please wait.",
+        }
+
+      case "unavailable":
+      default:
+        return {
+          available: false,
+          reason: "Gemini Nano is not supported on this device or browser configuration.",
+        }
     }
-
-    if (capabilities.available === "after-download") {
-      return {
-        available: false,
-        needsDownload: true,
-        reason: "Gemini Nano needs to be downloaded. This may happen automatically.",
-      }
-    }
-
-    return { available: true }
   } catch (error) {
     return {
       available: false,
-      reason: error instanceof Error ? error.message : "Failed to check AI capabilities",
+      reason: error instanceof Error ? error.message : "Failed to check AI availability",
     }
   }
 }
@@ -110,18 +112,18 @@ async function createSession(
   systemPrompt: string,
   options?: AIOptimizeOptions
 ): Promise<LanguageModel> {
-  const ai = getAI()
-
-  if (!ai?.languageModel) {
+  if (!isLanguageModelAvailable()) {
     throw new PromptTunerError(
-      `Gemini Nano not available. Please enable it at ${CHROME_FLAGS_URL}`,
+      `LanguageModel API not available. ${CHROME_VERSION_INFO}`,
       "AI_UNAVAILABLE"
     )
   }
 
   try {
-    const session = await ai.languageModel.create({
-      systemPrompt,
+    const session = await LanguageModel.create({
+      initialPrompts: [
+        { role: "system", content: systemPrompt },
+      ],
       temperature: options?.temperature ?? 0.3,
       topK: 40,
     })
@@ -189,7 +191,7 @@ export async function optimizePrompt(
  *
  * @param draft - The original prompt to optimize
  * @param rules - Array of optimization rules to apply
- * @param onChunk - Callback for each chunk of the response
+ * @param onChunk - Callback for each chunk of the response (receives delta tokens)
  * @param options - Optional configuration for the AI
  * @returns The complete optimized prompt
  */
@@ -222,6 +224,7 @@ export async function optimizePromptStreaming(
       const { done, value } = await reader.read()
       if (done) break
 
+      // Chrome 138+ streaming returns delta tokens (new content only)
       result += value
       onChunk(value)
     }

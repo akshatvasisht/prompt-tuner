@@ -3,15 +3,22 @@
  *
  * Handles prompt optimization requests from content scripts:
  * 1. Receives draft prompt and platform
- * 2. Searches VectorDB for relevant optimization rules
+ * 2. Gets platform-specific optimization rules
  * 3. Calls AI Engine to optimize the prompt
  * 4. Returns the optimized result
  */
 
 import { type PlasmoMessaging } from "@plasmohq/messaging"
-import { type OptimizeRequest, type OptimizeResponse, type ErrorCode, type Platform, PromptTunerError } from "~types"
-import { searchRules, initializeDatabase, seedDatabase, isDatabaseReady } from "~lib/vector-db"
+
 import { optimizePrompt, checkAIAvailability } from "~lib/ai-engine"
+import { getRulesForPlatform } from "~lib/platform-rules"
+import {
+  type OptimizeRequest,
+  type OptimizeResponse,
+  type ErrorCode,
+  type Platform,
+  PromptTunerError,
+} from "~types"
 
 // =============================================================================
 // Validation
@@ -61,17 +68,6 @@ function successResponse(optimizedPrompt: string, appliedRules: string[]): Optim
 }
 
 // =============================================================================
-// Database Initialization
-// =============================================================================
-
-async function ensureDatabaseReady(): Promise<void> {
-  if (!isDatabaseReady()) {
-    await initializeDatabase()
-    await seedDatabase()
-  }
-}
-
-// =============================================================================
 // Message Handler
 // =============================================================================
 
@@ -83,11 +79,7 @@ const handler: PlasmoMessaging.MessageHandler<OptimizeRequest, OptimizeResponse>
   if (!validateRequest(req.body)) {
     console.error("[Optimize] Invalid request:", req.body)
     res.send(
-      errorResponse(
-        "INVALID_REQUEST",
-        "Invalid request: draft prompt and platform are required",
-        ""
-      )
+      errorResponse("INVALID_REQUEST", "Invalid request: draft prompt and platform are required", "")
     )
     return
   }
@@ -95,13 +87,10 @@ const handler: PlasmoMessaging.MessageHandler<OptimizeRequest, OptimizeResponse>
   const { draft, platform } = req.body
 
   try {
-    // Step 1: Ensure database is ready
-    await ensureDatabaseReady()
+    // Step 1: Get platform-specific rules (synchronous)
+    const rules = getRulesForPlatform(platform)
 
-    // Step 2: Search for relevant rules
-    const rules = await searchRules(draft, platform, 3)
-
-    // Step 3: Check AI availability
+    // Step 2: Check AI availability
     const aiStatus = await checkAIAvailability()
 
     if (!aiStatus.available) {
@@ -109,18 +98,17 @@ const handler: PlasmoMessaging.MessageHandler<OptimizeRequest, OptimizeResponse>
       res.send(
         errorResponse(
           "AI_UNAVAILABLE",
-          aiStatus.reason ??
-            "Gemini Nano is not available. Please enable chrome://flags/#optimization-guide-on-device-model",
+          aiStatus.reason ?? "Gemini Nano is not available. Requires Chrome 138+.",
           draft
         )
       )
       return
     }
 
-    // Step 4: Optimize the prompt using AI
+    // Step 3: Optimize the prompt using AI
     const optimizedPrompt = await optimizePrompt(draft, rules)
 
-    // Step 5: Return success response
+    // Step 4: Return success response
     res.send(successResponse(optimizedPrompt, rules))
   } catch (error) {
     console.error("[Optimize] Error during optimization:", error)

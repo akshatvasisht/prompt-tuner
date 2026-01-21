@@ -1,77 +1,71 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+
 import { checkAIAvailability, optimizePrompt } from "~lib/ai-engine"
 import { PromptTunerError } from "~types"
+
+import { createMockLanguageModel, resetLanguageModelMock } from "../setup"
 
 describe("ai-engine", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetLanguageModelMock()
+  })
+
+  afterEach(() => {
+    resetLanguageModelMock()
   })
 
   describe("checkAIAvailability", () => {
     it("should return available when AI is ready", async () => {
-      // Mock is set up in tests/setup.ts
       const result = await checkAIAvailability()
       expect(result.available).toBe(true)
     })
 
-    it("should return unavailable when AI is not present", async () => {
-      // Temporarily remove the mock
-      const originalAI = globalThis.ai
-      globalThis.ai = undefined
+    it("should return unavailable when LanguageModel is not defined", async () => {
+      // @ts-expect-error - intentionally setting to undefined for test
+      globalThis.LanguageModel = undefined
 
       const result = await checkAIAvailability()
       expect(result.available).toBe(false)
-      expect(result.reason).toContain("Gemini Nano not available")
-
-      // Restore mock
-      globalThis.ai = originalAI
+      expect(result.reason).toContain("LanguageModel API not available")
     })
 
-    it("should return unavailable when languageModel is missing", async () => {
-      const originalAI = globalThis.ai
-      globalThis.ai = {} as WindowAI
-
-      const result = await checkAIAvailability()
-      expect(result.available).toBe(false)
-      expect(result.reason).toContain("Language Model API not available")
-
-      globalThis.ai = originalAI
-    })
-
-    it("should return needsDownload when model needs downloading", async () => {
-      const originalAI = globalThis.ai
-      globalThis.ai = {
-        languageModel: {
-          capabilities: vi.fn().mockResolvedValue({
-            available: "after-download",
-          }),
-          create: vi.fn(),
-        },
-      }
+    it("should return needsDownload when model is downloadable", async () => {
+      vi.stubGlobal("LanguageModel", createMockLanguageModel({ availability: "downloadable" }))
 
       const result = await checkAIAvailability()
       expect(result.available).toBe(false)
       expect(result.needsDownload).toBe(true)
-
-      globalThis.ai = originalAI
+      expect(result.reason).toContain("downloaded")
     })
 
-    it("should return unavailable when model is not supported", async () => {
-      const originalAI = globalThis.ai
-      globalThis.ai = {
-        languageModel: {
-          capabilities: vi.fn().mockResolvedValue({
-            available: "no",
-          }),
-          create: vi.fn(),
-        },
-      }
+    it("should return needsDownload when model is downloading", async () => {
+      vi.stubGlobal("LanguageModel", createMockLanguageModel({ availability: "downloading" }))
+
+      const result = await checkAIAvailability()
+      expect(result.available).toBe(false)
+      expect(result.needsDownload).toBe(true)
+      expect(result.reason).toContain("downloading")
+    })
+
+    it("should return unavailable when model is unavailable", async () => {
+      vi.stubGlobal("LanguageModel", createMockLanguageModel({ availability: "unavailable" }))
 
       const result = await checkAIAvailability()
       expect(result.available).toBe(false)
       expect(result.reason).toContain("not supported")
+    })
 
-      globalThis.ai = originalAI
+    it("should handle errors gracefully", async () => {
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockRejectedValue(new Error("API error")),
+        create: vi.fn(),
+        capabilities: vi.fn(),
+      })
+
+      const result = await checkAIAvailability()
+      expect(result.available).toBe(false)
+      expect(result.reason).toContain("API error")
     })
   })
 
@@ -87,12 +81,10 @@ describe("ai-engine", () => {
     })
 
     it("should throw PromptTunerError when AI is unavailable", async () => {
-      const originalAI = globalThis.ai
-      globalThis.ai = undefined
+      // @ts-expect-error - intentionally setting to undefined for test
+      globalThis.LanguageModel = undefined
 
       await expect(optimizePrompt("test", ["rule"])).rejects.toThrow(PromptTunerError)
-
-      globalThis.ai = originalAI
     })
 
     it("should use default rules when empty array provided", async () => {
@@ -101,28 +93,52 @@ describe("ai-engine", () => {
       expect(result).toBeTruthy()
     })
 
-    it("should format multiple rules correctly", async () => {
-      const rules = ["Rule one", "Rule two", "Rule three"]
-      const mockCreate = vi.fn().mockResolvedValue({
-        prompt: vi.fn().mockImplementation((input: string) => {
-          // Verify rules are numbered in the prompt
-          expect(input).toContain("optimize this prompt")
-          return Promise.resolve("Optimized result")
-        }),
-        destroy: vi.fn(),
-      })
-
-      const originalAI = globalThis.ai
-      globalThis.ai = {
-        languageModel: {
-          capabilities: vi.fn().mockResolvedValue({ available: "readily" }),
-          create: mockCreate,
-        },
+    it("should call destroy on session after completion", async () => {
+      const mockDestroy = vi.fn()
+      const mockSession = {
+        prompt: vi.fn().mockResolvedValue("Optimized result"),
+        promptStreaming: vi.fn(),
+        destroy: mockDestroy,
       }
 
-      await optimizePrompt("test", rules)
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockResolvedValue("available"),
+        capabilities: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue(mockSession),
+      })
 
-      globalThis.ai = originalAI
+      await optimizePrompt("test", ["rule"])
+
+      expect(mockDestroy).toHaveBeenCalled()
+    })
+
+    it("should return original prompt if AI returns empty string", async () => {
+      const mockSession = {
+        prompt: vi.fn().mockResolvedValue("   "),
+        promptStreaming: vi.fn(),
+        destroy: vi.fn(),
+      }
+
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockResolvedValue("available"),
+        capabilities: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue(mockSession),
+      })
+
+      const originalPrompt = "my original prompt"
+      const result = await optimizePrompt(originalPrompt, ["rule"])
+
+      expect(result).toBe(originalPrompt)
+    })
+
+    it("should throw PromptTunerError when session creation fails", async () => {
+      vi.stubGlobal("LanguageModel", {
+        availability: vi.fn().mockResolvedValue("available"),
+        capabilities: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockRejectedValue(new Error("Session failed")),
+      })
+
+      await expect(optimizePrompt("test", ["rule"])).rejects.toThrow(PromptTunerError)
     })
   })
 })

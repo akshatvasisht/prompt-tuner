@@ -16,7 +16,7 @@ export type SupportedPlatform = Exclude<Platform, "unknown">
 // Rule Types
 // =============================================================================
 
-/** A single optimization rule stored in the vector database */
+/** A single optimization rule for prompt engineering */
 export interface OptimizationRule {
   /** Unique identifier for the rule */
   id: string
@@ -34,14 +34,6 @@ export interface OptimizationRule {
   source?: string
   /** When the rule was created */
   createdAt?: string
-}
-
-/** Result from vector database search */
-export interface VectorSearchResult {
-  /** The matched rule */
-  rule: OptimizationRule
-  /** Relevance score (0-1) */
-  score: number
 }
 
 // =============================================================================
@@ -85,7 +77,6 @@ export type ErrorCode =
   | "INVALID_REQUEST"
   | "ELEMENT_NOT_FOUND"
   | "PLATFORM_UNSUPPORTED"
-  | "DATABASE_ERROR"
   | "UNKNOWN_ERROR"
 
 /** Custom error class for extension errors */

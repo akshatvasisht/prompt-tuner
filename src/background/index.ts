@@ -3,18 +3,18 @@
  *
  * Handles:
  * - Extension installation and updates
- * - Vector database initialization
  * - Message routing
+ * - Keep-alive for MV3 service workers
  */
 
-import { initializeDatabase, seedDatabase, isDatabaseReady, getRuleCount } from "~lib/vector-db"
+import { getRuleCount } from "~lib/platform-rules"
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface BackgroundMessage {
-  type: "PING" | "CHECK_DB_STATUS" | "RESET_DATABASE"
+  type: "PING" | "CHECK_STATUS"
 }
 
 // =============================================================================
@@ -25,9 +25,7 @@ interface BackgroundMessage {
 chrome.runtime.onInstalled.addListener((details): void => {
   void (async (): Promise<void> => {
     try {
-      await initializeDatabase()
-      await seedDatabase()
-      const ruleCount = await getRuleCount()
+      const ruleCount = getRuleCount()
 
       await chrome.storage.local.set({
         installedAt: Date.now(),
@@ -37,23 +35,10 @@ chrome.runtime.onInstalled.addListener((details): void => {
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
         // eslint-disable-next-line no-console
-        console.log(`[Background] Fresh installation - ${String(ruleCount)} rules loaded`)
+        console.log(`[Background] Fresh installation - ${String(ruleCount)} rules bundled`)
       }
     } catch (error: unknown) {
       console.error("[Background] Failed to initialize:", error)
-    }
-  })()
-})
-
-chrome.runtime.onStartup.addListener(() => {
-  void (async () => {
-    try {
-      if (!isDatabaseReady()) {
-        await initializeDatabase()
-        await seedDatabase()
-      }
-    } catch (error: unknown) {
-      console.error("[Background] Startup initialization failed:", error)
     }
   })()
 })
@@ -65,38 +50,14 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
   switch (message.type) {
     case "PING":
-      sendResponse({ type: "PONG", ready: isDatabaseReady() })
+      sendResponse({ type: "PONG", ready: true })
       return true
 
-    case "CHECK_DB_STATUS":
-      getRuleCount()
-        .then(count => {
-          sendResponse({
-            ready: isDatabaseReady(),
-            ruleCount: count,
-          })
-        })
-        .catch((error: unknown) => {
-          sendResponse({
-            ready: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-        })
-      return true
-
-    case "RESET_DATABASE":
-      initializeDatabase()
-        .then(() => seedDatabase())
-        .then(() => getRuleCount())
-        .then(count => {
-          sendResponse({ success: true, ruleCount: count })
-        })
-        .catch((error: unknown) => {
-          sendResponse({
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          })
-        })
+    case "CHECK_STATUS":
+      sendResponse({
+        ready: true,
+        ruleCount: getRuleCount(),
+      })
       return true
 
     default:
@@ -111,7 +72,7 @@ chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendR
 const KEEP_ALIVE_ALARM = "prompt-tuner-keep-alive"
 
 try {
-  chrome.alarms.onAlarm.addListener(alarm => {
+  chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === KEEP_ALIVE_ALARM) {
       // Keep service worker active
     }
@@ -131,5 +92,3 @@ export function setKeepAlive(active: boolean): void {
   }
 }
 /* eslint-enable @typescript-eslint/no-deprecated */
-
-export { initializeDatabase, seedDatabase, isDatabaseReady }
