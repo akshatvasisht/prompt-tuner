@@ -1,0 +1,400 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Prompt Tuner — Klein Editorial design tokens
+   Ultramarine #2C35EA (logo) on warm ivory paper.
+   Solid surfaces, ultramarine-tinted shadows, derived status
+   colors, real type and radius scales. No frosted glass.
+   ============================================================ */
+
+@layer base {
+  :root,
+  :host {
+    /* Brand accent — logo ultramarine */
+    --pt-accent: #2C35EA;
+    --pt-accent-hover: #1F28C4;
+    --pt-accent-light: rgba(44, 53, 234, 0.10);
+
+    /* Paper surfaces */
+    --pt-surface: #FAF7EF;
+    --pt-surface-elevated: #FFFDF7;
+    --pt-surface-border: rgba(44, 53, 234, 0.15);
+
+    /* Warm ink text */
+    --pt-text-primary: #111010;
+    --pt-text-secondary: #5C564E;
+    --pt-text-tertiary: #6B6457;
+    /* Decorative chrome only — carets, dividers, purely ornamental ink.
+       Fails body-text contrast intentionally; never use for meaningful copy. */
+    --pt-text-quaternary: #857E73;
+    /* Off-state track for toggles — bumped above surface-border so it reads
+       on both cream and ink without ever looking active. */
+    --pt-switch-off: rgba(44, 53, 234, 0.28);
+
+    /* Interaction wash — tinted with accent */
+    --pt-hover-bg: rgba(44, 53, 234, 0.06);
+    --pt-active-bg: rgba(44, 53, 234, 0.12);
+
+    /* Radius scale */
+    --pt-radius-sm: 2px;
+    --pt-radius: 6px;
+    --pt-radius-md: 8px;
+    --pt-radius-lg: 10px;
+
+    /* Ultramarine-tinted shadows */
+    --pt-shadow:
+      0 2px 8px rgba(44, 53, 234, 0.08),
+      0 8px 24px rgba(44, 53, 234, 0.06);
+    --pt-shadow-lg:
+      0 8px 32px rgba(44, 53, 234, 0.12),
+      0 24px 64px rgba(44, 53, 234, 0.08);
+
+    /* Modal scrim */
+    --pt-scrim: rgba(17, 16, 16, 0.35);
+
+    /* Semantic z-index scale — avoid arbitrary 99998/99999 collisions */
+    --pt-z-dropdown: 1000;
+    --pt-z-backdrop: 99998;
+    --pt-z-dialog:   99999;
+    --pt-z-toast:    100000;
+    --pt-z-tooltip:  100001;
+
+    /* Overlay dimension tokens — keep dense layouts anchored */
+    --pt-panel-min-h: 220px;
+    --pt-list-max-h:  380px;
+    --pt-error-max-w: clamp(220px, 40vw, 320px);
+
+    /* Base / elevated page backgrounds */
+    --pt-bg-base: #F4F1EA;
+    --pt-bg-elevated: var(--pt-surface-elevated);
+
+    --pt-font-body: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+
+    /* Brand-derived status colors */
+    --pt-status-error: #A8261F;
+    --pt-status-error-bg: rgba(168, 38, 31, 0.08);
+    --pt-status-warning: #B8791F;
+    --pt-status-warning-bg: rgba(184, 121, 31, 0.10);
+    --pt-status-success: #1F7A6B;
+    --pt-status-success-bg: rgba(31, 122, 107, 0.10);
+
+    /* Shadcn/Tailwind bridge — mapped to paper + ink */
+    --background: 42 33% 93%;
+    --foreground: 30 7% 7%;
+    --muted: 42 25% 90%;
+    --muted-foreground: 30 7% 35%;
+    --border: 236 82% 55% / 0.15;
+    --input: 236 82% 55% / 0.15;
+    --primary: 236 82% 55%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 42 33% 93%;
+    --accent-foreground: 30 7% 7%;
+    --radius: 0.375rem;
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    /* Ink-paper inversion — deep warm black surface, cream text, same ultramarine.
+       `[data-theme="dark"]` matches Ladle's theme addon so stories switch correctly
+       without relying on the Provider's class-toggle bridging globalState. */
+    --pt-accent: #4752F0;
+    --pt-accent-hover: #6A73F5;
+    --pt-accent-light: rgba(71, 82, 240, 0.18);
+
+    --pt-surface: #1A1815;
+    --pt-surface-elevated: #222019;
+    --pt-surface-border: rgba(71, 82, 240, 0.22);
+
+    --pt-text-primary: #F4F0E6;
+    --pt-text-secondary: #B8B0A0;
+    --pt-text-tertiary: #7E7668;
+    --pt-text-quaternary: #5F584D;
+    --pt-switch-off: rgba(71, 82, 240, 0.38);
+
+    --pt-hover-bg: rgba(71, 82, 240, 0.10);
+    --pt-active-bg: rgba(71, 82, 240, 0.18);
+
+    --pt-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.5),
+      0 8px 24px rgba(71, 82, 240, 0.10);
+    --pt-shadow-lg:
+      0 8px 32px rgba(0, 0, 0, 0.6),
+      0 24px 64px rgba(71, 82, 240, 0.14);
+
+    /* Dark-mode scrim — lighter alpha on dark ground */
+    --pt-scrim: rgba(0, 0, 0, 0.55);
+
+    --pt-bg-base: #141210;
+    --pt-bg-elevated: var(--pt-surface-elevated);
+
+    --pt-status-error: #E26A61;
+    --pt-status-error-bg: rgba(226, 106, 97, 0.12);
+    --pt-status-warning: #E0A653;
+    --pt-status-warning-bg: rgba(224, 166, 83, 0.12);
+    --pt-status-success: #4AB5A2;
+    --pt-status-success-bg: rgba(74, 181, 162, 0.12);
+
+    --background: 30 7% 7%;
+    --foreground: 42 33% 93%;
+    --muted: 30 7% 11%;
+    --muted-foreground: 30 11% 68%;
+    --border: 236 85% 62% / 0.22;
+    --input: 236 85% 62% / 0.22;
+    --primary: 236 85% 62%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 30 7% 11%;
+    --accent-foreground: 42 33% 93%;
+  }
+
+  /* Honor OS-level dark preference when no explicit `.dark` class is set */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light):not([data-theme="light"]),
+    :host(:not(.light)) {
+      --pt-accent: #4752F0;
+      --pt-accent-hover: #6A73F5;
+      --pt-accent-light: rgba(71, 82, 240, 0.18);
+      --pt-surface: #1A1815;
+      --pt-surface-elevated: #222019;
+      --pt-surface-border: rgba(71, 82, 240, 0.22);
+      --pt-text-primary: #F4F0E6;
+      --pt-text-secondary: #B8B0A0;
+      --pt-text-tertiary: #7E7668;
+      --pt-text-quaternary: #5F584D;
+      --pt-switch-off: rgba(71, 82, 240, 0.38);
+      --pt-hover-bg: rgba(71, 82, 240, 0.10);
+      --pt-active-bg: rgba(71, 82, 240, 0.18);
+      --pt-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.5),
+        0 8px 24px rgba(71, 82, 240, 0.10);
+      --pt-shadow-lg:
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        0 24px 64px rgba(71, 82, 240, 0.14);
+      --pt-scrim: rgba(0, 0, 0, 0.55);
+      --pt-bg-base: #141210;
+      --pt-status-error: #E26A61;
+      --pt-status-error-bg: rgba(226, 106, 97, 0.12);
+      --pt-status-warning: #E0A653;
+      --pt-status-warning-bg: rgba(224, 166, 83, 0.12);
+      --pt-status-success: #4AB5A2;
+      --pt-status-success-bg: rgba(74, 181, 162, 0.12);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family:
+      "Inter Variable",
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "SF Pro Text",
+      "Segoe UI",
+      "Roboto",
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .spinner {
+    @apply animate-spin h-5 w-5;
+  }
+  .spinner-circle {
+    @apply opacity-25;
+  }
+  .spinner-path {
+    @apply opacity-75;
+  }
+}
+
+@layer components {
+  @keyframes slideUpAndFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideDownAndFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideLeftAndFade {
+    from { opacity: 0; transform: translateX(4px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideRightAndFade {
+    from { opacity: 0; transform: translateX(-4px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 8px var(--pt-accent); }
+    50%      { box-shadow: 0 0 16px var(--pt-accent); }
+  }
+
+  .animate-slideUpAndFade    { animation: slideUpAndFade    200ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-slideDownAndFade  { animation: slideDownAndFade  200ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-slideLeftAndFade  { animation: slideLeftAndFade  200ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-slideRightAndFade { animation: slideRightAndFade 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .animate-glow              { animation: glow 2s ease-in-out infinite; }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  @keyframes ripple {
+    0%   { transform: scale(0); opacity: 0.6; }
+    100% { transform: scale(4); opacity: 0; }
+  }
+  .animate-ripple {
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes icon-bounce {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.1); }
+  }
+  .icon-hover:hover { animation: icon-bounce 0.3s ease-in-out; }
+
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pt-accent)] focus-visible:ring-offset-2;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  .active-scale {
+    @apply transition-transform duration-100 active:scale-[0.98];
+  }
+}
+
+/* ============================================================
+   Overlay & Pill CSS Transitions
+   ============================================================ */
+
+.pt-backdrop {
+  opacity: 1;
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    display 0.2s allow-discrete;
+  @starting-style { opacity: 0; }
+}
+
+.pt-dialog-motion {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    translate 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    display 0.2s allow-discrete;
+  @starting-style {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+.pt-pill-motion {
+  opacity: 1;
+  scale: 1;
+  translate: 0 0;
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    scale   0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    translate 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  @starting-style {
+    opacity: 0;
+    scale: 0.92;
+    translate: 0 8px;
+  }
+}
+
+@keyframes pt-fade-up {
+  from { opacity: 0; translate: 0 10px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+.pt-action-item {
+  animation: pt-fade-up 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.pt-action-item:nth-child(1) { animation-delay: 0ms; }
+.pt-action-item:nth-child(2) { animation-delay: 50ms; }
+.pt-action-item:nth-child(3) { animation-delay: 100ms; }
+.pt-action-item:nth-child(4) { animation-delay: 150ms; }
+.pt-action-item:nth-child(5) { animation-delay: 200ms; }
+.pt-action-item:nth-child(6) { animation-delay: 250ms; }
+.pt-action-item:nth-child(7) { animation-delay: 300ms; }
+.pt-action-item:nth-child(8) { animation-delay: 350ms; }
+.pt-action-item:nth-child(9) { animation-delay: 400ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-backdrop,
+  .pt-dialog-motion,
+  .pt-pill-motion { transition: none; }
+  .pt-action-item { animation: none; }
+}
+
+/* ============================================================
+   Status utility classes — keeps markup clean and tokens central
+   ============================================================ */
+
+@layer utilities {
+  .pt-status-error   { color: var(--pt-status-error); }
+  .pt-status-warning { color: var(--pt-status-warning); }
+  .pt-status-success { color: var(--pt-status-success); }
+
+  .pt-status-error-bg   { background-color: var(--pt-status-error-bg); }
+  .pt-status-warning-bg { background-color: var(--pt-status-warning-bg); }
+  .pt-status-success-bg { background-color: var(--pt-status-success-bg); }
+
+  .pt-status-dot-error   { background-color: var(--pt-status-error); }
+  .pt-status-dot-warning { background-color: var(--pt-status-warning); }
+  .pt-status-dot-success { background-color: var(--pt-status-success); }
+}
+
+/* Scrollbar Styling */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--pt-surface-border);
+    border-radius: var(--pt-radius-sm);
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--pt-accent);
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
