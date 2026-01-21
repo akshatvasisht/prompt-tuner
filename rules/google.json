@@ -1,0 +1,84 @@
+[
+  {
+    "id": "google-1",
+    "platform": "google",
+    "title": "Use Markdown Structure",
+    "description": "Gemini parses and responds well to markdown",
+    "rule": "Use markdown formatting (## headers, - bullet points, **bold**, numbered lists) to structure your prompts. Gemini understands and follows markdown structure effectively.",
+    "examples": [
+      "## Context\nYou are a data analyst.\n\n## Task\nAnalyze the following data:\n\n## Data\n```\n{data}\n```\n\n## Output Requirements\n- Key insights\n- Trends\n- Recommendations"
+    ],
+    "tags": ["structure", "markdown", "formatting"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-2",
+    "platform": "google",
+    "title": "Provide Concrete Examples",
+    "description": "Ground prompts with specific, real scenarios",
+    "rule": "Include concrete examples with specific details rather than abstract descriptions. Gemini performs better when given grounded, real-world scenarios to work with.",
+    "examples": [
+      "Instead of: 'Write a business email'\n\nUse: 'Write a business email from a project manager at a tech startup, informing the team about a 2-week deadline extension for the mobile app launch, explaining that QA testing revealed critical bugs.'"
+    ],
+    "tags": ["examples", "specificity", "grounding"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-3",
+    "platform": "google",
+    "title": "List Requirements Explicitly",
+    "description": "Use numbered checklists for requirements",
+    "rule": "Format requirements as a numbered checklist: '1. Must include X, 2. Should avoid Y, 3. Format as Z.' Be explicit about all constraints and expectations.",
+    "examples": [
+      "Requirements:\n1. Response must be under 200 words\n2. Include at least 3 specific examples\n3. Use professional tone\n4. Format as bullet points\n5. Do not include technical jargon"
+    ],
+    "tags": ["requirements", "constraints", "checklist"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-4",
+    "platform": "google",
+    "title": "Position Critical Content Strategically",
+    "description": "Place important information at key positions",
+    "rule": "Put the most important context and instructions at the beginning and end of long prompts. Information in the middle may receive less attention (the 'lost in the middle' effect).",
+    "tags": ["context", "positioning", "attention"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-5",
+    "platform": "google",
+    "title": "Decompose Complex Tasks",
+    "description": "Break down multi-step tasks explicitly",
+    "rule": "Break complex requests into sequential subtasks: 'First, analyze X. Then, based on your analysis, do Y. Finally, synthesize your findings into Z.'",
+    "examples": [
+      "Complete this task in three steps:\n\nStep 1: Read the provided research papers and identify the main methodology used in each.\n\nStep 2: Compare the methodologies and identify similarities and differences.\n\nStep 3: Write a synthesis paragraph summarizing which methodology is most appropriate for our use case."
+    ],
+    "tags": ["decomposition", "steps", "complex-tasks"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-6",
+    "platform": "google",
+    "title": "Specify Audience and Tone",
+    "description": "Define who the response is for",
+    "rule": "Explicitly state the target audience and tone: 'Explain this for a 5th grader' or 'Write this for a technical audience familiar with ML.' This adjusts vocabulary and depth appropriately.",
+    "tags": ["audience", "tone", "style"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "google-7",
+    "platform": "google",
+    "title": "Use System Instructions Effectively",
+    "description": "Leverage system instructions for consistent behavior",
+    "rule": "Place persistent instructions (role, tone, constraints that apply to all messages) in the system instruction rather than repeating them in each prompt.",
+    "tags": ["system-instructions", "consistency", "efficiency"],
+    "source": "https://ai.google.dev/docs/prompt_best_practices",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]

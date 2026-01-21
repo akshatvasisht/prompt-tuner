@@ -1,0 +1,87 @@
+[
+  {
+    "id": "openai-1",
+    "platform": "openai",
+    "title": "Use Clear Delimiters",
+    "description": "Separate distinct parts of the input with clear delimiters",
+    "rule": "Use triple quotes, XML tags, or section headers to clearly separate different parts of your prompt (context, instructions, examples, input data).",
+    "examples": [
+      "\"\"\"Context\"\"\"\nYou are a helpful assistant.\n\n\"\"\"Task\"\"\"\nSummarize the following text.\n\n\"\"\"Text\"\"\"\n{text}"
+    ],
+    "tags": ["structure", "clarity", "delimiters"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-2",
+    "platform": "openai",
+    "title": "Specify Output Format",
+    "description": "Tell the model exactly what format you want the output in",
+    "rule": "Explicitly specify the desired output format (JSON, markdown, bullet points, etc.) and provide an example of the exact structure you expect.",
+    "examples": [
+      "Respond with a JSON object containing: {\"summary\": string, \"key_points\": string[], \"sentiment\": \"positive\" | \"negative\" | \"neutral\"}"
+    ],
+    "tags": ["format", "output", "structure"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-3",
+    "platform": "openai",
+    "title": "Provide Few-Shot Examples",
+    "description": "Show the model what you want through examples",
+    "rule": "Include 2-3 examples of the desired input-output format before your actual request. This demonstrates the expected behavior and response style.",
+    "examples": [
+      "Example 1:\nInput: The weather is nice today.\nOutput: positive\n\nExample 2:\nInput: I missed my flight.\nOutput: negative\n\nNow classify:\nInput: {user_text}"
+    ],
+    "tags": ["examples", "few-shot", "demonstration"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-4",
+    "platform": "openai",
+    "title": "Assign a Persona",
+    "description": "Give the model a specific role or expertise to adopt",
+    "rule": "Start your prompt with a role assignment: 'You are an expert [role] with [years] of experience in [domain].' This sets context and improves response quality.",
+    "examples": [
+      "You are a senior software engineer with 15 years of experience in Python and distributed systems. Review the following code for bugs and performance issues."
+    ],
+    "tags": ["persona", "role", "context"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-5",
+    "platform": "openai",
+    "title": "Request Step-by-Step Reasoning",
+    "description": "Ask the model to think through complex problems systematically",
+    "rule": "For complex tasks, instruct the model to 'think step by step' or 'show your reasoning before providing the final answer.' This improves accuracy on logical and mathematical problems.",
+    "examples": [
+      "Think through this problem step by step:\n1. First, identify the key variables\n2. Then, determine the relationships between them\n3. Finally, calculate the answer"
+    ],
+    "tags": ["reasoning", "chain-of-thought", "steps"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-6",
+    "platform": "openai",
+    "title": "Specify Length and Detail",
+    "description": "Be explicit about the desired response length",
+    "rule": "Specify the expected length (e.g., '2-3 sentences', '500 words', 'brief') and level of detail ('high-level overview' vs 'detailed explanation') you want.",
+    "tags": ["length", "detail", "constraints"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "openai-7",
+    "platform": "openai",
+    "title": "Use Positive Instructions",
+    "description": "Tell the model what TO do rather than what NOT to do",
+    "rule": "Frame instructions positively. Instead of 'Don't be verbose', say 'Be concise.' Instead of 'Don't make things up', say 'Only use information from the provided context.'",
+    "tags": ["instructions", "positive", "clarity"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]

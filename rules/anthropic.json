@@ -1,0 +1,87 @@
+[
+  {
+    "id": "anthropic-1",
+    "platform": "anthropic",
+    "title": "Use XML Tags for Structure",
+    "description": "Claude responds exceptionally well to XML-structured prompts",
+    "rule": "Structure your prompt using XML tags like <context>, <task>, <instructions>, <constraints>, and <output>. Claude parses and follows XML structure reliably.",
+    "examples": [
+      "<context>\nYou are a technical writer.\n</context>\n\n<task>\nWrite documentation for the following function.\n</task>\n\n<code>\n{code}\n</code>\n\n<output>\nProvide the documentation in markdown format.\n</output>"
+    ],
+    "tags": ["structure", "xml", "formatting"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-2",
+    "platform": "anthropic",
+    "title": "Request Thinking in Tags",
+    "description": "Enable explicit reasoning with thinking tags",
+    "rule": "Ask Claude to show its reasoning in <thinking> tags before providing the final answer: 'First, show your reasoning in <thinking> tags, then provide your answer.'",
+    "examples": [
+      "Analyze this problem. First show your step-by-step reasoning in <thinking> tags, then provide your final answer outside the tags."
+    ],
+    "tags": ["reasoning", "thinking", "chain-of-thought"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-3",
+    "platform": "anthropic",
+    "title": "Set Explicit Constraints",
+    "description": "Define clear boundaries and requirements",
+    "rule": "List constraints explicitly using 'You MUST:' and 'You MUST NOT:' followed by specific requirements. Claude follows explicit boundaries reliably.",
+    "examples": [
+      "You MUST:\n- Only use information from the provided documents\n- Cite sources for each claim\n- Keep the response under 500 words\n\nYou MUST NOT:\n- Make assumptions beyond the given data\n- Include personal opinions"
+    ],
+    "tags": ["constraints", "boundaries", "explicit"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-4",
+    "platform": "anthropic",
+    "title": "Wrap Documents Properly",
+    "description": "Clearly delineate reference documents",
+    "rule": "When providing documents for analysis, wrap them in <document> tags with identifiers, then reference them explicitly: 'Based on the document above...'",
+    "examples": [
+      "<document id=\"contract\">\n{contract_text}\n</document>\n\nBased on the contract above, identify any clauses related to termination."
+    ],
+    "tags": ["documents", "context", "reference"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-5",
+    "platform": "anthropic",
+    "title": "Use Examples with Tags",
+    "description": "Structure few-shot examples within XML",
+    "rule": "When providing examples, wrap them in <example> tags with clear input/output delineation. This helps Claude understand the expected format.",
+    "examples": [
+      "<examples>\n<example>\n<input>Hello world</input>\n<output>HELLO WORLD</output>\n</example>\n<example>\n<input>Test string</input>\n<output>TEST STRING</output>\n</example>\n</examples>\n\nNow process: <input>{user_input}</input>"
+    ],
+    "tags": ["examples", "few-shot", "structure"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-6",
+    "platform": "anthropic",
+    "title": "Prefill Assistant Response",
+    "description": "Guide the response format by starting the assistant message",
+    "rule": "When using the API, you can prefill the assistant's response to guide the format. Start with '{' for JSON, or the beginning of your expected structure.",
+    "tags": ["prefill", "format", "guidance"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "anthropic-7",
+    "platform": "anthropic",
+    "title": "Long Context Best Practices",
+    "description": "Optimize prompts for long document processing",
+    "rule": "For long documents, place key instructions both at the beginning AND end of the prompt. Put the most important context at the start, with specific questions at the end.",
+    "tags": ["long-context", "documents", "optimization"],
+    "source": "https://docs.anthropic.com/claude/docs/prompt-engineering",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+]
