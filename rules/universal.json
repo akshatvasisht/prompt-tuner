@@ -1,0 +1,38 @@
+[
+  {
+    "id": "core-1",
+    "title": "Structure with Clear Sections",
+    "description": "Organize prompts with labeled sections and delimiters for context, task, constraints, and output",
+    "rule": "Organize your prompt with clearly labeled sections: context/background, task/instruction, constraints, and desired output format. Use delimiters (headers, blank lines, or tags) to visually separate each section. Place the most critical instruction at the beginning and reiterate key requirements at the end for long prompts. Providing a role or persona ('You are an expert...') belongs in the context section.",
+    "tags": ["structure", "clarity", "delimiters", "persona", "role", "context"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2026-04-12T00:00:00.000Z"
+  },
+  {
+    "id": "core-2",
+    "title": "Provide Few-Shot Examples",
+    "description": "Include concrete input/output examples to steer model behavior",
+    "rule": "Include 2-3 concrete input/output examples that demonstrate the exact behavior you want. Choose diverse examples that cover typical cases and edge cases. Label each example clearly (e.g., 'Example 1: Input / Output'). Examples are the single most effective way to steer model behavior and response style.",
+    "tags": ["examples", "few-shot", "demonstration"],
+    "source": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview",
+    "createdAt": "2026-04-12T00:00:00.000Z"
+  },
+  {
+    "id": "core-3",
+    "title": "Request Step-by-Step Reasoning",
+    "description": "Instruct the model to reason through problems step by step before answering",
+    "rule": "For complex tasks, instruct the model to think through the problem step by step before giving a final answer. Break multi-part tasks into numbered sub-tasks. Decompose complex problems into sequential steps, each building on the previous. This improves accuracy on reasoning, math, logic, and multi-step problems.",
+    "tags": ["reasoning", "chain-of-thought", "steps", "decomposition", "complex-tasks"],
+    "source": "https://ai.google.dev/gemini-api/docs/prompting-strategies",
+    "createdAt": "2026-04-12T00:00:00.000Z"
+  },
+  {
+    "id": "core-4",
+    "title": "Specify Format, Constraints, and Tone",
+    "description": "Explicitly define output format, length, audience, and framing",
+    "rule": "State the desired output format explicitly (JSON, markdown table, bulleted list, numbered steps, etc.). Set length expectations ('respond in 2-3 sentences', 'under 200 words'). Define tone and audience ('explain to a 10-year-old', 'write as a senior engineer'). Use positive framing — tell the model what TO do rather than what to avoid. Set explicit constraints using MUST/MUST NOT or a numbered checklist.",
+    "tags": ["format", "output", "constraints", "length", "detail", "instructions", "audience", "tone", "style"],
+    "source": "https://platform.openai.com/docs/guides/prompt-engineering",
+    "createdAt": "2026-04-12T00:00:00.000Z"
+  }
+]
