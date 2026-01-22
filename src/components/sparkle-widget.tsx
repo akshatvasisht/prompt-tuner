@@ -10,14 +10,13 @@
 
 import * as React from "react"
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
-import { useFloating, autoUpdate, offset, flip, shift } from "@floating-ui/react"
+import { useFloating, autoUpdate, offset, shift } from "@floating-ui/react"
 import { sendToBackground } from "@plasmohq/messaging"
 import { Sparkles, Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { replaceText, isElementValid, getElementText } from "~lib/dom-injector"
 import { detectPlatform } from "~lib/platform-detector"
 import { cn } from "~lib/utils"
 import { type OptimizeRequest, type OptimizeResponse, type TextInputElement } from "~types"
-import "../styles/globals.css"
 
 // =============================================================================
 // Types
@@ -60,10 +59,14 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
     }
   }, [])
 
-  // Floating UI positioning
+  // Floating UI positioning - bottom-right inside the input
   const { refs, floatingStyles, update } = useFloating({
-    placement: "top-end",
-    middleware: [offset(8), flip(), shift({ padding: 8 })],
+    placement: "bottom-end",
+    middleware: [
+      // Negative offset to position inside the input element
+      offset({ mainAxis: -36, crossAxis: -8 }),
+      shift({ padding: 8 }),
+    ],
   })
 
   // Update position when active element changes
@@ -73,14 +76,15 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
     refs.setReference({
       getBoundingClientRect: (): DOMRect => {
         const rect = activeElement.getBoundingClientRect()
+        // Anchor at the bottom-right corner of the input
         return {
           width: 0,
           height: 0,
           x: rect.right,
-          y: rect.top,
-          top: rect.top,
+          y: rect.bottom,
+          top: rect.bottom,
           right: rect.right,
-          bottom: rect.top,
+          bottom: rect.bottom,
           left: rect.right,
           toJSON: () => ({}),
         }
@@ -91,10 +95,10 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
     if (!floatingElement) return
 
     const cleanup = autoUpdate(activeElement, floatingElement, update, {
-      animationFrame: false,
+      animationFrame: true, // Enable for smoother position updates
       ancestorScroll: true,
       ancestorResize: true,
-      elementResize: false,
+      elementResize: true, // Track element resize
     })
 
     return cleanup
@@ -165,7 +169,8 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
         platform,
       }
 
-      const response = await sendToBackground<OptimizeRequest, OptimizeResponse>({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+      const response: OptimizeResponse = await (sendToBackground as any)({
         name: "optimize",
         body: request,
       })
@@ -242,16 +247,19 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
 
   // Clear error after delay
   useEffect(() => {
-    if (status === "error") {
-      const timer = setTimeout(() => {
-        if (isMounted()) {
-          setStatus("idle")
-          setMessage(null)
-        }
-      }, 4000)
-      return () => {
-        clearTimeout(timer)
+    if (status !== "error") {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      if (isMounted()) {
+        setStatus("idle")
+        setMessage(null)
       }
+    }, 4000)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [status, isMounted])
 
@@ -276,6 +284,10 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
       <button
         onClick={() => {
           void handleClick()
+        }}
+        onMouseDown={(e) => {
+          // Prevent focus loss from the input field
+          e.preventDefault()
         }}
         disabled={status === "processing"}
         className={cn(
