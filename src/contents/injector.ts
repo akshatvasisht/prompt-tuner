@@ -20,7 +20,7 @@
  * - No eval() or dynamic code execution
  */
 
-import type { PlasmoCSConfig } from "plasmo"
+import type { PlasmoCSConfig } from "plasmo";
 
 // =============================================================================
 // Configuration
@@ -35,35 +35,35 @@ export const config: PlasmoCSConfig = {
     "https://gemini.google.com/*",
   ],
   world: "MAIN",
-}
+};
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MESSAGE_SOURCE = "prompt-tuner"
-const MESSAGE_TYPE_REPLACE = "REPLACE_TEXT"
-const MESSAGE_TYPE_RESPONSE = "REPLACE_TEXT_RESPONSE"
+const MESSAGE_SOURCE = "prompt-tuner";
+const MESSAGE_TYPE_REPLACE = "REPLACE_TEXT";
+const MESSAGE_TYPE_RESPONSE = "REPLACE_TEXT_RESPONSE";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ReplaceTextMessage {
-  type: typeof MESSAGE_TYPE_REPLACE
-  source: typeof MESSAGE_SOURCE
-  id: string
-  selector?: string
-  element?: string // Serialized element identifier
-  text: string
+  type: typeof MESSAGE_TYPE_REPLACE;
+  source: typeof MESSAGE_SOURCE;
+  id: string;
+  selector?: string;
+  element?: string; // Serialized element identifier
+  text: string;
 }
 
 interface ReplaceTextResponse {
-  type: typeof MESSAGE_TYPE_RESPONSE
-  source: typeof MESSAGE_SOURCE
-  id: string
-  success: boolean
-  error?: string
+  type: typeof MESSAGE_TYPE_RESPONSE;
+  source: typeof MESSAGE_SOURCE;
+  id: string;
+  success: boolean;
+  error?: string;
 }
 
 // =============================================================================
@@ -75,123 +75,134 @@ interface ReplaceTextResponse {
  */
 function findTextInputElement(selector?: string): HTMLElement | null {
   if (selector) {
-    const element = document.querySelector(selector)
+    const element = document.querySelector(selector);
     if (element instanceof HTMLElement) {
-      return element
+      return element;
     }
   }
 
   // Fallback: use document.activeElement
-  const active = document.activeElement
-  if (active instanceof HTMLTextAreaElement || 
-      (active instanceof HTMLDivElement && active.contentEditable === "true")) {
-    return active
+  const active = document.activeElement;
+  if (
+    active instanceof HTMLTextAreaElement ||
+    (active instanceof HTMLDivElement && active.contentEditable === "true")
+  ) {
+    return active;
   }
 
-  return null
+  return null;
 }
 
 /**
  * Replaces text in a textarea using native setters (Main World)
  */
-function replaceTextarea(element: HTMLTextAreaElement, newText: string): { success: boolean; error?: string } {
+function replaceTextarea(
+  element: HTMLTextAreaElement,
+  newText: string,
+): { success: boolean; error?: string } {
   try {
     // Get native property descriptor
     const descriptor = Object.getOwnPropertyDescriptor(
       HTMLTextAreaElement.prototype,
-      "value"
-    )
+      "value",
+    );
 
     if (descriptor?.set) {
       // Call native setter directly (bypasses React tracking)
-      descriptor.set.call(element, newText)
+      descriptor.set.call(element, newText);
     } else {
-      element.value = newText
+      element.value = newText;
     }
 
     // Dispatch events that React/frameworks listen to
-    element.dispatchEvent(new Event("input", { bubbles: true }))
-    element.dispatchEvent(new Event("change", { bubbles: true }))
-    
-    // Set cursor to end
-    element.setSelectionRange(newText.length, newText.length)
-    element.focus()
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
 
-    return { success: true }
+    // Set cursor to end
+    element.setSelectionRange(newText.length, newText.length);
+    element.focus();
+
+    return { success: true };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
-    }
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
 /**
  * Replaces text in a contenteditable div (Main World)
  */
-function replaceContentEditable(element: HTMLDivElement, newText: string): { success: boolean; error?: string } {
+function replaceContentEditable(
+  element: HTMLDivElement,
+  newText: string,
+): { success: boolean; error?: string } {
   try {
-    element.focus()
+    element.focus();
 
-    const selection = window.getSelection()
+    const selection = window.getSelection();
     if (!selection) {
-      return { success: false, error: "No selection available" }
+      return { success: false, error: "No selection available" };
     }
 
     // Select all content
-    const range = document.createRange()
-    range.selectNodeContents(element)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
 
     // Try execCommand first (preserves undo history)
-    const success = document.execCommand("insertText", false, newText)
+    const success = document.execCommand("insertText", false, newText);
 
     if (success) {
-      element.dispatchEvent(new Event("input", { bubbles: true }))
-      element.dispatchEvent(new Event("change", { bubbles: true }))
-      return { success: true }
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+      return { success: true };
     }
 
     // Fallback: direct manipulation
-    element.textContent = newText
-    element.dispatchEvent(new Event("input", { bubbles: true }))
-    element.dispatchEvent(new Event("change", { bubbles: true }))
+    element.textContent = newText;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
 
     // Set cursor to end
-    range.selectNodeContents(element)
-    range.collapse(false)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
 
-    return { success: true }
+    return { success: true };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
-    }
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
 /**
  * Main text replacement function (Main World context)
  */
-function replaceText(selector: string | undefined, newText: string): { success: boolean; error?: string } {
-  const element = findTextInputElement(selector)
+function replaceText(
+  selector: string | undefined,
+  newText: string,
+): { success: boolean; error?: string } {
+  const element = findTextInputElement(selector);
 
   if (!element) {
-    return { success: false, error: "Element not found or not in DOM" }
+    return { success: false, error: "Element not found or not in DOM" };
   }
 
   if (element instanceof HTMLTextAreaElement) {
-    return replaceTextarea(element, newText)
+    return replaceTextarea(element, newText);
   }
 
   if (element instanceof HTMLDivElement && element.contentEditable === "true") {
-    return replaceContentEditable(element, newText)
+    return replaceContentEditable(element, newText);
   }
 
-  return { success: false, error: "Unsupported element type" }
+  return { success: false, error: "Unsupported element type" };
 }
 
 // =============================================================================
@@ -202,16 +213,16 @@ function replaceText(selector: string | undefined, newText: string): { success: 
  * Validates incoming message
  */
 function isReplaceTextMessage(data: unknown): data is ReplaceTextMessage {
-  if (!data || typeof data !== "object") return false
-  
-  const msg = data as Record<string, unknown>
-  
+  if (!data || typeof data !== "object") return false;
+
+  const msg = data as Record<string, unknown>;
+
   return (
     msg.type === MESSAGE_TYPE_REPLACE &&
     msg.source === MESSAGE_SOURCE &&
     typeof msg.id === "string" &&
     typeof msg.text === "string"
-  )
+  );
 }
 
 /**
@@ -220,18 +231,18 @@ function isReplaceTextMessage(data: unknown): data is ReplaceTextMessage {
 function handleMessage(event: MessageEvent): void {
   // Security: Only process messages from same origin
   if (event.origin !== window.location.origin) {
-    return
+    return;
   }
 
   // Validate message format
   if (!isReplaceTextMessage(event.data)) {
-    return
+    return;
   }
 
-  const message = event.data
+  const message = event.data;
 
   // Perform text replacement in Main World
-  const result = replaceText(message.selector, message.text)
+  const result = replaceText(message.selector, message.text);
 
   // Send response back to content script
   const response: ReplaceTextResponse = {
@@ -239,10 +250,10 @@ function handleMessage(event: MessageEvent): void {
     source: MESSAGE_SOURCE,
     id: message.id,
     success: result.success,
-    error: result.error
-  }
+    error: result.error,
+  };
 
-  window.postMessage(response, window.location.origin)
+  window.postMessage(response, window.location.origin);
 }
 
 // =============================================================================
@@ -250,13 +261,13 @@ function handleMessage(event: MessageEvent): void {
 // =============================================================================
 
 // Register message listener
-window.addEventListener("message", handleMessage, false)
+window.addEventListener("message", handleMessage, false);
 
 // Signal that Main World injector is ready
 window.postMessage(
   {
     type: "PROMPT_TUNER_READY",
-    source: MESSAGE_SOURCE
+    source: MESSAGE_SOURCE,
   },
-  window.location.origin
-)
+  window.location.origin,
+);
