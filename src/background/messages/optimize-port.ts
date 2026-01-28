@@ -17,56 +17,64 @@
  * - Connection stays alive during streaming
  */
 
-import { checkAIAvailability, optimizePromptStreaming } from "~lib/ai-engine"
-import { getRulesForPlatform } from "~lib/platform-rules"
-import { type ErrorCode, type Platform, PromptTunerError } from "~types"
+import { checkAIAvailability, optimizePromptStreaming } from "~lib/ai-engine";
+import { getRulesForPlatform } from "~lib/platform-rules";
+import { type ErrorCode, type Platform, PromptTunerError } from "~types";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface OptimizePortRequest {
-  type: "START_OPTIMIZATION"
-  draft: string
-  platform: Platform
+  type: "START_OPTIMIZATION";
+  draft: string;
+  platform: Platform;
 }
 
 interface OptimizePortChunk {
-  type: "CHUNK"
-  data: string
+  type: "CHUNK";
+  data: string;
 }
 
 interface OptimizePortComplete {
-  type: "COMPLETE"
-  optimizedPrompt: string
-  appliedRules: string[]
+  type: "COMPLETE";
+  optimizedPrompt: string;
+  appliedRules: string[];
 }
 
 interface OptimizePortError {
-  type: "ERROR"
-  code: ErrorCode
-  message: string
+  type: "ERROR";
+  code: ErrorCode;
+  message: string;
 }
 
-type OptimizePortMessage = OptimizePortChunk | OptimizePortComplete | OptimizePortError
+type OptimizePortMessage =
+  | OptimizePortChunk
+  | OptimizePortComplete
+  | OptimizePortError;
 
 // =============================================================================
 // Validation
 // =============================================================================
 
-const VALID_PLATFORMS: Platform[] = ["openai", "anthropic", "google", "unknown"]
+const VALID_PLATFORMS: Platform[] = [
+  "openai",
+  "anthropic",
+  "google",
+  "unknown",
+];
 
 function validateRequest(data: unknown): data is OptimizePortRequest {
-  if (!data || typeof data !== "object") return false
+  if (!data || typeof data !== "object") return false;
 
-  const request = data as Record<string, unknown>
+  const request = data as Record<string, unknown>;
 
   return (
     request.type === "START_OPTIMIZATION" &&
     typeof request.draft === "string" &&
     request.draft.trim().length > 0 &&
     VALID_PLATFORMS.includes(request.platform as Platform)
-  )
+  );
 }
 
 // =============================================================================
@@ -77,38 +85,46 @@ function sendChunk(port: chrome.runtime.Port, data: string): void {
   const message: OptimizePortChunk = {
     type: "CHUNK",
     data,
-  }
+  };
   try {
-    port.postMessage(message)
+    port.postMessage(message);
   } catch (error) {
     // Port disconnected - silently fail
-    console.warn("[OptimizePort] Failed to send chunk:", error)
+    console.warn("[OptimizePort] Failed to send chunk:", error);
   }
 }
 
-function sendComplete(port: chrome.runtime.Port, optimizedPrompt: string, rules: string[]): void {
+function sendComplete(
+  port: chrome.runtime.Port,
+  optimizedPrompt: string,
+  rules: string[],
+): void {
   const message: OptimizePortComplete = {
     type: "COMPLETE",
     optimizedPrompt,
     appliedRules: rules,
-  }
+  };
   try {
-    port.postMessage(message)
+    port.postMessage(message);
   } catch (error) {
-    console.warn("[OptimizePort] Failed to send completion:", error)
+    console.warn("[OptimizePort] Failed to send completion:", error);
   }
 }
 
-function sendError(port: chrome.runtime.Port, code: ErrorCode, errorMessage: string): void {
+function sendError(
+  port: chrome.runtime.Port,
+  code: ErrorCode,
+  errorMessage: string,
+): void {
   const message: OptimizePortError = {
     type: "ERROR",
     code,
     message: errorMessage,
-  }
+  };
   try {
-    port.postMessage(message)
+    port.postMessage(message);
   } catch (error) {
-    console.warn("[OptimizePort] Failed to send error:", error)
+    console.warn("[OptimizePort] Failed to send error:", error);
   }
 }
 
@@ -121,24 +137,25 @@ function sendError(port: chrome.runtime.Port, code: ErrorCode, errorMessage: str
  */
 async function handleOptimizationRequest(
   port: chrome.runtime.Port,
-  request: OptimizePortRequest
+  request: OptimizePortRequest,
 ): Promise<void> {
-  const { draft, platform } = request
+  const { draft, platform } = request;
 
   try {
     // Step 1: Get platform-specific rules
-    const rules = getRulesForPlatform(platform)
+    const rules = getRulesForPlatform(platform);
 
     // Step 2: Check AI availability
-    const aiStatus = await checkAIAvailability()
+    const aiStatus = await checkAIAvailability();
 
     if (!aiStatus.available) {
       sendError(
         port,
         "AI_UNAVAILABLE",
-        aiStatus.reason ?? "Gemini Nano is not available. Requires Chrome 138+."
-      )
-      return
+        aiStatus.reason ??
+          "Gemini Nano is not available. Requires Chrome 138+.",
+      );
+      return;
     }
 
     // Step 3: Stream optimization with token-by-token updates
@@ -146,22 +163,25 @@ async function handleOptimizationRequest(
       draft,
       rules,
       (chunk: string) => {
-        sendChunk(port, chunk)
-      }
-    )
+        sendChunk(port, chunk);
+      },
+    );
 
     // Step 4: Send completion message
-    sendComplete(port, optimizedPrompt, rules)
+    sendComplete(port, optimizedPrompt, rules);
   } catch (error) {
-    console.error("[OptimizePort] Error during optimization:", error)
+    console.error("[OptimizePort] Error during optimization:", error);
 
     if (error instanceof PromptTunerError) {
-      sendError(port, error.code, error.message)
-      return
+      sendError(port, error.code, error.message);
+      return;
     }
 
-    const message = error instanceof Error ? error.message : "Unknown error during optimization"
-    sendError(port, "UNKNOWN_ERROR", message)
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown error during optimization";
+    sendError(port, "UNKNOWN_ERROR", message);
   }
 }
 
@@ -177,31 +197,35 @@ export function registerOptimizePortHandler(): void {
   chrome.runtime.onConnect.addListener((port) => {
     // Only handle ports with the correct name
     if (port.name !== "optimize-port") {
-      return
+      return;
     }
 
-    console.log("[OptimizePort] Port connected")
+    console.log("[OptimizePort] Port connected");
 
     // Handle messages on this port
     port.onMessage.addListener((message: unknown) => {
       if (!validateRequest(message)) {
-        console.error("[OptimizePort] Invalid request:", message)
-        sendError(port, "INVALID_REQUEST", "Invalid optimization request format")
-        return
+        console.error("[OptimizePort] Invalid request:", message);
+        sendError(
+          port,
+          "INVALID_REQUEST",
+          "Invalid optimization request format",
+        );
+        return;
       }
 
       // Handle the optimization request (async)
-      void handleOptimizationRequest(port, message)
-    })
+      void handleOptimizationRequest(port, message);
+    });
 
     // Handle port disconnect
     port.onDisconnect.addListener(() => {
-      console.log("[OptimizePort] Port disconnected")
+      console.log("[OptimizePort] Port disconnected");
       // Cleanup if needed
-    })
-  })
+    });
+  });
 
-  console.log("[OptimizePort] Handler registered")
+  console.log("[OptimizePort] Handler registered");
 }
 
 // =============================================================================
@@ -214,5 +238,5 @@ export function registerOptimizePortHandler(): void {
  */
 export default function (): void {
   // No-op: Port handler is registered in background/index.ts
-  console.log("[OptimizePort] Dummy handler - using manual port registration")
+  console.log("[OptimizePort] Dummy handler - using manual port registration");
 }

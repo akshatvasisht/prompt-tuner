@@ -8,15 +8,15 @@
  * - Port-based streaming for AI optimization
  */
 
-import { registerOptimizePortHandler } from "./messages/optimize-port"
-import { getRuleCount, initializeRules } from "~lib/platform-rules"
+import { registerOptimizePortHandler } from "./messages/optimize-port";
+import { getRuleCount, initializeRules } from "~lib/platform-rules";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface BackgroundMessage {
-  type: "PING" | "CHECK_STATUS"
+  type: "PING" | "CHECK_STATUS";
 }
 
 // =============================================================================
@@ -28,65 +28,71 @@ chrome.runtime.onInstalled.addListener((details): void => {
   void (async (): Promise<void> => {
     try {
       // Initialize rules (fetch remote or use bundled)
-      await initializeRules()
-      
-      const ruleCount = getRuleCount()
+      await initializeRules();
+
+      const ruleCount = getRuleCount();
 
       await chrome.storage.local.set({
         installedAt: Date.now(),
         lastUpdated: Date.now(),
         version: chrome.runtime.getManifest().version,
-      })
+      });
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
         // eslint-disable-next-line no-console
-        console.log(`[Background] Fresh installation - ${String(ruleCount)} rules loaded`)
+        console.log(
+          `[Background] Fresh installation - ${String(ruleCount)} rules loaded`,
+        );
       } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
         // eslint-disable-next-line no-console
-        console.log(`[Background] Extension updated - ${String(ruleCount)} rules loaded`)
+        console.log(
+          `[Background] Extension updated - ${String(ruleCount)} rules loaded`,
+        );
       }
     } catch (error: unknown) {
-      console.error("[Background] Failed to initialize:", error)
+      console.error("[Background] Failed to initialize:", error);
     }
-  })()
-})
+  })();
+});
 
 // =============================================================================
 // Message Handling
 // =============================================================================
 
-chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
-  switch (message.type) {
-    case "PING":
-      sendResponse({ type: "PONG", ready: true })
-      return true
+chrome.runtime.onMessage.addListener(
+  (message: BackgroundMessage, _sender, sendResponse) => {
+    switch (message.type) {
+      case "PING":
+        sendResponse({ type: "PONG", ready: true });
+        return true;
 
-    case "CHECK_STATUS":
-      sendResponse({
-        ready: true,
-        ruleCount: getRuleCount(),
-      })
-      return true
+      case "CHECK_STATUS":
+        sendResponse({
+          ready: true,
+          ruleCount: getRuleCount(),
+        });
+        return true;
 
-    default:
-      return false
-  }
-})
+      default:
+        return false;
+    }
+  },
+);
 
 // =============================================================================
 // Keep Alive (MV3 Service Workers)
 // =============================================================================
 
-const KEEP_ALIVE_ALARM = "prompt-tuner-keep-alive"
+const KEEP_ALIVE_ALARM = "prompt-tuner-keep-alive";
 
 try {
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === KEEP_ALIVE_ALARM) {
       // Keep service worker active
     }
-  })
+  });
 } catch (error: unknown) {
-  console.error("[Background] Failed to set up alarms listener:", error)
+  console.error("[Background] Failed to set up alarms listener:", error);
 }
 
 /**
@@ -94,9 +100,9 @@ try {
  */
 export function setKeepAlive(active: boolean): void {
   if (active) {
-    void chrome.alarms.create(KEEP_ALIVE_ALARM, { periodInMinutes: 0.5 })
+    void chrome.alarms.create(KEEP_ALIVE_ALARM, { periodInMinutes: 0.5 });
   } else {
-    void chrome.alarms.clear(KEEP_ALIVE_ALARM)
+    void chrome.alarms.clear(KEEP_ALIVE_ALARM);
   }
 }
 /* eslint-enable @typescript-eslint/no-deprecated */
@@ -106,4 +112,4 @@ export function setKeepAlive(active: boolean): void {
 // =============================================================================
 
 // Register the optimize port handler for streaming support
-registerOptimizePortHandler()
+registerOptimizePortHandler();
