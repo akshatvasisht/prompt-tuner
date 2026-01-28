@@ -310,6 +310,7 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
       style={combinedStyles}
       className="sparkle-widget-container"
       role="tooltip"
+      data-testid="prompt-tuner-widget"
     >
       <button
         onClick={() => {
@@ -329,11 +330,12 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
         }
         aria-busy={status === "processing"}
         type="button"
+        data-testid="optimize-button"
       >
         {status === "processing" ? (
           <Wrench className="sparkle-button-icon animate-wiggle" />
         ) : status === "success" ? (
-          <CheckCircle className="sparkle-button-icon text-green-400" />
+          <CheckCircle className="sparkle-button-icon text-green-400" data-testid="success-indicator" />
         ) : status === "error" ? (
           <AlertCircle className="sparkle-button-icon text-red-400" />
         ) : (
@@ -350,11 +352,15 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
           )}
           role={status === "error" ? "alert" : "status"}
           aria-live="polite"
+          data-testid={status === "error" ? "error-message" : undefined}
         >
           {message}
           {/* Show streaming preview during processing */}
           {status === "processing" && streamedText && (
-            <div className="mt-2 text-xs opacity-75 max-h-20 overflow-y-auto">
+            <div 
+              className="mt-2 text-xs opacity-75 max-h-20 overflow-y-auto"
+              data-testid="streaming-preview"
+            >
               {streamedText.slice(0, 100)}
               {streamedText.length > 100 && "..."}
             </div>

@@ -225,7 +225,11 @@ const SparkleWidgetOverlay: React.FC = () => {
     return null;
   }
 
-  return <SparkleWidget activeElement={activeElement} />;
+  return (
+    <div data-testid="widget-container">
+      <SparkleWidget activeElement={activeElement} />
+    </div>
+  );
 };
 
 export default SparkleWidgetOverlay;
