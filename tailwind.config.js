@@ -60,12 +60,17 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(251, 191, 36, 0.4)" },
           "50%": { boxShadow: "0 0 0 8px rgba(251, 191, 36, 0)" },
         },
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-15deg)" },
+          "50%": { transform: "rotate(15deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         sparkle: "sparkle 2s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        wiggle: "wiggle 0.5s ease-in-out infinite",
       },
     },
   },
