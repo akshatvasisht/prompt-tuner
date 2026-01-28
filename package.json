@@ -16,7 +16,10 @@
       "https://claude.ai/*",
       "https://bard.google.com/*",
       "https://gemini.google.com/*"
-    ]
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.github.io https://*.githubusercontent.com"
+    }
   },
   "scripts": {
     "dev": "plasmo dev",
