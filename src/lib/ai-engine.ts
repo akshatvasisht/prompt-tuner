@@ -19,6 +19,18 @@ import {
 
 const CHROME_VERSION_INFO = "Requires Chrome 138+ with Gemini Nano enabled";
 
+/**
+ * Gemini Nano has approximately 2K token context window
+ * Set conservative limit to leave room for system prompt (~200 tokens)
+ */
+const MAX_INPUT_TOKENS = 1800;
+
+/**
+ * Rough heuristic: 4 characters ≈ 1 token
+ * This is conservative and works well for English text
+ */
+const CHARS_PER_TOKEN = 4;
+
 // =============================================================================
 // Session Cache
 // =============================================================================
@@ -88,6 +100,56 @@ function formatRulesForPrompt(rules: string[]): string {
     return "- Use clear, specific instructions\n- Be concise but complete";
   }
   return rules.map((rule, index) => `${String(index + 1)}. ${rule}`).join("\n");
+}
+
+/**
+ * Estimates token count using character-based heuristic
+ * Gemini Nano has ~2K token context window
+ *
+ * @param text - Input text to estimate tokens for
+ * @returns Estimated token count
+ */
+function estimateTokenCount(text: string): number {
+  return Math.ceil(text.length / CHARS_PER_TOKEN);
+}
+
+/**
+ * Validates input length and throws error if too long
+ * @param text - Input text to validate
+ * @throws PromptTunerError with INPUT_TOO_LONG code if exceeds limit
+ */
+function validateInputLength(text: string): void {
+  const estimatedTokens = estimateTokenCount(text);
+  
+  if (estimatedTokens > MAX_INPUT_TOKENS) {
+    const maxChars = MAX_INPUT_TOKENS * CHARS_PER_TOKEN;
+    throw new PromptTunerError(
+      `Input too long (${text.length} chars, ~${estimatedTokens} tokens). Please shorten your prompt to ~${maxChars} characters or less.`,
+      "INPUT_TOO_LONG",
+    );
+  }
+}
+
+/**
+ * Truncates text preserving start context and end intent
+ * Cuts from middle with [...truncated...] marker
+ *
+ * @param text - Text to truncate
+ * @param maxTokens - Maximum token count
+ * @returns Truncated text with marker
+ */
+function truncateText(text: string, maxTokens: number): string {
+  const maxChars = maxTokens * CHARS_PER_TOKEN;
+  if (text.length <= maxChars) return text;
+
+  const markerLength = 17; // "\n[...truncated...]\n".length
+  const availableChars = maxChars - markerLength;
+  const halfChars = Math.floor(availableChars / 2);
+
+  const start = text.slice(0, halfChars).trim();
+  const end = text.slice(-halfChars).trim();
+
+  return `${start}\n[...truncated...]\n${end}`;
 }
 
 /**
@@ -232,7 +294,10 @@ export async function optimizePrompt(
   rules: string[],
   options?: AIOptimizeOptions,
 ): Promise<string> {
-  // Check availability first
+  // Validate input length first
+  validateInputLength(draft);
+
+  // Check availability
   const availability = await checkAIAvailability();
   if (!availability.available) {
     throw new PromptTunerError(
@@ -290,6 +355,9 @@ export async function optimizePromptStreaming(
   onChunk: (chunk: string) => void,
   options?: AIOptimizeOptions,
 ): Promise<string> {
+  // Validate input length first
+  validateInputLength(draft);
+
   const availability = await checkAIAvailability();
   if (!availability.available) {
     throw new PromptTunerError(
