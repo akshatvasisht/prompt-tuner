@@ -64,6 +64,13 @@ npm test -- --coverage
 
 ### End-to-End Tests
 
+**Prerequisites**: E2E tests require Chrome browser installation:
+
+```bash
+# Install Chrome for Playwright
+npx playwright install chrome
+```
+
 Run the E2E test suite:
 
 ```bash
@@ -73,7 +80,13 @@ npm run test:e2e
 Run E2E tests with headed browser (visible):
 
 ```bash
-npm run test:e2e -- --headed
+npm run test:e2e:headed
+```
+
+Run E2E tests in debug mode:
+
+```bash
+npm run test:e2e:debug
 ```
 
 Run specific E2E test file:
@@ -81,6 +94,8 @@ Run specific E2E test file:
 ```bash
 npm run test:e2e -- tests/e2e/widget-injection.spec.ts
 ```
+
+**Note**: The `pretest:e2e` script automatically builds the extension before running tests.
 
 ---
 
