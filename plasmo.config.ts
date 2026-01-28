@@ -1,4 +1,4 @@
-import { type PlasmoConfig } from "plasmo"
+import { type PlasmoConfig } from "plasmo";
 
 /**
  * Plasmo Framework Configuration
@@ -16,6 +16,6 @@ const config: PlasmoConfig = {
     // Enable source maps for debugging
     sourcemap: true,
   },
-}
+};
 
-export default config
+export default config;
