@@ -1,24 +1,28 @@
 /**
- * Content Script Entry Point - Plasmo CSUI
+ * Content Script Entry Point - Plasmo CSUI with Overlay Anchor
  *
  * Injects the Sparkle Widget into LLM platform pages (ChatGPT, Claude, Gemini)
- * using Plasmo's Content Script UI pattern.
+ * using Plasmo's official overlay anchor pattern for automatic lifecycle management.
  *
- * Features:
- * - Focus tracking for text inputs
- * - MutationObserver for element removal detection
- * - SPA navigation handling
- * - Proper cleanup on unmount
+ * Plasmo Features Used:
+ * - getOverlayAnchor: Automatic mounting when anchor element is visible
+ * - Built-in MutationObserver: Plasmo watches DOM for anchor changes
+ * - Shadow DOM isolation: Automatic style encapsulation
+ *
+ * Custom Features:
+ * - Focus tracking: Show widget only for focused text inputs
+ * - Click-outside detection: Hide widget when clicking outside
+ * - SPA navigation handling: Cleanup on route changes
  */
 
 import cssText from "data-text:~styles/globals.css"
-import type { PlasmoCSConfig, PlasmoGetStyle } from "plasmo"
+import type { PlasmoCSConfig, PlasmoGetOverlayAnchor, PlasmoGetStyle } from "plasmo"
 import * as React from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { SparkleWidget } from "~components/sparkle-widget"
 import { getActiveTextInput } from "~lib/dom-injector"
-import { isSupportedPlatform } from "~lib/platform-detector"
+import { detectPlatform, getPlatformInputSelectors, isSupportedPlatform } from "~lib/platform-detector"
 import { throttle } from "~lib/utils"
 import { type TextInputElement } from "~types"
 
@@ -42,6 +46,33 @@ export const getStyle: PlasmoGetStyle = () => {
   return style
 }
 
+/**
+ * Plasmo Overlay Anchor - Returns the first text input on the page
+ * Plasmo will automatically mount/unmount the overlay based on anchor visibility
+ */
+export const getOverlayAnchor: PlasmoGetOverlayAnchor = async () => {
+  // Wait for platform detection
+  if (!isSupportedPlatform()) {
+    return null
+  }
+
+  // Get platform-specific selectors
+  const platform = detectPlatform()
+  const selectors = getPlatformInputSelectors(platform)
+
+  // Find the first matching input element
+  for (const selector of selectors) {
+    const element = document.querySelector(selector)
+    if (element) {
+      return element as Element
+    }
+  }
+
+  // Fallback: look for any common text input
+  const fallback = document.querySelector('textarea, div[contenteditable="true"]')
+  return fallback
+}
+
 // =============================================================================
 // Type Guards
 // =============================================================================
@@ -60,30 +91,19 @@ function isTextInputElement(element: EventTarget | Node | null): element is Text
   return false
 }
 
-function isElementInDOM(element: HTMLElement | null): boolean {
-  return element !== null && document.body.contains(element)
-}
-
 // =============================================================================
 // Sparkle Widget Overlay Component
 // =============================================================================
 
 const SparkleWidgetOverlay: React.FC = () => {
   const [activeElement, setActiveElement] = useState<TextInputElement | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
   const activeElementRef = useRef<TextInputElement | null>(null)
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mutationObserverRef = useRef<MutationObserver | null>(null)
 
   // Keep ref in sync
   useEffect(() => {
     activeElementRef.current = activeElement
   }, [activeElement])
-
-  // Check platform support
-  useEffect(() => {
-    setIsSupported(isSupportedPlatform())
-  }, [])
 
   // Clear any pending hide timeout
   const clearHideTimeout = useCallback(() => {
@@ -117,42 +137,12 @@ const SparkleWidgetOverlay: React.FC = () => {
     [clearHideTimeout]
   )
 
-  // Observe element removal from DOM
-  const observeElementRemoval = useCallback(
-    (element: HTMLElement) => {
-      mutationObserverRef.current?.disconnect()
-
-      mutationObserverRef.current = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const removedNode of mutation.removedNodes) {
-            if (
-              removedNode === element ||
-              (removedNode instanceof HTMLElement && removedNode.contains(element))
-            ) {
-              hideWidget()
-              return
-            }
-          }
-        }
-      })
-
-      mutationObserverRef.current.observe(document.body, {
-        childList: true,
-        subtree: true,
-      })
-    },
-    [hideWidget]
-  )
-
-  // Setup event listeners
+  // Setup event listeners for focus tracking
   useEffect(() => {
-    if (!isSupported) return
-
     const handleFocusIn = (event: FocusEvent): void => {
       const target = event.target
       if (isTextInputElement(target)) {
         showWidget(target)
-        observeElementRemoval(target)
       }
     }
 
@@ -161,7 +151,6 @@ const SparkleWidgetOverlay: React.FC = () => {
 
       if (isTextInputElement(target)) {
         showWidget(target)
-        observeElementRemoval(target)
         return
       }
 
@@ -184,7 +173,6 @@ const SparkleWidgetOverlay: React.FC = () => {
       const target = event.target
       if (isTextInputElement(target) && document.activeElement === target) {
         showWidget(target)
-        observeElementRemoval(target)
       }
     }, 100)
 
@@ -196,26 +184,16 @@ const SparkleWidgetOverlay: React.FC = () => {
       hideWidget(300)
     }
 
-    const handleNavigation = (): void => {
-      const current = activeElementRef.current
-      if (current && !isElementInDOM(current)) {
-        hideWidget()
-      }
-    }
-
     // Add listeners
     document.addEventListener("focusin", handleFocusIn, true)
     document.addEventListener("click", handleClick, true)
     document.addEventListener("input", handleInput, true)
     document.addEventListener("focusout", handleBlur, true)
-    window.addEventListener("popstate", handleNavigation)
-    window.addEventListener("hashchange", handleNavigation)
 
-    // Check for already active input
+    // Check for already active input on mount
     const currentActive = getActiveTextInput()
     if (currentActive && document.activeElement === currentActive) {
       showWidget(currentActive)
-      observeElementRemoval(currentActive)
     }
 
     // Cleanup
@@ -224,15 +202,12 @@ const SparkleWidgetOverlay: React.FC = () => {
       document.removeEventListener("click", handleClick, true)
       document.removeEventListener("input", handleInput, true)
       document.removeEventListener("focusout", handleBlur, true)
-      window.removeEventListener("popstate", handleNavigation)
-      window.removeEventListener("hashchange", handleNavigation)
-      mutationObserverRef.current?.disconnect()
       clearHideTimeout()
     }
-  }, [isSupported, showWidget, hideWidget, observeElementRemoval, clearHideTimeout])
+  }, [showWidget, hideWidget, clearHideTimeout])
 
-  // Don't render if not supported or no active element
-  if (!isSupported || !activeElement) {
+  // Don't render if no active element
+  if (!activeElement) {
     return null
   }
 
