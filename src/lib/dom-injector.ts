@@ -11,21 +11,21 @@
  * 2. Fallback: Direct manipulation from Isolated World (content script context)
  */
 
-import { type ReplaceTextResult, type TextInputElement } from "~types"
+import { type ReplaceTextResult, type TextInputElement } from "~types";
 
 // =============================================================================
 // Main World Bridge
 // =============================================================================
 
-const MAIN_WORLD_TIMEOUT = 1000 // 1 second timeout for Main World response
-const MESSAGE_SOURCE = "prompt-tuner"
+const MAIN_WORLD_TIMEOUT = 1000; // 1 second timeout for Main World response
+const MESSAGE_SOURCE = "prompt-tuner";
 
 interface MainWorldResponse {
-  type: "REPLACE_TEXT_RESPONSE"
-  source: typeof MESSAGE_SOURCE
-  id: string
-  success: boolean
-  error?: string
+  type: "REPLACE_TEXT_RESPONSE";
+  source: typeof MESSAGE_SOURCE;
+  id: string;
+  success: boolean;
+  error?: string;
 }
 
 /**
@@ -34,28 +34,28 @@ interface MainWorldResponse {
 function getElementSelector(element: HTMLElement): string | undefined {
   // Try ID first
   if (element.id) {
-    return `#${element.id}`
+    return `#${element.id}`;
   }
 
   // Try common data attributes
-  const dataId = element.getAttribute("data-id")
+  const dataId = element.getAttribute("data-id");
   if (dataId) {
-    return `[data-id="${dataId}"]`
+    return `[data-id="${dataId}"]`;
   }
 
   // Try class + tag combination
   if (element.className && typeof element.className === "string") {
-    const classes = element.className.trim().split(/\s+/).slice(0, 2).join(".")
+    const classes = element.className.trim().split(/\s+/).slice(0, 2).join(".");
     if (classes) {
-      const selector = `${element.tagName.toLowerCase()}.${classes}`
+      const selector = `${element.tagName.toLowerCase()}.${classes}`;
       // Verify uniqueness
       if (document.querySelectorAll(selector).length === 1) {
-        return selector
+        return selector;
       }
     }
   }
 
-  return undefined
+  return undefined;
 }
 
 /**
@@ -64,11 +64,11 @@ function getElementSelector(element: HTMLElement): string | undefined {
  */
 async function tryMainWorldReplacement(
   element: TextInputElement,
-  newText: string
+  newText: string,
 ): Promise<ReplaceTextResult | null> {
   try {
-    const messageId = `replace-${Date.now()}-${Math.random().toString(36).slice(2)}`
-    const selector = getElementSelector(element)
+    const messageId = `replace-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const selector = getElementSelector(element);
 
     // Send message to Main World
     const message = {
@@ -77,44 +77,46 @@ async function tryMainWorldReplacement(
       id: messageId,
       selector,
       text: newText,
-    }
+    };
 
     // Listen for response
-    const responsePromise = new Promise<MainWorldResponse>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        window.removeEventListener("message", handler)
-        reject(new Error("Main World injection timeout"))
-      }, MAIN_WORLD_TIMEOUT)
+    const responsePromise = new Promise<MainWorldResponse>(
+      (resolve, reject) => {
+        const timeout = setTimeout(() => {
+          window.removeEventListener("message", handler);
+          reject(new Error("Main World injection timeout"));
+        }, MAIN_WORLD_TIMEOUT);
 
-      const handler = (event: MessageEvent): void => {
-        if (
-          event.source === window &&
-          event.data?.type === "REPLACE_TEXT_RESPONSE" &&
-          event.data?.source === MESSAGE_SOURCE &&
-          event.data?.id === messageId
-        ) {
-          clearTimeout(timeout)
-          window.removeEventListener("message", handler)
-          resolve(event.data as MainWorldResponse)
-        }
-      }
+        const handler = (event: MessageEvent): void => {
+          if (
+            event.source === window &&
+            event.data?.type === "REPLACE_TEXT_RESPONSE" &&
+            event.data?.source === MESSAGE_SOURCE &&
+            event.data?.id === messageId
+          ) {
+            clearTimeout(timeout);
+            window.removeEventListener("message", handler);
+            resolve(event.data as MainWorldResponse);
+          }
+        };
 
-      window.addEventListener("message", handler)
-    })
+        window.addEventListener("message", handler);
+      },
+    );
 
     // Send the message
-    window.postMessage(message, window.location.origin)
+    window.postMessage(message, window.location.origin);
 
     // Wait for response
-    const response = await responsePromise
+    const response = await responsePromise;
 
     return {
       success: response.success,
       error: response.error,
-    }
+    };
   } catch (error) {
     // Main World unavailable or timed out - will fallback to Isolated World
-    return null
+    return null;
   }
 }
 
@@ -125,19 +127,21 @@ async function tryMainWorldReplacement(
 /**
  * Checks if an element is currently in the DOM and editable
  */
-export function isElementValid(element: HTMLElement | null): element is TextInputElement {
-  if (!element) return false
-  if (!document.body.contains(element)) return false
+export function isElementValid(
+  element: HTMLElement | null,
+): element is TextInputElement {
+  if (!element) return false;
+  if (!document.body.contains(element)) return false;
 
   if (element instanceof HTMLTextAreaElement) {
-    return !element.disabled && !element.readOnly
+    return !element.disabled && !element.readOnly;
   }
 
   if (element instanceof HTMLDivElement) {
-    return element.contentEditable === "true" && !element.ariaReadOnly
+    return element.contentEditable === "true" && !element.ariaReadOnly;
   }
 
-  return false
+  return false;
 }
 
 /**
@@ -150,8 +154,8 @@ function dispatchBeforeInput(element: HTMLElement, newText: string): boolean {
     cancelable: true,
     inputType: "insertReplacementText",
     data: newText,
-  })
-  return element.dispatchEvent(beforeInputEvent)
+  });
+  return element.dispatchEvent(beforeInputEvent);
 }
 
 /**
@@ -163,8 +167,8 @@ function dispatchInputEvent(element: HTMLElement, newText: string): void {
     cancelable: false,
     inputType: "insertReplacementText",
     data: newText,
-  })
-  element.dispatchEvent(inputEvent)
+  });
+  element.dispatchEvent(inputEvent);
 }
 
 /**
@@ -174,48 +178,51 @@ function dispatchChangeEvent(element: HTMLElement): void {
   const changeEvent = new Event("change", {
     bubbles: true,
     cancelable: false,
-  })
-  element.dispatchEvent(changeEvent)
+  });
+  element.dispatchEvent(changeEvent);
 }
 
 /**
  * Replaces text in a textarea using the native value setter
  * This preserves React's synthetic event system compatibility
  */
-function replaceTextarea(element: HTMLTextAreaElement, newText: string): ReplaceTextResult {
+function replaceTextarea(
+  element: HTMLTextAreaElement,
+  newText: string,
+): ReplaceTextResult {
   try {
     // Dispatch beforeinput BEFORE mutation
-    const shouldContinue = dispatchBeforeInput(element, newText)
+    const shouldContinue = dispatchBeforeInput(element, newText);
     if (!shouldContinue) {
-      return { success: false, error: "beforeinput event was cancelled" }
+      return { success: false, error: "beforeinput event was cancelled" };
     }
 
     // Use native setter to bypass React's value tracking
     const descriptor = Object.getOwnPropertyDescriptor(
       window.HTMLTextAreaElement.prototype,
-      "value"
-    )
+      "value",
+    );
 
     if (descriptor?.set) {
-      descriptor.set.call(element, newText)
+      descriptor.set.call(element, newText);
     } else {
-      element.value = newText
+      element.value = newText;
     }
 
     // Dispatch input event AFTER mutation
-    dispatchInputEvent(element, newText)
-    dispatchChangeEvent(element)
+    dispatchInputEvent(element, newText);
+    dispatchChangeEvent(element);
 
     // Set cursor to end of text
-    element.setSelectionRange(newText.length, newText.length)
-    element.focus()
+    element.setSelectionRange(newText.length, newText.length);
+    element.focus();
 
-    return { success: true }
+    return { success: true };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
-    }
+    };
   }
 }
 
@@ -223,40 +230,47 @@ function replaceTextarea(element: HTMLTextAreaElement, newText: string): Replace
  * Replaces text in a contenteditable element using execCommand
  * This preserves editor state (undo/redo history) for rich text editors
  */
-function replaceContentEditable(element: HTMLDivElement, newText: string): ReplaceTextResult {
+function replaceContentEditable(
+  element: HTMLDivElement,
+  newText: string,
+): ReplaceTextResult {
   try {
     // Ensure element has focus for execCommand to work
-    element.focus()
+    element.focus();
 
-    const selection = window.getSelection()
+    const selection = window.getSelection();
     if (!selection) {
-      return { success: false, error: "No selection available" }
+      return { success: false, error: "No selection available" };
     }
 
     // Dispatch beforeinput BEFORE mutation
-    const shouldContinue = dispatchBeforeInput(element, newText)
+    const shouldContinue = dispatchBeforeInput(element, newText);
     if (!shouldContinue) {
-      return { success: false, error: "beforeinput event was cancelled" }
+      return { success: false, error: "beforeinput event was cancelled" };
     }
 
     // Select all content in the element
-    const range = document.createRange()
-    range.selectNodeContents(element)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
 
     // Try execCommand first - preserves editor state and undo history
     // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const execCommandSuccess = document.execCommand("insertText", false, newText)
+    const execCommandSuccess = document.execCommand(
+      "insertText",
+      false,
+      newText,
+    );
 
     if (execCommandSuccess) {
-      dispatchChangeEvent(element)
-      return { success: true }
+      dispatchChangeEvent(element);
+      return { success: true };
     }
 
     // Fallback: Use Input Events Level 2 API
-    const dataTransfer = new DataTransfer()
-    dataTransfer.setData("text/plain", newText)
+    const dataTransfer = new DataTransfer();
+    dataTransfer.setData("text/plain", newText);
 
     const insertEvent = new InputEvent("input", {
       bubbles: true,
@@ -264,25 +278,25 @@ function replaceContentEditable(element: HTMLDivElement, newText: string): Repla
       inputType: "insertReplacementText",
       data: newText,
       dataTransfer,
-    })
+    });
 
     // Clear and set content
-    element.textContent = newText
-    element.dispatchEvent(insertEvent)
-    dispatchChangeEvent(element)
+    element.textContent = newText;
+    element.dispatchEvent(insertEvent);
+    dispatchChangeEvent(element);
 
     // Set cursor to end
-    range.selectNodeContents(element)
-    range.collapse(false)
-    selection.removeAllRanges()
-    selection.addRange(range)
+    range.selectNodeContents(element);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
 
-    return { success: true }
+    return { success: true };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
-    }
+    };
   }
 }
 
@@ -292,14 +306,14 @@ function replaceContentEditable(element: HTMLDivElement, newText: string): Repla
  */
 function replaceTextIsolated(element: TextInputElement): ReplaceTextResult {
   if (element instanceof HTMLTextAreaElement) {
-    return replaceTextarea(element, "")
+    return replaceTextarea(element, "");
   }
 
   if (element instanceof HTMLDivElement && element.contentEditable === "true") {
-    return replaceContentEditable(element, "")
+    return replaceContentEditable(element, "");
   }
 
-  return { success: false, error: "Unsupported element type" }
+  return { success: false, error: "Unsupported element type" };
 }
 
 /**
@@ -315,48 +329,51 @@ function replaceTextIsolated(element: TextInputElement): ReplaceTextResult {
  */
 export async function replaceText(
   element: TextInputElement | null,
-  newText: string
+  newText: string,
 ): Promise<ReplaceTextResult> {
   if (!isElementValid(element)) {
-    return { success: false, error: "Element is not valid or not in DOM" }
+    return { success: false, error: "Element is not valid or not in DOM" };
   }
 
   // Try Main World injection first
-  const mainWorldResult = await tryMainWorldReplacement(element, newText)
+  const mainWorldResult = await tryMainWorldReplacement(element, newText);
 
   if (mainWorldResult !== null) {
     // Main World injection attempted - return its result (success or failure)
-    return mainWorldResult
+    return mainWorldResult;
   }
 
   // Fallback: Use Isolated World injection
   if (element instanceof HTMLTextAreaElement) {
-    return replaceTextarea(element, newText)
+    return replaceTextarea(element, newText);
   }
 
   if (element instanceof HTMLDivElement && element.contentEditable === "true") {
-    return replaceContentEditable(element, newText)
+    return replaceContentEditable(element, newText);
   }
 
-  return { success: false, error: "Unsupported element type" }
+  return { success: false, error: "Unsupported element type" };
 }
 
 /**
  * Gets the currently active text input element
  */
 export function getActiveTextInput(): TextInputElement | null {
-  const activeElement = document.activeElement
+  const activeElement = document.activeElement;
 
   if (!activeElement) {
-    return null
+    return null;
   }
 
   if (activeElement instanceof HTMLTextAreaElement) {
-    return activeElement
+    return activeElement;
   }
 
-  if (activeElement instanceof HTMLDivElement && activeElement.contentEditable === "true") {
-    return activeElement
+  if (
+    activeElement instanceof HTMLDivElement &&
+    activeElement.contentEditable === "true"
+  ) {
+    return activeElement;
   }
 
   // Fallback: search for common selectors
@@ -366,19 +383,22 @@ export function getActiveTextInput(): TextInputElement | null {
     "textarea#prompt-textarea",
     'div[contenteditable="true"][role="textbox"]',
     'div[contenteditable="true"].ProseMirror',
-  ]
+  ];
 
   for (const selector of selectors) {
-    const element = document.querySelector(selector)
+    const element = document.querySelector(selector);
     if (element instanceof HTMLTextAreaElement) {
-      return element
+      return element;
     }
-    if (element instanceof HTMLDivElement && element.contentEditable === "true") {
-      return element
+    if (
+      element instanceof HTMLDivElement &&
+      element.contentEditable === "true"
+    ) {
+      return element;
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -386,8 +406,8 @@ export function getActiveTextInput(): TextInputElement | null {
  */
 export function getElementText(element: TextInputElement): string {
   if (element instanceof HTMLTextAreaElement) {
-    return element.value
+    return element.value;
   }
   // textContent can be null for some node types
-  return element.textContent || element.innerText || ""
+  return element.textContent || element.innerText || "";
 }

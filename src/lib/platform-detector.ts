@@ -3,39 +3,39 @@
  * Identifies which LLM platform the user is currently using
  */
 
-import { type Platform } from "~types"
+import { type Platform } from "~types";
 
 /** Platform URL patterns for detection */
 const PLATFORM_PATTERNS: Record<Exclude<Platform, "unknown">, string[]> = {
   openai: ["chat.openai.com", "chatgpt.com"],
   anthropic: ["claude.ai", "anthropic.com"],
   google: ["bard.google.com", "gemini.google.com"],
-}
+};
 
 /**
  * Detect the current platform based on URL
  */
 export function detectPlatform(): Platform {
   if (typeof window === "undefined") {
-    return "unknown"
+    return "unknown";
   }
 
-  const hostname = window.location.hostname.toLowerCase()
+  const hostname = window.location.hostname.toLowerCase();
 
   for (const [platform, patterns] of Object.entries(PLATFORM_PATTERNS)) {
-    if (patterns.some(pattern => hostname.includes(pattern))) {
-      return platform as Platform
+    if (patterns.some((pattern) => hostname.includes(pattern))) {
+      return platform as Platform;
     }
   }
 
-  return "unknown"
+  return "unknown";
 }
 
 /**
  * Check if the current page is a supported LLM platform
  */
 export function isSupportedPlatform(): boolean {
-  return detectPlatform() !== "unknown"
+  return detectPlatform() !== "unknown";
 }
 
 /**
@@ -47,8 +47,8 @@ export function getPlatformDisplayName(platform: Platform): string {
     anthropic: "Claude",
     google: "Gemini",
     unknown: "Unknown",
-  }
-  return names[platform]
+  };
+  return names[platform];
 }
 
 /**
@@ -72,11 +72,7 @@ export function getPlatformInputSelectors(platform: Platform): string[] {
       'div[contenteditable="true"][role="textbox"]',
       ".ql-editor",
     ],
-    unknown: [
-      "textarea",
-      'div[contenteditable="true"]',
-      'input[type="text"]',
-    ],
-  }
-  return selectors[platform]
+    unknown: ["textarea", 'div[contenteditable="true"]', 'input[type="text"]'],
+  };
+  return selectors[platform];
 }
