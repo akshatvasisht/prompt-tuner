@@ -1,10 +1,14 @@
 /**
- * Scraping pipeline using Jina Reader
+ * Scraping pipeline using Playwright + Readability + Turndown
  * Fetches and processes documentation from LLM providers
  */
 
 import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
+import { chromium, type Browser } from "@playwright/test"
+import { Readability } from "@mozilla/readability"
+import { JSDOM } from "jsdom"
+import TurndownService from "turndown"
 import { type DocumentationSource, type ScrapedContent } from "./types.js"
 
 const DOCUMENTATION_SOURCES: DocumentationSource[] = [
@@ -28,37 +32,146 @@ const DOCUMENTATION_SOURCES: DocumentationSource[] = [
   },
 ]
 
+const PLAYWRIGHT_TIMEOUT = 30000 // 30 seconds
+
 /**
- * Scrape content from a URL using Jina Reader API
+ * Initialize Turndown service for HTML to Markdown conversion
+ */
+function createTurndownService(): TurndownService {
+  const turndown = new TurndownService({
+    headingStyle: "atx",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+  })
+  
+  // Preserve code blocks
+  turndown.keep(["pre", "code"])
+  
+  return turndown
+}
+
+/**
+ * Extract content using Mozilla Readability
+ */
+function extractContent(html: string, url: string): string | null {
+  try {
+    const dom = new JSDOM(html, { url })
+    const reader = new Readability(dom.window.document)
+    const article = reader.parse()
+    
+    if (!article) {
+      return null
+    }
+    
+    // Convert extracted HTML to Markdown
+    const turndown = createTurndownService()
+    const markdown = turndown.turndown(article.content)
+    
+    return markdown
+  } catch (error) {
+    console.error("Error extracting content with Readability:", error)
+    return null
+  }
+}
+
+/**
+ * Scrape content using Playwright (primary method)
+ */
+async function scrapeWithPlaywright(url: string): Promise<string | null> {
+  let browser: Browser | null = null
+  
+  try {
+    // eslint-disable-next-line no-console
+    console.log("  [Playwright] Launching browser...")
+    browser = await chromium.launch({ headless: true })
+    const context = await browser.newContext({
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    })
+    const page = await context.newPage()
+    
+    // Navigate to page with timeout
+    // eslint-disable-next-line no-console
+    console.log("  [Playwright] Navigating to URL...")
+    await page.goto(url, { 
+      waitUntil: "networkidle",
+      timeout: PLAYWRIGHT_TIMEOUT,
+    })
+    
+    // Get full HTML content
+    const html = await page.content()
+    
+    await browser.close()
+    browser = null
+    
+    // Extract content using Readability
+    // eslint-disable-next-line no-console
+    console.log("  [Readability] Extracting content...")
+    const markdown = extractContent(html, url)
+    
+    return markdown
+  } catch (error) {
+    console.error("  [Playwright] Error:", error)
+    if (browser) {
+      await browser.close().catch(() => {})
+    }
+    return null
+  }
+}
+
+/**
+ * Scrape content using simple fetch (fallback method)
+ */
+async function scrapeWithFetch(url: string): Promise<string | null> {
+  try {
+    // eslint-disable-next-line no-console
+    console.log("  [Fetch] Fetching URL...")
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${String(response.status)}: ${response.statusText}`)
+    }
+    
+    const html = await response.text()
+    
+    // Extract content using Readability
+    // eslint-disable-next-line no-console
+    console.log("  [Readability] Extracting content...")
+    const markdown = extractContent(html, url)
+    
+    return markdown
+  } catch (error) {
+    console.error("  [Fetch] Error:", error)
+    return null
+  }
+}
+
+/**
+ * Scrape content from a URL using Playwright + Readability + Turndown
+ * Falls back to fetch if Playwright fails
  */
 async function scrapeUrl(source: DocumentationSource): Promise<ScrapedContent | null> {
-  const jinaApiKey = process.env.JINA_API_KEY
-
-  if (!jinaApiKey) {
-    console.warn("JINA_API_KEY not set, using public endpoint (rate limited)")
-  }
-
   try {
-    const headers: Record<string, string> = {
-      "X-Return-Format": "markdown",
+    // Try Playwright first (handles JavaScript-heavy pages)
+    let content = await scrapeWithPlaywright(source.url)
+    
+    // Fall back to fetch if Playwright fails
+    if (!content) {
+      // eslint-disable-next-line no-console
+      console.log("  [Fallback] Trying fetch method...")
+      content = await scrapeWithFetch(source.url)
     }
-
-    if (jinaApiKey) {
-      headers.Authorization = `Bearer ${jinaApiKey}`
-    }
-
-    const response = await fetch(`https://r.jina.ai/${source.url}`, { headers })
-
-    if (!response.ok) {
-      throw new Error(`Failed to scrape ${source.url}: ${String(response.status)} ${response.statusText}`)
-    }
-
-    const content = await response.text()
-
+    
     if (!content || content.length < 100) {
       throw new Error(`Scraped content too short for ${source.url}`)
     }
-
+    
+    // eslint-disable-next-line no-console
+    console.log(`  [OK] Extracted ${String(content.length)} characters`)
+    
     return {
       url: source.url,
       platform: source.platform,
@@ -113,8 +226,6 @@ async function main(): Promise<void> {
       await writeFile(filepath, JSON.stringify(scraped, null, 2))
 
       // eslint-disable-next-line no-console
-      console.log(`  [OK] Scraped ${String(scraped.content.length)} characters`)
-      // eslint-disable-next-line no-console
       console.log(`  [OK] Saved to ${filename}`)
     } else {
       // eslint-disable-next-line no-console
@@ -138,13 +249,13 @@ async function main(): Promise<void> {
           platform: r.platform,
           title: r.title,
           url: r.url,
-        contentLength: r.content.length,
-      })),
-    },
-    null,
-    2
+          contentLength: r.content.length,
+        })),
+      },
+      null,
+      2
+    )
   )
-)
 
   // eslint-disable-next-line no-console
   console.log(`\n${"=".repeat(50)}`)

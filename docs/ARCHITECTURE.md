@@ -6,7 +6,7 @@ This document details the architectural decisions, system components, and data f
 
 ## Glossary
 * **Golden Rules:** Platform-specific, distilled prompt engineering principles extracted from official documentation and stored as compact JSON files optimized for Gemini Nano's context window.
-* **Jina-to-Rules Pipeline:** The automated GitHub Actions workflow that fetches documentation via Jina Reader API, distills it using Gemini Flash, and generates platform-specific rule files.
+* **Scraping Pipeline:** The automated GitHub Actions workflow that fetches documentation via Playwright + Readability, distills it using Gemini Flash, and generates platform-specific rule files.
 * **Sparkle Widget:** The floating UI component that appears adjacent to active text inputs, similar to Grammarly's interface, built using Radix UI and Floating UI.
 
 ## System Overview
@@ -28,7 +28,7 @@ Prompt Tuner is a Chrome extension built with a two-part architecture: (1) a cli
 | **Extension Framework** | Plasmo | Removes boilerplate and complexity of raw Chrome extension development, provides React/TypeScript framework with hot-reload |
 | **UI Positioning** | Floating UI / Radix UI | Handles complex logic of positioning elements near dynamic cursors or text inputs without manual CSS/Shadow DOM positioning |
 | **Local AI Engine** | Chrome Prompt API (Gemini Nano) | Provides free, fast, and offline LLM directly inside the browser, ensuring privacy |
-| **Documentation Scraping** | Jina Reader API (r.jina.ai) | Solves the "brittle scraper" problem by handling complex HTML, CSS selectors, and bot detection automatically |
+| **Documentation Scraping** | Playwright + Mozilla Readability | Self-hosted solution with JS rendering capability and battle-tested content extraction |
 | **Knowledge Distillation** | Gemini Flash | Processes raw documentation text to extract top-tier prompting principles within reasonable token limits |
 | **Rule Hosting** | GitHub Pages | Free, high-availability "backend" for hosting platform-specific rules files |
 | **Automation** | GitHub Actions | Runs quarterly scripts to keep rules current with infrequent model update schedules |
@@ -37,7 +37,7 @@ Prompt Tuner is a Chrome extension built with a two-part architecture: (1) a cli
 
 ### Knowledge Distillation Pipeline (Quarterly)
 1. **Input:** Documentation URLs from major AI providers (OpenAI, Anthropic, etc.)
-2. **Scraping:** Jina Reader API converts documentation URLs into clean Markdown
+2. **Scraping:** Playwright renders pages, Readability extracts content, Turndown converts to Markdown
 3. **Distillation:** Gemini Flash extracts top-tier prompting principles from the raw text
 4. **Output:** Platform-specific JSON files (e.g., `openai.json`, `anthropic.json`) saved to repository and hosted on GitHub Pages
 
