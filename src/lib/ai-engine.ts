@@ -15,17 +15,55 @@ import { type AIAvailability, type AIOptimizeOptions, PromptTunerError } from "~
 
 const CHROME_VERSION_INFO = "Requires Chrome 138+ with Gemini Nano enabled"
 
+// =============================================================================
+// Session Cache
+// =============================================================================
+
+/**
+ * Global session cache to avoid recreation overhead (2-3s per request)
+ * Cached session is reused when system prompt matches
+ */
+let cachedSession: LanguageModel | null = null
+let cachedSystemPrompt: string | null = null
+
+/**
+ * Clears the cached session (called on rule changes or memory warnings)
+ */
+export function clearSessionCache(): void {
+  if (cachedSession) {
+    cachedSession.destroy()
+    cachedSession = null
+    cachedSystemPrompt = null
+  }
+}
+
 const SYSTEM_PROMPT_TEMPLATE = `You are an expert prompt engineer. Your task is to rewrite and optimize the user's prompt to be more effective.
 
 Follow these rules when optimizing:
 {rules}
 
 Instructions:
-1. Analyze the user's original prompt
-2. Apply the relevant rules to improve it
-3. Return ONLY the optimized prompt, nothing else
-4. Maintain the user's original intent
-5. Make the prompt clearer, more specific, and better structured`
+1. Analyze the user's original prompt carefully
+2. Apply the relevant rules to improve clarity, structure, and effectiveness
+3. Maintain the user's original intent and core message
+4. Make the prompt more specific, well-structured, and actionable
+
+CRITICAL: Return ONLY the optimized prompt wrapped in <result></result> tags, with NO additional commentary.
+
+Examples:
+
+Input: "make it summarize this article"
+<result>Please provide a concise summary of the following article, highlighting the main points and key takeaways. Focus on factual accuracy and maintain a neutral tone. Structure your summary in 3-4 paragraphs covering: introduction, main arguments, and conclusion.</result>
+
+Input: "write code for sorting"
+<result>Please write clean, well-documented code that implements an efficient sorting algorithm. Include:
+1. Function signature with type hints
+2. Time and space complexity analysis in comments
+3. Example usage with at least 3 test cases
+
+Prefer built-in sorting methods when appropriate, but explain your choice.</result>
+
+Now optimize this prompt:`
 
 // =============================================================================
 // Helper Functions
@@ -46,6 +84,27 @@ function formatRulesForPrompt(rules: string[]): string {
     return "- Use clear, specific instructions\n- Be concise but complete"
   }
   return rules.map((rule, index) => `${String(index + 1)}. ${rule}`).join("\n")
+}
+
+/**
+ * Extracts the optimized prompt from XML tags, stripping meta-commentary
+ */
+function cleanModelOutput(rawOutput: string): string {
+  // Try to extract content from <result> tags
+  const resultMatch = /<result>([\s\S]*?)<\/result>/i.exec(rawOutput)
+  
+  if (resultMatch && resultMatch[1]) {
+    return resultMatch[1].trim()
+  }
+  
+  // Fallback: strip common meta-phrases if no tags found
+  const cleaned = rawOutput
+    .replace(/^(?:here is|here's|sure,?\s*|okay,?\s*)/i, '')
+    .replace(/^(?:the\s+)?(?:optimized|improved|rewritten)\s+prompt:?\s*/i, '')
+    .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+    .trim()
+  
+  return cleaned || rawOutput.trim()
 }
 
 // =============================================================================
@@ -106,9 +165,10 @@ export async function checkAIAvailability(): Promise<AIAvailability> {
 }
 
 /**
- * Creates a language model session with the given system prompt
+ * Gets or creates a language model session with caching
+ * Reuses cached session if system prompt matches, otherwise creates new one
  */
-async function createSession(
+async function getOrCreateSession(
   systemPrompt: string,
   options?: AIOptimizeOptions
 ): Promise<LanguageModel> {
@@ -119,6 +179,17 @@ async function createSession(
     )
   }
 
+  // Check if we can reuse cached session
+  if (cachedSession && cachedSystemPrompt === systemPrompt) {
+    return cachedSession
+  }
+
+  // Clear old session if exists
+  if (cachedSession) {
+    cachedSession.destroy()
+  }
+
+  // Create new session
   try {
     const session = await LanguageModel.create({
       initialPrompts: [
@@ -127,6 +198,11 @@ async function createSession(
       temperature: options?.temperature ?? 0.3,
       topK: 40,
     })
+    
+    // Cache the session
+    cachedSession = session
+    cachedSystemPrompt = systemPrompt
+    
     return session
   } catch (error) {
     throw new PromptTunerError(
@@ -159,16 +235,14 @@ export async function optimizePrompt(
   const formattedRules = formatRulesForPrompt(rules)
   const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace("{rules}", formattedRules)
 
-  let session: LanguageModel | null = null
-
   try {
-    session = await createSession(systemPrompt, options)
+    const session = await getOrCreateSession(systemPrompt, options)
 
     // Send the draft prompt for optimization
     const optimizedPrompt = await session.prompt(`Please optimize this prompt:\n\n${draft}`)
 
-    // Clean up the response
-    const cleaned = optimizedPrompt.trim()
+    // Clean up the response - extract from XML tags and strip meta-text
+    const cleaned = cleanModelOutput(optimizedPrompt)
 
     // Return the optimized prompt, or original if empty
     return cleaned || draft
@@ -181,8 +255,6 @@ export async function optimizePrompt(
       error instanceof Error ? error.message : "Failed to generate optimized prompt",
       "AI_GENERATION_FAILED"
     )
-  } finally {
-    session?.destroy()
   }
 }
 
@@ -209,10 +281,8 @@ export async function optimizePromptStreaming(
   const formattedRules = formatRulesForPrompt(rules)
   const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace("{rules}", formattedRules)
 
-  let session: LanguageModel | null = null
-
   try {
-    session = await createSession(systemPrompt, options)
+    const session = await getOrCreateSession(systemPrompt, options)
 
     const stream = session.promptStreaming(`Please optimize this prompt:\n\n${draft}`)
 
@@ -229,7 +299,9 @@ export async function optimizePromptStreaming(
       onChunk(value)
     }
 
-    return result.trim() || draft
+    // Clean up the response - extract from XML tags and strip meta-text
+    const cleaned = cleanModelOutput(result)
+    return cleaned || draft
   } catch (error) {
     if (error instanceof PromptTunerError) {
       throw error
@@ -239,7 +311,5 @@ export async function optimizePromptStreaming(
       error instanceof Error ? error.message : "Failed to generate optimized prompt",
       "AI_GENERATION_FAILED"
     )
-  } finally {
-    session?.destroy()
   }
 }
