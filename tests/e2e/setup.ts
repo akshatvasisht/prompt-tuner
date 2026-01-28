@@ -64,25 +64,116 @@ export async function waitForExtensionLoad(
 }
 
 // =============================================================================
-// Widget Detection
+// Trigger Button Detection (New Architecture)
 // =============================================================================
 
 /**
+ * Wait for the Prompt Tuner trigger button to be injected
+ */
+export async function waitForTriggerInjection(
+  page: Page,
+  timeout = 15000
+): Promise<void> {
+  await page.waitForSelector('[data-testid="trigger-button"]', {
+    timeout,
+    state: "attached",
+  });
+}
+
+/**
+ * Check if trigger button is visible
+ */
+export async function isTriggerVisible(page: Page): Promise<boolean> {
+  const trigger = await page.$('[data-testid="trigger-button"]');
+  if (!trigger) return false;
+  return await trigger.isVisible();
+}
+
+// =============================================================================
+// Side Panel Utilities (New Architecture)
+// =============================================================================
+
+/**
+ * Wait for side panel to open
+ */
+export async function waitForSidePanelOpen(
+  page: Page,
+  timeout = 10000
+): Promise<void> {
+  // Side panel runs in extension context, need to find the panel page
+  const context = page.context();
+  
+  // Wait for new page (side panel)
+  const panelPromise = context.waitForEvent('page', { timeout });
+  const panel = await panelPromise;
+  
+  // Wait for panel to load
+  await panel.waitForLoadState('domcontentloaded');
+}
+
+/**
+ * Get side panel page handle
+ */
+export async function getSidePanelPage(page: Page): Promise<Page | null> {
+  const context = page.context();
+  const pages = context.pages();
+  
+  // Find page with sidepanel.html in URL
+  for (const p of pages) {
+    if (p.url().includes('sidepanel.html')) {
+      return p;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Click trigger button to open panel
+ */
+export async function openSidePanel(page: Page): Promise<Page> {
+  const trigger = await page.$('[data-testid="trigger-button"]');
+  if (!trigger) {
+    throw new Error('Trigger button not found');
+  }
+  
+  // Click trigger and wait for panel
+  const panelPromise = page.context().waitForEvent('page');
+  await trigger.click();
+  const panel = await panelPromise;
+  
+  await panel.waitForLoadState('domcontentloaded');
+  return panel;
+}
+
+// =============================================================================
+// Test ID Constants
+// =============================================================================
+
+export const TRIGGER_BUTTON = '[data-testid="trigger-button"]';
+export const PANEL_OPTIMIZE_BUTTON = '[data-testid="panel-optimize-button"]';
+export const PANEL_ACCEPT_BUTTON = '[data-testid="panel-accept-button"]';
+export const PANEL_CANCEL_BUTTON = '[data-testid="panel-cancel-button"]';
+export const PANEL_ORIGINAL_TEXT = '[data-testid="panel-original-text"]';
+export const PANEL_OPTIMIZED_TEXT = '[data-testid="panel-optimized-text"]';
+export const PANEL_STATS = '[data-testid="panel-stats"]';
+
+// =============================================================================
+// Legacy Widget Detection (Deprecated - for backward compatibility)
+// =============================================================================
+
+/**
+ * @deprecated Use waitForTriggerInjection instead
  * Wait for the Prompt Tuner widget to be injected into the page
- * The widget is injected via content script and may take time to appear
  */
 export async function waitForWidgetInjection(
   page: Page,
   timeout = 15000,
 ): Promise<void> {
   try {
-    // Wait for widget container with data-testid
-    await page.waitForSelector('[data-testid="widget-container"]', {
-      timeout,
-      state: "attached",
-    });
+    await waitForTriggerInjection(page, timeout);
   } catch (error) {
-    // If data-testid not found, try class-based selector as fallback
+    // Fallback to old selector
     await page.waitForSelector(".prompt-tuner-widget", {
       timeout: 5000,
       state: "attached",
@@ -91,14 +182,11 @@ export async function waitForWidgetInjection(
 }
 
 /**
- * Check if widget is visible in the shadow DOM
+ * @deprecated Use isTriggerVisible instead
+ * Check if widget is visible
  */
 export async function isWidgetVisible(page: Page): Promise<boolean> {
-  const widgetHandle = await page.$('[data-testid="widget-container"]');
-  if (!widgetHandle) return false;
-
-  const isVisible = await widgetHandle.isVisible();
-  return isVisible;
+  return await isTriggerVisible(page);
 }
 
 // =============================================================================

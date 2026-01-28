@@ -12,7 +12,8 @@
 import { test, expect } from "@playwright/test";
 import {
   waitForExtensionLoad,
-  waitForWidgetInjection,
+  waitForTriggerInjection,
+  isTriggerVisible,
   createMockChatPage,
   focusChatTextarea,
   typeInChatTextarea,
@@ -20,6 +21,8 @@ import {
   monitorConsoleErrors,
   assertNoConsoleErrors,
   mockGeminiNanoAPI,
+  openSidePanel,
+  PANEL_ORIGINAL_TEXT,
 } from "./setup";
 
 // =============================================================================
@@ -35,43 +38,43 @@ test.describe("Platform Detection", () => {
   test("should detect ChatGPT platform correctly", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
-    // Check that widget uses ChatGPT-specific selector
+    // Check that textarea uses ChatGPT-specific selector
     const textarea = await page.$('[contenteditable="true"][data-id="root"]');
     expect(textarea).not.toBeNull();
 
-    // Widget should be present
-    const widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).not.toBeNull();
+    // Trigger button should be present
+    const trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).not.toBeNull();
   });
 
   test("should detect Claude platform correctly", async ({ page }) => {
     await createMockChatPage(page, "claude");
     await focusChatTextarea(page, "claude");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
-    // Check that widget uses Claude-specific selector
+    // Check that trigger uses Claude-specific selector
     const textarea = await page.$('[contenteditable="true"].ProseMirror');
     expect(textarea).not.toBeNull();
 
-    // Widget should be present
-    const widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).not.toBeNull();
+    // Trigger should be present
+    const trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).not.toBeNull();
   });
 
   test("should detect Gemini platform correctly", async ({ page }) => {
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
-    // Check that widget uses Gemini-specific selector
+    // Check that trigger uses Gemini-specific selector
     const textarea = await page.$("textarea");
     expect(textarea).not.toBeNull();
 
-    // Widget should be present
-    const widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).not.toBeNull();
+    // Trigger should be present
+    const trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).not.toBeNull();
   });
 });
 
@@ -93,7 +96,7 @@ test.describe("Platform-Specific Textarea Handling", () => {
 
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type in contenteditable
     await typeInChatTextarea(page, "chatgpt", "Test prompt for ChatGPT");
@@ -117,7 +120,7 @@ test.describe("Platform-Specific Textarea Handling", () => {
 
     await createMockChatPage(page, "claude");
     await focusChatTextarea(page, "claude");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type in ProseMirror
     await typeInChatTextarea(page, "claude", "Test prompt for Claude");
@@ -141,7 +144,7 @@ test.describe("Platform-Specific Textarea Handling", () => {
 
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type in textarea
     await typeInChatTextarea(page, "gemini", "Test prompt for Gemini");
@@ -177,7 +180,7 @@ test.describe("React-Controlled Input Compatibility", () => {
   test("should work with React Virtual DOM on ChatGPT", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type text
     await typeInChatTextarea(page, "chatgpt", "React controlled input test");
@@ -219,7 +222,7 @@ test.describe("React-Controlled Input Compatibility", () => {
 
     await page.waitForLoadState("domcontentloaded");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     await typeInChatTextarea(page, "chatgpt", "Test");
     
@@ -249,11 +252,11 @@ test.describe("SPA Navigation Compatibility", () => {
     // Create initial page
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
-    // Widget should be present
-    let widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).not.toBeNull();
+    // Trigger should be present
+    let trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).not.toBeNull();
 
     // Simulate SPA navigation (change content without page reload)
     await page.evaluate(() => {
@@ -271,30 +274,30 @@ test.describe("SPA Navigation Compatibility", () => {
     await focusChatTextarea(page, "chatgpt");
     await page.waitForTimeout(1000);
 
-    // Widget should re-inject or still be present
-    widget = await page.$('[data-testid="widget-container"]');
+    // Trigger should re-inject or still be present
+    trigger = await page.$('[data-testid="trigger-button"]');
     
-    // Widget might need to re-inject, give it time
-    if (!widget) {
-      await waitForWidgetInjection(page);
-      widget = await page.$('[data-testid="widget-container"]');
+    // Trigger might need to re-inject, give it time
+    if (!trigger) {
+      await waitForTriggerInjection(page);
+      trigger = await page.$('[data-testid="trigger-button"]');
     }
     
-    expect(widget).not.toBeNull();
+    expect(trigger).not.toBeNull();
   });
 
   test("should cleanup on navigation", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Navigate to different page
     await page.goto("about:blank");
     await page.waitForTimeout(1000);
 
-    // Widget should be gone
-    const widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).toBeNull();
+    // Trigger should be gone
+    const trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).toBeNull();
   });
 });
 
@@ -311,7 +314,7 @@ test.describe("No Interference with Platform Functionality", () => {
   test("should not block typing in textarea", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type normally
     const testText = "This is a test message that should work normally";
@@ -326,7 +329,7 @@ test.describe("No Interference with Platform Functionality", () => {
   test("should not intercept keyboard shortcuts", async ({ page }) => {
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type some text
     await typeInChatTextarea(page, "gemini", "Test text");
@@ -367,7 +370,7 @@ test.describe("No Interference with Platform Functionality", () => {
 
     await page.waitForLoadState("domcontentloaded");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type and submit
     await typeInChatTextarea(page, "gemini", "Test");
@@ -395,7 +398,7 @@ test.describe("No Console Errors", () => {
 
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     await typeInChatTextarea(page, "chatgpt", "Test");
     await page.waitForTimeout(1000);
@@ -408,7 +411,7 @@ test.describe("No Console Errors", () => {
 
     await createMockChatPage(page, "claude");
     await focusChatTextarea(page, "claude");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     await typeInChatTextarea(page, "claude", "Test");
     await page.waitForTimeout(1000);
@@ -421,7 +424,7 @@ test.describe("No Console Errors", () => {
 
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     await typeInChatTextarea(page, "gemini", "Test");
     await page.waitForTimeout(1000);
@@ -434,7 +437,7 @@ test.describe("No Console Errors", () => {
 
     await createMockChatPage(page, "chatgpt");
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     await typeInChatTextarea(page, "chatgpt", "Test prompt");
     
@@ -470,11 +473,11 @@ test.describe("Cross-Platform Consistency", () => {
       // Test each platform
       await createMockChatPage(page, platform);
       await focusChatTextarea(page, platform);
-      await waitForWidgetInjection(page);
+      await waitForTriggerInjection(page);
 
-      // Widget should exist
-      const widget = await page.$('[data-testid="widget-container"]');
-      expect(widget).not.toBeNull();
+      // Trigger should exist
+      const trigger = await page.$('[data-testid="trigger-button"]');
+      expect(trigger).not.toBeNull();
 
       // Type and optimize
       await typeInChatTextarea(page, platform, "Test");
@@ -483,8 +486,8 @@ test.describe("Cross-Platform Consistency", () => {
       await page.waitForTimeout(2000);
 
       // Should complete without errors
-      const widgetAfter = await page.$('[data-testid="widget-container"]');
-      expect(widgetAfter).not.toBeNull();
+      const triggerAfter = await page.$('[data-testid="trigger-button"]');
+      expect(triggerAfter).not.toBeNull();
     }
   });
 
@@ -531,17 +534,17 @@ test.describe("Edge Cases", () => {
     }
 
     await focusChatTextarea(page, "chatgpt");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
-    // Widget should still work
-    const widget = await page.$('[data-testid="widget-container"]');
-    expect(widget).not.toBeNull();
+    // Trigger should still work
+    const trigger = await page.$('[data-testid="trigger-button"]');
+    expect(trigger).not.toBeNull();
   });
 
   test("should handle very long text", async ({ page }) => {
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type very long text
     const longText = "A".repeat(5000);
@@ -556,7 +559,7 @@ test.describe("Edge Cases", () => {
   test("should handle special characters", async ({ page }) => {
     await createMockChatPage(page, "gemini");
     await focusChatTextarea(page, "gemini");
-    await waitForWidgetInjection(page);
+    await waitForTriggerInjection(page);
 
     // Type special characters
     const specialText = "Test with émojis 🚀 and symbols @#$%^&*()";
