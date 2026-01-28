@@ -7,25 +7,27 @@
 Unlike traditional prompt optimization tools that require manual updates or cloud-based processing, this system leverages local AI processing and automated knowledge distillation to achieve complete privacy, offline capability, and always-current optimization rules.
 
 ### Core Functionality
-* **Platform-Agnostic Optimization:** Automatically detects the LLM platform (ChatGPT, Claude, etc.) and applies platform-specific optimization rules.
-* **Local AI Processing:** Uses Chrome's built-in Gemini Nano model to optimize prompts entirely within the browser, ensuring zero data leaves your device.
-* **Automated Knowledge Updates:** Quarterly GitHub Actions pipeline distills the latest prompt engineering documentation from major AI providers into compact "Golden Rules" that stay current without manual intervention.
+
+- **Platform-Agnostic Optimization:** Automatically detects the LLM platform (ChatGPT, Claude, etc.) and applies platform-specific optimization rules.
+- **Local AI Processing:** Uses Chrome's built-in Gemini Nano model to optimize prompts entirely within the browser, ensuring zero data leaves your device.
+- **Automated Knowledge Updates:** Quarterly GitHub Actions pipeline distills the latest prompt engineering documentation from major AI providers into compact "Golden Rules" that stay current without manual intervention.
 
 ---
 
 ## Impact & Performance
 
-* **Privacy:** All processing happens locally in the browser using Gemini Nano—no data is sent to external servers.
-* **Cost:** Completely free—leverages Chrome's built-in AI capabilities and free hosting via GitHub Pages.
-* **Offline Capability:** Once rules are cached, the extension works offline for prompt optimization.
+- **Privacy:** All processing happens locally in the browser using Gemini Nano—no data is sent to external servers.
+- **Cost:** Completely free—leverages Chrome's built-in AI capabilities and free hosting via GitHub Pages.
+- **Offline Capability:** Once rules are cached, the extension works offline for prompt optimization.
 
 ## Documentation
 
-* **[SETUP.md](SETUP.md):** Installation, environment configuration, and startup instructions.
-* **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design, data flow, glossary, and design decisions.
-* **[API.md](docs/API.md):** [Protocols / API / Interface] reference.
-* **[TESTING.md](docs/TESTING.md):** Testing guidelines.
-* **[STYLE.md](docs/STYLE.md):** Coding standards, testing guidelines, and repository conventions.
+- **[SETUP.md](SETUP.md):** Installation, environment configuration, and startup instructions.
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design, data flow, glossary, and design decisions.
+- **[TESTING.md](docs/TESTING.md):** Testing guidelines.
+- **[STYLE.md](docs/STYLE.md):** Coding standards, testing guidelines, and repository conventions.
+- **[PRIVACY.md](docs/PRIVACY.md):** Privacy policy and data handling practices.
+- **[SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md):** Security analysis and compliance documentation.
 
 ## License
 
