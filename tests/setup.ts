@@ -6,8 +6,8 @@
  * - Chrome Built-in AI LanguageModel API (Gemini Nano)
  */
 
-import "@testing-library/jest-dom/vitest"
-import { vi } from "vitest"
+import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
 
 // =============================================================================
 // Chrome API Mocks
@@ -43,9 +43,9 @@ const mockChrome = {
     clear: vi.fn(),
     onAlarm: { addListener: vi.fn() },
   },
-}
+};
 
-vi.stubGlobal("chrome", mockChrome)
+vi.stubGlobal("chrome", mockChrome);
 
 // =============================================================================
 // Chrome 138+ LanguageModel API Mocks
@@ -57,18 +57,18 @@ vi.stubGlobal("chrome", mockChrome)
 const createMockSession = () => ({
   prompt: vi.fn((input: string) => Promise.resolve(`Optimized: ${input}`)),
   promptStreaming: vi.fn((input: string) => {
-    const chunks = [`Optimized: `, input]
-    let index = 0
+    const chunks = [`Optimized: `, input];
+    let index = 0;
     return new ReadableStream({
       pull(controller) {
         if (index < chunks.length) {
-          controller.enqueue(chunks[index])
-          index++
+          controller.enqueue(chunks[index]);
+          index++;
         } else {
-          controller.close()
+          controller.close();
         }
       },
-    })
+    });
   }),
   destroy: vi.fn(),
   clone: vi.fn(),
@@ -82,7 +82,7 @@ const createMockSession = () => ({
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
   dispatchEvent: vi.fn(),
-})
+});
 
 /**
  * Mock LanguageModel global (Chrome 138+ API)
@@ -95,12 +95,12 @@ const mockLanguageModel = {
       maxTopK: 128,
       defaultTemperature: 0.7,
       maxTemperature: 2.0,
-    })
+    }),
   ),
   create: vi.fn(() => Promise.resolve(createMockSession())),
-}
+};
 
-vi.stubGlobal("LanguageModel", mockLanguageModel)
+vi.stubGlobal("LanguageModel", mockLanguageModel);
 
 // =============================================================================
 // Test Utilities
@@ -110,31 +110,35 @@ vi.stubGlobal("LanguageModel", mockLanguageModel)
  * Helper to create a mock LanguageModel with custom behavior
  */
 export function createMockLanguageModel(overrides?: {
-  availability?: "available" | "downloadable" | "downloading" | "unavailable"
-  promptResponse?: string
+  availability?: "available" | "downloadable" | "downloading" | "unavailable";
+  promptResponse?: string;
 }) {
   return {
-    availability: vi.fn(() => Promise.resolve(overrides?.availability ?? "available")),
+    availability: vi.fn(() =>
+      Promise.resolve(overrides?.availability ?? "available"),
+    ),
     params: vi.fn(() =>
       Promise.resolve({
         defaultTopK: 40,
         maxTopK: 128,
         defaultTemperature: 0.7,
         maxTemperature: 2.0,
-      })
+      }),
     ),
     create: vi.fn(() =>
       Promise.resolve({
         ...createMockSession(),
-        prompt: vi.fn(() => Promise.resolve(overrides?.promptResponse ?? "Optimized prompt")),
-      })
+        prompt: vi.fn(() =>
+          Promise.resolve(overrides?.promptResponse ?? "Optimized prompt"),
+        ),
+      }),
     ),
-  }
+  };
 }
 
 /**
  * Helper to reset LanguageModel mock to default state
  */
 export function resetLanguageModelMock() {
-  vi.stubGlobal("LanguageModel", mockLanguageModel)
+  vi.stubGlobal("LanguageModel", mockLanguageModel);
 }
