@@ -31,6 +31,7 @@ const mockChrome = {
     local: {
       get: vi.fn(),
       set: vi.fn(),
+      remove: vi.fn(),
     },
     sync: {
       get: vi.fn(),

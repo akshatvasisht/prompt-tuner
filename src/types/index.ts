@@ -144,3 +144,47 @@ export interface ReplaceTextResult {
 
 /** Valid text input element types */
 export type TextInputElement = HTMLTextAreaElement | HTMLDivElement
+
+// =============================================================================
+// Zod Schemas for Runtime Validation
+// =============================================================================
+
+import { z } from "zod"
+
+/**
+ * Schema for a single optimization rule
+ * Validates structure of rules fetched from remote sources
+ */
+export const OptimizationRuleSchema = z.object({
+  id: z.string().min(1),
+  platform: z.enum(["openai", "anthropic", "google"]),
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  rule: z.string().min(10), // Rules must be substantial
+  examples: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  source: z.string().optional(),
+  createdAt: z.string().optional(),
+})
+
+/**
+ * Schema for an array of optimization rules
+ */
+export const OptimizationRulesArraySchema = z.array(OptimizationRuleSchema)
+
+/**
+ * Schema for cached rules with metadata
+ */
+export const CachedRulesSchema = z.object({
+  rules: OptimizationRulesArraySchema,
+  fetchedAt: z.number(), // Timestamp
+  source: z.enum(["bundled", "remote"]),
+  version: z.string().optional(),
+})
+
+/**
+ * Type inference from schemas
+ */
+export type ValidatedOptimizationRule = z.infer<typeof OptimizationRuleSchema>
+export type ValidatedRulesArray = z.infer<typeof OptimizationRulesArraySchema>
+export type CachedRules = z.infer<typeof CachedRulesSchema>

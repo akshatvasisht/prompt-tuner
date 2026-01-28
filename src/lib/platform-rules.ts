@@ -1,16 +1,58 @@
 /**
- * Platform Rules - Optimization rules for different LLM platforms
+ * Platform Rules - Hybrid Loading Strategy
  *
- * Simple, synchronous rule lookup by platform. No database overhead.
- * Rules are bundled with the extension for offline capability and privacy.
+ * Architecture:
+ * 1. Bundled Rules: Import JSON files as fallback (offline capability)
+ * 2. Remote Rules: Fetch from GitHub Pages on startup (quarterly updates)
+ * 3. Validation: Zod schemas validate all fetched rules
+ * 4. Caching: Store in chrome.storage.local to avoid excessive fetches
+ * 5. Fallback: Always revert to bundled rules on failure
+ *
+ * Benefits:
+ * - Offline capability (bundled rules)
+ * - Dynamic updates without Chrome Web Store review
+ * - Security (Zod validation)
+ * - Performance (7-day cache)
  */
 
-import { type OptimizationRule, type Platform, type SupportedPlatform } from "~types"
+import openaiRulesJson from "../../rules/openai.json"
+import anthropicRulesJson from "../../rules/anthropic.json"
+import googleRulesJson from "../../rules/google.json"
+
+import { 
+  type OptimizationRule, 
+  type Platform, 
+  type SupportedPlatform,
+  OptimizationRulesArraySchema,
+  type CachedRules 
+} from "~types"
+import { clearSessionCache } from "~lib/ai-engine"
 
 // =============================================================================
-// Platform-Specific Golden Rules
+// Constants
 // =============================================================================
 
+/**
+ * GitHub Pages base URL for fetching remote rules
+ * 
+ * IMPORTANT: Replace with your actual GitHub Pages URL after deployment
+ * Format: https://{username}.github.io/{repo-name}
+ * 
+ * Example: https://myusername.github.io/prompt-tuner
+ * 
+ * If not configured, the extension will use bundled rules as fallback
+ */
+const GITHUB_PAGES_BASE_URL = "https://YOUR_ORG.github.io/prompt-tuner"
+const CACHE_KEY_PREFIX = "rules_cache_"
+const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+// =============================================================================
+// Bundled Rules (Fallback)
+// =============================================================================
+
+/**
+ * Convert hardcoded rules to match OptimizationRule interface
+ */
 const OPENAI_RULES: OptimizationRule[] = [
   {
     id: "openai-1",
@@ -140,18 +182,158 @@ const GOOGLE_RULES: OptimizationRule[] = [
   },
 ]
 
-// =============================================================================
-// Platform Rules Map
-// =============================================================================
-
-const PLATFORM_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
+// Bundled rules as fallback
+const BUNDLED_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
   openai: OPENAI_RULES,
   anthropic: ANTHROPIC_RULES,
   google: GOOGLE_RULES,
 }
 
+// Runtime rules (may be updated from remote)
+let RUNTIME_RULES: Record<SupportedPlatform, OptimizationRule[]> = { ...BUNDLED_RULES }
+
 // =============================================================================
-// Public API
+// Rule Fetching & Validation
+// =============================================================================
+
+/**
+ * Fetches rules for a platform from GitHub Pages
+ * Returns null on failure (network error, validation error, etc.)
+ */
+async function fetchRemoteRules(platform: SupportedPlatform): Promise<OptimizationRule[] | null> {
+  try {
+    const url = `${GITHUB_PAGES_BASE_URL}/rules/${platform}.json`
+    const response = await fetch(url, {
+      cache: "no-cache",
+      headers: {
+        "Accept": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      console.warn(`[PlatformRules] Failed to fetch remote rules for ${platform}: ${response.status}`)
+      return null
+    }
+
+    const jsonData = await response.json()
+
+    // Validate with Zod schema
+    const validationResult = OptimizationRulesArraySchema.safeParse(jsonData)
+
+    if (!validationResult.success) {
+      console.error(`[PlatformRules] Validation failed for ${platform}:`, validationResult.error)
+      return null
+    }
+
+    console.log(`[PlatformRules] Successfully fetched and validated ${validationResult.data.length} rules for ${platform}`)
+    return validationResult.data as OptimizationRule[]
+  } catch (error) {
+    console.error(`[PlatformRules] Error fetching remote rules for ${platform}:`, error)
+    return null
+  }
+}
+
+/**
+ * Gets cached rules from chrome.storage.local
+ */
+async function getCachedRules(platform: SupportedPlatform): Promise<CachedRules | null> {
+  try {
+    const key = `${CACHE_KEY_PREFIX}${platform}`
+    const result = await chrome.storage.local.get(key)
+    
+    if (!result[key]) {
+      return null
+    }
+
+    const cached = result[key] as CachedRules
+    
+    // Check if cache is expired
+    if (Date.now() - cached.fetchedAt > CACHE_DURATION_MS) {
+      return null
+    }
+
+    return cached
+  } catch (error) {
+    console.error(`[PlatformRules] Error reading cache for ${platform}:`, error)
+    return null
+  }
+}
+
+/**
+ * Saves rules to chrome.storage.local
+ */
+async function cacheRules(
+  platform: SupportedPlatform, 
+  rules: OptimizationRule[], 
+  source: "bundled" | "remote"
+): Promise<void> {
+  try {
+    const key = `${CACHE_KEY_PREFIX}${platform}`
+    const cached: CachedRules = {
+      rules,
+      fetchedAt: Date.now(),
+      source,
+    }
+    await chrome.storage.local.set({ [key]: cached })
+  } catch (error) {
+    console.error(`[PlatformRules] Error caching rules for ${platform}:`, error)
+  }
+}
+
+/**
+ * Updates rules for a platform (tries remote, falls back to bundled)
+ */
+export async function updateRulesForPlatform(platform: SupportedPlatform): Promise<void> {
+  // Try to get cached rules first
+  const cached = await getCachedRules(platform)
+  if (cached) {
+    RUNTIME_RULES[platform] = cached.rules
+    console.log(`[PlatformRules] Using cached rules for ${platform} (source: ${cached.source})`)
+    return
+  }
+
+  // Try to fetch remote rules
+  const remoteRules = await fetchRemoteRules(platform)
+  
+  if (remoteRules) {
+    // Success: use remote rules
+    RUNTIME_RULES[platform] = remoteRules
+    await cacheRules(platform, remoteRules, "remote")
+    clearSessionCache() // Invalidate AI session cache
+    console.log(`[PlatformRules] Updated to remote rules for ${platform}`)
+  } else {
+    // Failure: use bundled rules
+    RUNTIME_RULES[platform] = BUNDLED_RULES[platform]
+    await cacheRules(platform, BUNDLED_RULES[platform], "bundled")
+    console.log(`[PlatformRules] Falling back to bundled rules for ${platform}`)
+  }
+}
+
+/**
+ * Initializes rules for all platforms on extension startup
+ */
+export async function initializeRules(): Promise<void> {
+  const platforms: SupportedPlatform[] = ["openai", "anthropic", "google"]
+  await Promise.all(platforms.map(updateRulesForPlatform))
+}
+
+/**
+ * Forces a refresh of rules from remote source
+ */
+export async function refreshRules(): Promise<void> {
+  // Clear cache
+  await chrome.storage.local.remove([
+    `${CACHE_KEY_PREFIX}openai`,
+    `${CACHE_KEY_PREFIX}anthropic`,
+    `${CACHE_KEY_PREFIX}google`,
+  ])
+  
+  // Re-fetch
+  await initializeRules()
+}
+
+// =============================================================================
+// Public API (unchanged interface for backward compatibility)
 // =============================================================================
 
 /**
@@ -163,9 +345,9 @@ const PLATFORM_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
 export function getRulesForPlatform(platform: Platform): string[] {
   if (platform === "unknown") {
     // Default to OpenAI rules for unknown platforms
-    return OPENAI_RULES.map((r) => r.rule)
+    return RUNTIME_RULES.openai.map((r) => r.rule)
   }
-  return PLATFORM_RULES[platform].map((r) => r.rule)
+  return RUNTIME_RULES[platform].map((r) => r.rule)
 }
 
 /**
@@ -176,21 +358,29 @@ export function getRulesForPlatform(platform: Platform): string[] {
  */
 export function getFullRulesForPlatform(platform: Platform): OptimizationRule[] {
   if (platform === "unknown") {
-    return [...OPENAI_RULES]
+    return [...RUNTIME_RULES.openai]
   }
-  return [...PLATFORM_RULES[platform]]
+  return [...RUNTIME_RULES[platform]]
 }
 
 /**
  * Gets the total count of rules across all platforms
  */
 export function getRuleCount(): number {
-  return OPENAI_RULES.length + ANTHROPIC_RULES.length + GOOGLE_RULES.length
+  return (
+    RUNTIME_RULES.openai.length +
+    RUNTIME_RULES.anthropic.length +
+    RUNTIME_RULES.google.length
+  )
 }
 
 /**
  * Gets all rules across all platforms
  */
 export function getAllRules(): OptimizationRule[] {
-  return [...OPENAI_RULES, ...ANTHROPIC_RULES, ...GOOGLE_RULES]
+  return [
+    ...RUNTIME_RULES.openai,
+    ...RUNTIME_RULES.anthropic,
+    ...RUNTIME_RULES.google,
+  ]
 }
