@@ -23,7 +23,7 @@ interface BackgroundMessage {
 // Extension Lifecycle Events
 // =============================================================================
 
-/* eslint-disable @typescript-eslint/no-deprecated */
+/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 chrome.runtime.onInstalled.addListener((details): void => {
   void (async (): Promise<void> => {
     try {
@@ -59,8 +59,27 @@ chrome.runtime.onInstalled.addListener((details): void => {
 // Message Handling
 // =============================================================================
 
+interface OpenSidePanelMessage {
+  type: "OPEN_SIDE_PANEL";
+}
+
+interface InjectTextMessage {
+  type: "INJECT_TEXT";
+  tabId: number;
+  text: string;
+}
+
+type ExtendedBackgroundMessage =
+  | BackgroundMessage
+  | OpenSidePanelMessage
+  | InjectTextMessage;
+
 chrome.runtime.onMessage.addListener(
-  (message: BackgroundMessage, _sender, sendResponse) => {
+  (
+    message: ExtendedBackgroundMessage,
+    sender,
+    sendResponse,
+  ) => {
     switch (message.type) {
       case "PING":
         sendResponse({ type: "PONG", ready: true });
@@ -72,6 +91,55 @@ chrome.runtime.onMessage.addListener(
           ruleCount: getRuleCount(),
         });
         return true;
+
+      case "OPEN_SIDE_PANEL": {
+        // Get the tab ID from sender
+        const tabId = sender.tab?.id;
+
+        if (tabId) {
+          // Open side panel for this tab
+          void chrome.sidePanel
+            .open({ tabId })
+            .then(() => {
+              sendResponse({ success: true });
+            })
+            .catch((error: unknown) => {
+              console.error("[Background] Failed to open side panel:", error);
+              sendResponse({
+                success: false,
+                error:
+                  error instanceof Error ? error.message : "Unknown error",
+              });
+            });
+        } else {
+          sendResponse({ success: false, error: "No tab ID available" });
+        }
+
+        return true; // Keep channel open for async response
+      }
+
+      case "INJECT_TEXT": {
+        // Route message to content script in specified tab
+        const { tabId, text } = message as InjectTextMessage;
+
+        void chrome.tabs
+          .sendMessage(tabId, {
+            type: "INJECT_TEXT",
+            text,
+          })
+          .then((response: unknown) => {
+            sendResponse(response);
+          })
+          .catch((error: unknown) => {
+            console.error("[Background] Failed to inject text:", error);
+            sendResponse({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
+          });
+
+        return true; // Keep channel open for async response
+      }
 
       default:
         return false;
@@ -85,6 +153,7 @@ chrome.runtime.onMessage.addListener(
 
 const KEEP_ALIVE_ALARM = "prompt-tuner-keep-alive";
 
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 try {
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === KEEP_ALIVE_ALARM) {
@@ -94,10 +163,12 @@ try {
 } catch (error: unknown) {
   console.error("[Background] Failed to set up alarms listener:", error);
 }
+/* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 /**
  * Sets or clears the keep-alive alarm for the service worker
  */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 export function setKeepAlive(active: boolean): void {
   if (active) {
     void chrome.alarms.create(KEEP_ALIVE_ALARM, { periodInMinutes: 0.5 });
@@ -105,7 +176,7 @@ export function setKeepAlive(active: boolean): void {
     void chrome.alarms.clear(KEEP_ALIVE_ALARM);
   }
 }
-/* eslint-enable @typescript-eslint/no-deprecated */
+/* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 // =============================================================================
 // Port Handlers Registration

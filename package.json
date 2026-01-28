@@ -8,7 +8,8 @@
     "permissions": [
       "storage",
       "alarms",
-      "activeTab"
+      "activeTab",
+      "sidePanel"
     ],
     "host_permissions": [
       "https://chat.openai.com/*",
@@ -17,6 +18,9 @@
       "https://bard.google.com/*",
       "https://gemini.google.com/*"
     ],
+    "side_panel": {
+      "default_path": "sidepanel.html"
+    },
     "content_security_policy": {
       "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.github.io https://*.githubusercontent.com"
     }

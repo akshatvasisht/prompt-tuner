@@ -53,6 +53,10 @@ type OptimizePortMessage =
   | OptimizePortComplete
   | OptimizePortError;
 
+// Suppress warning about unused type (used for documentation)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _OptimizePortResponse = OptimizePortMessage;
+
 // =============================================================================
 // Validation
 // =============================================================================
@@ -194,13 +198,15 @@ async function handleOptimizationRequest(
  * Call this from background/index.ts during initialization
  */
 export function registerOptimizePortHandler(): void {
+  /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
   chrome.runtime.onConnect.addListener((port) => {
     // Only handle ports with the correct name
     if (port.name !== "optimize-port") {
       return;
     }
 
-    console.log("[OptimizePort] Port connected");
+    // Port connected (debug)
+    // console.log("[OptimizePort] Port connected");
 
     // Handle messages on this port
     port.onMessage.addListener((message: unknown) => {
@@ -220,12 +226,15 @@ export function registerOptimizePortHandler(): void {
 
     // Handle port disconnect
     port.onDisconnect.addListener(() => {
-      console.log("[OptimizePort] Port disconnected");
+      // Port disconnected (debug)
+      // console.log("[OptimizePort] Port disconnected");
       // Cleanup if needed
     });
   });
+  /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
-  console.log("[OptimizePort] Handler registered");
+  // Handler registered (debug)
+  // console.log("[OptimizePort] Handler registered");
 }
 
 // =============================================================================
