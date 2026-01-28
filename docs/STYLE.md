@@ -217,6 +217,29 @@ export const MyComponent: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
 export const MemoizedComponent = React.memo(MyComponent)
 ```
 
+### Plasmo Content Script UI (CSUI) Patterns
+
+For Chrome extension content scripts, follow Plasmo CSUI patterns:
+
+```typescript
+import type { PlasmoCSConfig, PlasmoGetOverlayAnchor } from "plasmo"
+
+// Configuration
+export const config: PlasmoCSConfig = {
+  matches: ["https://example.com/*"],
+}
+
+// Overlay anchor for automatic mounting/unmounting
+export const getOverlayAnchor: PlasmoGetOverlayAnchor = async () => {
+  return document.querySelector("textarea[data-id='root']")
+}
+
+// Component automatically manages lifecycle
+export default function ContentScript() {
+  return <div>Content</div>
+}
+```
+
 ### Hook Rules
 
 1. **Follow Rules of Hooks** — Only call hooks at the top level of components.
@@ -424,6 +447,75 @@ const handler: PlasmoMessaging.MessageHandler<OptimizeRequest, OptimizeResponse>
   }
 ```
 
+### Port-Based Messaging for Streaming
+
+For streaming data or maintaining long-lived connections, use `chrome.runtime.Port`:
+
+```typescript
+// Content script - open port
+const port = chrome.runtime.connect({ name: "optimize-port" })
+
+port.onMessage.addListener((message) => {
+  if (message.type === "CHUNK") {
+    // Handle streaming chunk
+  }
+})
+
+port.postMessage({ type: "START_OPTIMIZATION", draft: "text" })
+
+// Background - handle port connections
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "optimize-port") return
+  
+  port.onMessage.addListener((message) => {
+    // Validate and process
+    port.postMessage({ type: "CHUNK", data: "..." })
+  })
+})
+```
+
+### Main World Injection
+
+For bypassing React/Vue Virtual DOM restrictions, use Main World injection:
+
+```typescript
+// In content script config
+export const config: PlasmoCSConfig = {
+  matches: ["https://example.com/*"],
+  world: "MAIN",
+}
+
+// Communicate via window.postMessage
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin) return
+  // Process message
+})
+```
+
+### Runtime Validation with Zod
+
+All external data (fetched rules, user input, storage) must be validated at runtime:
+
+```typescript
+import { z } from "zod"
+
+const RuleSchema = z.object({
+  id: z.string(),
+  platform: z.enum(["openai", "anthropic", "google"]),
+  rule: z.string(),
+  tags: z.array(z.string()),
+})
+
+const RulesArraySchema = z.array(RuleSchema)
+
+// Validate before use
+const result = RulesArraySchema.safeParse(jsonData)
+if (!result.success) {
+  // Fall back to bundled rules
+  return BUNDLED_RULES
+}
+```
+
 ### Data Handling
 
 - **Never store sensitive data** in `chrome.storage.local` unencrypted.
@@ -475,6 +567,72 @@ useEffect(() => {
     abortController.abort()
   }
 }, [])
+```
+
+### Session Caching
+
+Cache expensive resources to reduce latency:
+
+```typescript
+// Global cache for reusable sessions
+let cachedSession: LanguageModel | null = null
+let cachedSystemPrompt: string | null = null
+
+async function getOrCreateSession(systemPrompt: string): Promise<LanguageModel> {
+  // Reuse if system prompt matches
+  if (cachedSession && cachedSystemPrompt === systemPrompt) {
+    return cachedSession
+  }
+  
+  // Clear old session
+  if (cachedSession) {
+    cachedSession.destroy()
+  }
+  
+  // Create and cache new session
+  cachedSession = await LanguageModel.create({ 
+    initialPrompts: [{ role: "system", content: systemPrompt }] 
+  })
+  cachedSystemPrompt = systemPrompt
+  
+  return cachedSession
+}
+
+// Clear cache on rule changes
+export function clearSessionCache(): void {
+  if (cachedSession) {
+    cachedSession.destroy()
+    cachedSession = null
+    cachedSystemPrompt = null
+  }
+}
+```
+
+### Streaming Implementation
+
+Implement streaming for better UX on long-running operations:
+
+```typescript
+// Streaming with callback for progress updates
+async function optimizePromptStreaming(
+  draft: string,
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const stream = session.promptStreaming(draft)
+  const reader = stream.getReader()
+  let result = ""
+  
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    
+    result += value
+    onChunk(value) // Update UI incrementally
+  }
+  
+  return result
+}
 ```
 
 ### Bundle Size
@@ -664,3 +822,161 @@ Key rules enforced:
 import { cn } from "~lib/utils"
 import { type Platform } from "~types"
 ```
+
+---
+
+## Extension-Specific Patterns
+
+### Hybrid Loading Strategy
+
+For rules and configuration that need updates without Chrome Web Store review:
+
+```typescript
+// 1. Bundle rules as fallback
+import bundledRules from "../../rules/platform.json"
+
+const BUNDLED_RULES = bundledRules as OptimizationRule[]
+
+// 2. Fetch remote rules with validation
+async function fetchRemoteRules(platform: string): Promise<OptimizationRule[] | null> {
+  try {
+    const response = await fetch(`${GITHUB_PAGES_URL}/rules/${platform}.json`)
+    const data = await response.json()
+    
+    // Validate with Zod
+    const result = RulesArraySchema.safeParse(data)
+    if (!result.success) {
+      return null // Fall back to bundled
+    }
+    
+    return result.data
+  } catch {
+    return null // Fall back to bundled
+  }
+}
+
+// 3. Cache in chrome.storage.local with expiration
+const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+async function cacheRules(platform: string, rules: OptimizationRule[]): Promise<void> {
+  await chrome.storage.local.set({
+    [`rules_cache_${platform}`]: {
+      rules,
+      fetchedAt: Date.now(),
+      source: "remote",
+    },
+  })
+}
+
+// 4. Load with cache-first strategy
+async function loadRules(platform: string): Promise<OptimizationRule[]> {
+  // Try cache first
+  const cached = await getCachedRules(platform)
+  if (cached && Date.now() - cached.fetchedAt < CACHE_DURATION_MS) {
+    return cached.rules
+  }
+  
+  // Try remote
+  const remote = await fetchRemoteRules(platform)
+  if (remote) {
+    await cacheRules(platform, remote)
+    return remote
+  }
+  
+  // Fall back to bundled
+  return BUNDLED_RULES
+}
+```
+
+### Type Guards for Message Validation
+
+Always validate messages with type guards:
+
+```typescript
+interface OptimizeRequest {
+  type: "START_OPTIMIZATION"
+  draft: string
+  platform: Platform
+}
+
+const VALID_PLATFORMS: Platform[] = ["openai", "anthropic", "google", "unknown"]
+
+function isOptimizeRequest(data: unknown): data is OptimizeRequest {
+  if (!data || typeof data !== "object") return false
+  
+  const request = data as Record<string, unknown>
+  
+  return (
+    request.type === "START_OPTIMIZATION" &&
+    typeof request.draft === "string" &&
+    request.draft.trim().length > 0 &&
+    VALID_PLATFORMS.includes(request.platform as Platform)
+  )
+}
+
+// Usage
+port.onMessage.addListener((message: unknown) => {
+  if (!isOptimizeRequest(message)) {
+    sendError(port, "INVALID_REQUEST", "Invalid message format")
+    return
+  }
+  
+  // message is now typed as OptimizeRequest
+  handleRequest(message)
+})
+```
+
+### Output Cleaning Patterns
+
+For AI responses, always clean and extract the desired content:
+
+```typescript
+/**
+ * Extracts content from XML tags, stripping meta-commentary
+ */
+function cleanModelOutput(rawOutput: string): string {
+  // Try to extract from structured tags
+  const match = /<result>([\s\S]*?)<\/result>/i.exec(rawOutput)
+  
+  if (match && match[1]) {
+    return match[1].trim()
+  }
+  
+  // Fallback: strip common meta-phrases
+  const cleaned = rawOutput
+    .replace(/^(?:here is|here's|sure,?\s*|okay,?\s*)/i, '')
+    .replace(/^(?:the\s+)?(?:optimized|improved|rewritten)\s+prompt:?\s*/i, '')
+    .replace(/^["']|["']$/g, '')
+    .trim()
+  
+  return cleaned || rawOutput.trim()
+}
+```
+
+---
+
+## Architecture Patterns Summary
+
+### Phase 1: Core Patterns
+
+1. **Plasmo CSUI** - Use `getOverlayAnchor` for automatic lifecycle management
+2. **Main World Injection** - For React/Vue compatibility via page context execution
+3. **Port-Based Messaging** - For streaming and long-lived connections
+
+### Phase 2: Performance Patterns
+
+1. **Session Caching** - Reuse AI sessions when system prompt matches
+2. **Streaming** - Token-by-token updates for better UX
+3. **Output Cleaning** - XML tags and regex for clean AI responses
+
+### Phase 3: Data Patterns
+
+1. **Zod Validation** - Runtime validation for all external data
+2. **Hybrid Loading** - Bundled + Remote + Cache with fallback chain
+3. **Type Guards** - Validate messages before processing
+
+### Phase 4: UI/UX Patterns
+
+1. **Tailwind Animations** - Custom keyframes for brand identity
+2. **Icon Replacement** - Semantic icons (Wrench for "tuning")
+3. **Accessibility** - ARIA labels, states, and keyboard support
