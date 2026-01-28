@@ -4,7 +4,7 @@
 
 **Prompt Tuner** is a lightweight, privacy-focused Chrome extension that acts as a "Grammarly for Prompts." It intercepts user input in browser-based LLM chats (like ChatGPT or Claude) and optimizes prompts using Google's built-in edge AI model (Gemini Nano). The system remains platform-agnostic by automatically scraping, distilling, and ingesting the latest prompt engineering documentation from major AI providers, ensuring the optimization logic stays current without manual code updates.
 
-Unlike traditional prompt optimization tools that require manual updates or cloud-based processing, this system leverages edge AI processing and automated knowledge distillation to achieve complete privacy, offline capability, and always-current optimization rules.
+Unlike traditional prompt optimization tools that require manual updates or cloud-based processing, this system leverages local AI processing and automated knowledge distillation to achieve complete privacy, offline capability, and always-current optimization rules.
 
 ### Core Functionality
 
@@ -16,8 +16,8 @@ Unlike traditional prompt optimization tools that require manual updates or clou
 
 ## Impact & Performance
 
-- **Privacy:** All processing happens on-device using edge AI (Gemini Nano)—no data is sent to external servers.
-- **Cost:** Completely free—leverages Chrome's built-in edge AI capabilities and free hosting via GitHub Pages.
+- **Privacy:** All processing happens locally in the browser using Gemini Nano—no data is sent to external servers.
+- **Cost:** Completely free—leverages Chrome's built-in AI capabilities and free hosting via GitHub Pages.
 - **Offline Capability:** Once rules are cached, the extension works offline for prompt optimization.
 
 ## Documentation

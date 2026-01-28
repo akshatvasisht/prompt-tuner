@@ -64,12 +64,20 @@ npm test -- --coverage
 
 ### End-to-End Tests
 
-**Prerequisites**: E2E tests require Chrome browser installation:
+**Prerequisites**: E2E tests require Chromium browser and system dependencies:
 
 ```bash
-# Install Chrome for Playwright
-npx playwright install chrome
+# Step 1: Install system dependencies (requires sudo)
+sudo bash scripts/install-test-deps.sh
+
+# Step 2: Install Chromium browser for Playwright
+npx playwright install chromium
 ```
+
+**Note**: On WSL or systems without sudo access, you may need to manually install the required packages:
+- libnss3, libnspr4, libatk1.0-0, libatk-bridge2.0-0, libcups2, libdrm2, libdbus-1-3
+- libxkbcommon0, libxcomposite1, libxdamage1, libxfixes3, libxrandr2
+- libgbm1, libpango-1.0-0, libcairo2, libasound2
 
 Run the E2E test suite:
 
@@ -92,7 +100,7 @@ npm run test:e2e:debug
 Run specific E2E test file:
 
 ```bash
-npm run test:e2e -- tests/e2e/widget-injection.spec.ts
+npm run test:e2e -- tests/e2e/trigger-injection.spec.ts
 ```
 
 **Note**: The `pretest:e2e` script automatically builds the extension before running tests.
@@ -113,7 +121,7 @@ tests/
     dom-injector.test.ts       # DOM manipulation tests
     sparkle-widget.test.tsx    # React component tests
   e2e/
-    widget-injection.spec.ts   # Widget injection tests
+    trigger-injection.spec.ts  # Trigger button injection tests
     optimization-flow.spec.ts  # Full optimization flow tests
     platform-compat.spec.ts    # Cross-platform compatibility tests
 ```
@@ -223,29 +231,32 @@ Tests the React UI component for the optimization widget.
 
 ## E2E Test Suites
 
-### widget-injection.spec.ts
+### trigger-injection.spec.ts
 
-Tests widget injection on supported LLM platforms.
+Tests trigger button injection on supported LLM platforms.
 
 **Coverage**:
 
-- Widget appears on ChatGPT
-- Widget appears on Claude
-- Widget appears on Gemini
-- Widget positioning relative to textarea
+- Trigger button appears on ChatGPT
+- Trigger button appears on Claude
+- Trigger button appears on Gemini
+- Trigger button positioning on right edge
 - Shadow DOM isolation
+- Neobrutalist visual design (construction yellow, black borders, brutal shadows)
 
 ### optimization-flow.spec.ts
 
-Tests the complete prompt optimization workflow.
+Tests the complete prompt optimization workflow using the side panel.
 
 **Coverage**:
 
-- User types prompt in textarea
-- User clicks optimization icon
-- Streaming response displays correctly
-- Optimized text replaces original
-- Text replacement works with React/Vue inputs
+- User clicks trigger button
+- Side panel opens with original text
+- User clicks optimize button
+- Streaming response displays correctly in panel
+- User can edit optimized text before accepting
+- Accept button injects text back to platform
+- Cancel button closes panel without injection
 
 ### platform-compat.spec.ts
 
@@ -385,12 +396,12 @@ describe("checkAIAvailability", () => {
 **Example**:
 
 ```typescript
-test("widget appears on ChatGPT", async ({ page }) => {
+test("trigger button appears on ChatGPT", async ({ page }) => {
   await page.goto("https://chat.openai.com");
-  await page.waitForSelector("[data-testid='prompt-tuner-widget']");
+  await page.waitForSelector("[data-testid='trigger-button']");
 
-  const widget = page.locator("[data-testid='prompt-tuner-widget']");
-  await expect(widget).toBeVisible();
+  const trigger = page.locator("[data-testid='trigger-button']");
+  await expect(trigger).toBeVisible();
 });
 ```
 
@@ -426,7 +437,7 @@ The CI pipeline runs:
 **Issue**: Tests fail with "LanguageModel is not defined"  
 **Solution**: Ensure `tests/setup.ts` is loaded via `setupFiles` in Vitest config
 
-**Issue**: E2E tests timeout on widget detection  
+**Issue**: E2E tests timeout on trigger button detection  
 **Solution**: Increase timeout or ensure extension is properly loaded in browser context
 
 **Issue**: Mock functions not being called  
