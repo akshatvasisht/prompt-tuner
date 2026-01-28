@@ -42,7 +42,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         // Chrome extension specific settings
-        channel: "chrome",
+        // channel: "chrome", // Commented out to use installed Chromium
         // Extension will be loaded in test setup
         launchOptions: {
           args: [
