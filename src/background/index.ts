@@ -3,11 +3,13 @@
  *
  * Handles:
  * - Extension installation and updates
- * - Message routing
+ * - Message routing (single-fire and long-lived ports)
  * - Keep-alive for MV3 service workers
+ * - Port-based streaming for AI optimization
  */
 
-import { getRuleCount } from "~lib/platform-rules"
+import { registerOptimizePortHandler } from "./messages/optimize-port"
+import { getRuleCount, initializeRules } from "~lib/platform-rules"
 
 // =============================================================================
 // Types
@@ -25,6 +27,9 @@ interface BackgroundMessage {
 chrome.runtime.onInstalled.addListener((details): void => {
   void (async (): Promise<void> => {
     try {
+      // Initialize rules (fetch remote or use bundled)
+      await initializeRules()
+      
       const ruleCount = getRuleCount()
 
       await chrome.storage.local.set({
@@ -35,7 +40,10 @@ chrome.runtime.onInstalled.addListener((details): void => {
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
         // eslint-disable-next-line no-console
-        console.log(`[Background] Fresh installation - ${String(ruleCount)} rules bundled`)
+        console.log(`[Background] Fresh installation - ${String(ruleCount)} rules loaded`)
+      } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+        // eslint-disable-next-line no-console
+        console.log(`[Background] Extension updated - ${String(ruleCount)} rules loaded`)
       }
     } catch (error: unknown) {
       console.error("[Background] Failed to initialize:", error)
@@ -92,3 +100,10 @@ export function setKeepAlive(active: boolean): void {
   }
 }
 /* eslint-enable @typescript-eslint/no-deprecated */
+
+// =============================================================================
+// Port Handlers Registration
+// =============================================================================
+
+// Register the optimize port handler for streaming support
+registerOptimizePortHandler()
