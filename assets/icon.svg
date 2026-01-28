@@ -1,21 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <rect width="128" height="128" rx="24" fill="url(#bg)"/>
-  <g fill="#fbbf24" transform="translate(64, 64)">
-    <!-- Center sparkle -->
-    <path d="M0,-24 L3,-8 L16,-8 L5,0 L9,16 L0,8 L-9,16 L-5,0 L-16,-8 L-3,-8 Z" />
-    <!-- Top right sparkle -->
-    <g transform="translate(20, -20) scale(0.5)">
-      <path d="M0,-24 L3,-8 L16,-8 L5,0 L9,16 L0,8 L-9,16 L-5,0 L-16,-8 L-3,-8 Z" />
-    </g>
-    <!-- Bottom left sparkle -->
-    <g transform="translate(-18, 18) scale(0.4)">
-      <path d="M0,-24 L3,-8 L16,-8 L5,0 L9,16 L0,8 L-9,16 L-5,0 L-16,-8 L-3,-8 Z" />
-    </g>
+  <!-- Construction yellow background with black border -->
+  <rect x="2" y="2" width="124" height="124" rx="20" fill="#FBBF24" stroke="#000000" stroke-width="4"/>
+  
+  <!-- Black wrench icon (simplified bold design) -->
+  <g fill="#000000" stroke="#000000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Wrench handle -->
+    <rect x="35" y="60" width="12" height="50" rx="2" transform="rotate(-45 41 85)"/>
+    
+    <!-- Wrench head (adjustable part) -->
+    <path d="M 60 40 L 70 30 L 75 35 L 80 30 L 85 35 L 80 40 L 75 35 L 70 40 Z"/>
+    
+    <!-- Connection between head and handle -->
+    <rect x="50" y="48" width="10" height="18" rx="1" transform="rotate(-45 55 57)"/>
+    
+    <!-- Bolt/nut detail -->
+    <circle cx="75" cy="35" r="6" fill="none" stroke-width="3"/>
+    <circle cx="75" cy="35" r="3" fill="#000000"/>
   </g>
 </svg>

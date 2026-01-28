@@ -38,10 +38,15 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      boxShadow: {
+        'brutal': '4px 4px 0px 0px #000000',
+        'brutal-sm': '2px 2px 0px 0px #000000',
+        'brutal-lg': '6px 6px 0px 0px #000000',
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "0.25rem",  // Reduced from var(--radius) for sharper edges
+        md: "0.125rem", // Reduced
+        sm: "0rem",     // Sharp edges
       },
       keyframes: {
         "accordion-down": {

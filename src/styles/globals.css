@@ -4,48 +4,49 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Neobrutalist Colors */
+    --primary: 45 93% 58%;           /* Construction Yellow #FBBF24 */
+    --primary-foreground: 0 0% 0%;   /* Black #000000 */
+    --accent: 0 0% 0%;                /* Black */
+    --border: 0 0% 0%;                /* Black borders */
+    --ring: 0 0% 0%;                  /* Black focus rings */
+    --radius: 0.25rem;                /* Minimal 4px radius */
+    --background: 60 9% 98%;          /* Off-white #FEFCE8 */
+    
+    /* Keep existing for backward compatibility */
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
-    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 0 0% 10%;           /* Dark gray #1A1A1A */
     --foreground: 210 40% 98%;
+    --primary: 45 93% 58%;            /* Same yellow in dark */
+    --primary-foreground: 0 0% 0%;   /* Black text on yellow */
+    --accent: 0 0% 0%;
+    --border: 0 0% 20%;               /* Lighter border for dark mode */
+    --ring: 0 0% 0%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
   }
 }
 
@@ -58,53 +59,26 @@
   }
 }
 
-/* Sparkle Widget Styles */
+/* Neobrutalist Component Classes */
 @layer components {
-  .sparkle-widget-container {
-    @apply pointer-events-auto;
+  .brutal-button {
+    @apply border-2 border-black shadow-brutal;
+    @apply hover:shadow-brutal-sm hover:translate-x-[2px] hover:translate-y-[2px];
+    @apply active:shadow-none active:translate-x-[4px] active:translate-y-[4px];
+    @apply transition-all duration-100;
   }
-
-  .sparkle-button {
-    @apply flex items-center justify-center;
-    @apply min-w-[28px] min-h-[28px] p-1.5;
-    @apply bg-primary text-primary-foreground;
-    @apply rounded-full shadow-md;
-    @apply transition-all duration-200 ease-out;
-    @apply hover:shadow-lg hover:scale-110;
-    @apply active:scale-95;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
-    @apply backdrop-blur-sm;
-    @apply cursor-pointer;
+  
+  .brutal-card {
+    @apply border-2 border-black shadow-brutal bg-background;
   }
-
-  .sparkle-button-icon {
-    @apply w-4 h-4 text-amber-300;
+  
+  .brutal-input {
+    @apply border-2 border-black focus:ring-2 focus:ring-black focus:ring-offset-2;
+    @apply transition-none;
   }
-
-  .sparkle-status {
-    @apply absolute top-full left-0 mt-2;
-    @apply bg-primary/95 text-primary-foreground;
-    @apply text-xs px-3 py-1.5 rounded-lg shadow-lg;
-    @apply whitespace-nowrap max-w-[220px];
-    @apply animate-pulse;
-    @apply backdrop-blur-sm;
-  }
-
-  .sparkle-error {
-    @apply absolute top-full left-0 mt-2;
-    @apply bg-destructive/95 text-destructive-foreground;
-    @apply text-xs px-3 py-1.5 rounded-lg shadow-lg;
-    @apply whitespace-nowrap max-w-[220px];
-    @apply backdrop-blur-sm;
-  }
-
-  .sparkle-success {
-    @apply absolute top-full left-0 mt-2;
-    @apply bg-green-600/95 text-white;
-    @apply text-xs px-3 py-1.5 rounded-lg shadow-lg;
-    @apply whitespace-nowrap max-w-[220px];
-    @apply backdrop-blur-sm;
+  
+  .brutal-header {
+    @apply bg-primary border-b-2 border-black;
   }
 }
 

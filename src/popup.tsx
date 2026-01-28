@@ -9,7 +9,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  Sparkles,
+  Wrench,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -111,28 +111,28 @@ export default function Popup(): React.JSX.Element {
   return (
     <div className="w-80 p-4 bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <Sparkles className="w-6 h-6 text-primary" />
+      <div className="brutal-header px-4 py-3 flex items-center gap-3 mb-4 -m-4 mb-4">
+        <div className="p-2 bg-black rounded">
+          <Wrench className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold">Prompt Tuner</h1>
-          <p className="text-xs text-muted-foreground">
-            Optimize your prompts locally
+          <h1 className="text-lg font-bold text-black">Prompt Tuner</h1>
+          <p className="text-xs text-black/70">
+            100% Local AI
           </p>
         </div>
       </div>
 
       {/* Status Card */}
-      <div className="mb-4 p-3 rounded-lg bg-muted/50">
+      <div className="brutal-card p-3 mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">AI Status</span>
+          <span className="text-sm font-bold">AI Status</span>
           <button
             onClick={() => void checkStatus()}
-            className="p-1 hover:bg-muted rounded"
+            className="brutal-button p-1.5 bg-primary"
             title="Refresh status"
           >
-            <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            <RefreshCw className="w-4 h-4 text-black" />
           </button>
         </div>
 
@@ -186,24 +186,24 @@ export default function Popup(): React.JSX.Element {
       </div>
 
       {/* Settings */}
-      <div className="mb-4 p-3 rounded-lg bg-muted/50">
+      <div className="brutal-card p-3 mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm font-medium">Extension Enabled</span>
+            <span className="text-sm font-bold">Extension Enabled</span>
             <p className="text-xs text-muted-foreground">
-              Show optimization widget
+              Show trigger button
             </p>
           </div>
           <button
             onClick={() => void toggleEnabled()}
             className={cn(
-              "relative w-11 h-6 rounded-full transition-colors",
+              "relative w-11 h-6 border-2 border-black rounded-full transition-colors",
               isEnabled ? "bg-primary" : "bg-muted-foreground/30",
             )}
           >
             <span
               className={cn(
-                "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                "absolute top-0.5 left-0.5 w-4 h-4 bg-black rounded-full shadow-brutal-sm transition-transform",
                 isEnabled && "translate-x-5",
               )}
             />
@@ -213,10 +213,10 @@ export default function Popup(): React.JSX.Element {
 
       {/* Stats */}
       {ruleCount !== null && (
-        <div className="mb-4 p-3 rounded-lg bg-muted/50">
+        <div className="brutal-card p-3 mb-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Optimization Rules</span>
-            <span className="text-sm font-semibold text-primary">
+            <span className="text-sm font-bold">Optimization Rules</span>
+            <span className="text-sm font-bold text-primary">
               {ruleCount}
             </span>
           </div>
