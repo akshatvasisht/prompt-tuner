@@ -1,5 +1,12 @@
 # Prompt Tuner
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Chrome](https://img.shields.io/badge/Chrome-138%2B-green.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)
+![Plasmo](https://img.shields.io/badge/Plasmo-Framework-purple.svg)
+
+> Privacy-first prompt optimization using Chrome's built-in AI
+
 ## Overview
 
 **Prompt Tuner** is a lightweight, privacy-focused Chrome extension that acts as a "Grammarly for Prompts." It intercepts user input in browser-based LLM chats (like ChatGPT or Claude) and optimizes prompts using Google's built-in edge AI model (Gemini Nano). The system remains platform-agnostic by automatically scraping, distilling, and ingesting the latest prompt engineering documentation from major AI providers, ensuring the optimization logic stays current without manual code updates.
@@ -22,7 +29,7 @@ Unlike traditional prompt optimization tools that require manual updates or clou
 
 ## Documentation
 
-- **[SETUP.md](SETUP.md):** Installation, environment configuration, and startup instructions.
+- **[SETUP.md](docs/SETUP.md):** Installation, environment configuration, and startup instructions.
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design, data flow, glossary, and design decisions.
 - **[TESTING.md](docs/TESTING.md):** Testing guidelines.
 - **[STYLE.md](docs/STYLE.md):** Coding standards, testing guidelines, and repository conventions.
