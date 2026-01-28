@@ -34,7 +34,6 @@ Unlike traditional prompt optimization tools that require manual updates or clou
 - **[TESTING.md](docs/TESTING.md):** Testing guidelines.
 - **[STYLE.md](docs/STYLE.md):** Coding standards, testing guidelines, and repository conventions.
 - **[PRIVACY.md](docs/PRIVACY.md):** Privacy policy and data handling practices.
-- **[SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md):** Security analysis and compliance documentation.
 
 ## License
 
