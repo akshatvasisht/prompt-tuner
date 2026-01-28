@@ -24,7 +24,7 @@ This document defines the coding standards, conventions, and best practices for 
 ### Code Quality Philosophy
 
 - **Readability over cleverness** — Code is read far more often than it is written. Prioritize clarity.
-- **Intent over implementation** — Comments should explain *why*, not *what*. Let the code speak for itself.
+- **Intent over implementation** — Comments should explain _why_, not _what_. Let the code speak for itself.
 - **Fail fast, fail loud** — Errors should surface immediately with clear messages.
 - **Single responsibility** — Functions and components should do one thing well.
 - **Defensive coding** — Validate inputs, handle edge cases, never trust external data.
@@ -55,33 +55,33 @@ All TypeScript code must pass strict mode compilation. The following compiler op
 
 ### Naming Conventions
 
-| Element | Convention | Example |
-|---------|------------|---------|
-| Variables | camelCase | `userInput`, `isProcessing` |
-| Functions | camelCase | `optimizePrompt()`, `handleClick()` |
-| Constants | SCREAMING_SNAKE_CASE | `MAX_RETRIES`, `DEFAULT_TIMEOUT` |
-| Types/Interfaces | PascalCase | `OptimizeRequest`, `AIAvailability` |
-| Enums | PascalCase | `ErrorCode`, `WidgetStatus` |
-| Components | PascalCase | `SparkleWidget`, `PromptInput` |
-| Files (components) | kebab-case | `sparkle-widget.tsx`, `ai-engine.ts` |
-| Test files | Same as source + `.test` | `ai-engine.test.ts` |
+| Element            | Convention               | Example                              |
+| ------------------ | ------------------------ | ------------------------------------ |
+| Variables          | camelCase                | `userInput`, `isProcessing`          |
+| Functions          | camelCase                | `optimizePrompt()`, `handleClick()`  |
+| Constants          | SCREAMING_SNAKE_CASE     | `MAX_RETRIES`, `DEFAULT_TIMEOUT`     |
+| Types/Interfaces   | PascalCase               | `OptimizeRequest`, `AIAvailability`  |
+| Enums              | PascalCase               | `ErrorCode`, `WidgetStatus`          |
+| Components         | PascalCase               | `SparkleWidget`, `PromptInput`       |
+| Files (components) | kebab-case               | `sparkle-widget.tsx`, `ai-engine.ts` |
+| Test files         | Same as source + `.test` | `ai-engine.test.ts`                  |
 
 ### Type Definitions
 
 ```typescript
 // Prefer interfaces for object shapes
 interface OptimizeRequest {
-  draft: string
-  platform: Platform
-  context?: string
+  draft: string;
+  platform: Platform;
+  context?: string;
 }
 
 // Use type for unions, intersections, and aliases
-type Platform = "openai" | "anthropic" | "google" | "unknown"
-type SupportedPlatform = Exclude<Platform, "unknown">
+type Platform = "openai" | "anthropic" | "google" | "unknown";
+type SupportedPlatform = Exclude<Platform, "unknown">;
 
 // Use type-only imports when importing types
-import { type OptimizeRequest, PromptTunerError } from "~types"
+import { type OptimizeRequest, PromptTunerError } from "~types";
 ```
 
 ### Type Safety Rules
@@ -94,13 +94,13 @@ import { type OptimizeRequest, PromptTunerError } from "~types"
 
 ```typescript
 // Bad: Unsafe index access
-const value = items[index]
-value.doSomething()
+const value = items[index];
+value.doSomething();
 
 // Good: Safe index access
-const value = items[index]
+const value = items[index];
 if (value !== undefined) {
-  value.doSomething()
+  value.doSomething();
 }
 ```
 
@@ -115,15 +115,15 @@ if (value !== undefined) {
 // ✅ Good: Proper async error handling
 export async function optimizePrompt(draft: string): Promise<string> {
   try {
-    const session = await createSession()
-    return await session.prompt(draft)
+    const session = await createSession();
+    return await session.prompt(draft);
   } catch (error) {
     throw new PromptTunerError(
       error instanceof Error ? error.message : "Unknown error",
-      "AI_GENERATION_FAILED"
-    )
+      "AI_GENERATION_FAILED",
+    );
   } finally {
-    session?.destroy()
+    session?.destroy();
   }
 }
 ```
@@ -134,12 +134,12 @@ Use the custom `PromptTunerError` class for all extension errors:
 
 ```typescript
 export class PromptTunerError extends Error {
-  code: ErrorCode
+  code: ErrorCode;
 
   constructor(message: string, code: ErrorCode) {
-    super(message)
-    this.name = "PromptTunerError"
-    this.code = code
+    super(message);
+    this.name = "PromptTunerError";
+    this.code = code;
   }
 }
 
@@ -152,7 +152,7 @@ type ErrorCode =
   | "ELEMENT_NOT_FOUND"
   | "PLATFORM_UNSUPPORTED"
   | "DATABASE_ERROR"
-  | "UNKNOWN_ERROR"
+  | "UNKNOWN_ERROR";
 ```
 
 ---
@@ -251,17 +251,17 @@ export default function ContentScript() {
 ```typescript
 // Good: Proper hook usage
 const handleClick = useCallback(async (): Promise<void> => {
-  if (isProcessingRef.current) return
+  if (isProcessingRef.current) return;
   // ... processing logic
-}, [dependencies])
+}, [dependencies]);
 
 const combinedStyles = useMemo(
   () => ({
     ...floatingStyles,
     zIndex: 2147483647,
   }),
-  [floatingStyles]
-)
+  [floatingStyles],
+);
 ```
 
 ### Accessibility
@@ -288,11 +288,11 @@ All components must be accessible:
 
 ### Event Handler Naming
 
-| Event Type | Handler Prefix | Example |
-|------------|----------------|---------|
-| Click | `handle` | `handleClick`, `handleSubmit` |
-| Change | `handle` | `handleChange`, `handleInputChange` |
-| Callbacks (props) | `on` | `onProcessingComplete`, `onChange` |
+| Event Type        | Handler Prefix | Example                             |
+| ----------------- | -------------- | ----------------------------------- |
+| Click             | `handle`       | `handleClick`, `handleSubmit`       |
+| Change            | `handle`       | `handleChange`, `handleInputChange` |
+| Callbacks (props) | `on`           | `onProcessingComplete`, `onChange`  |
 
 ---
 
@@ -359,31 +359,31 @@ import { cn } from "~lib/utils"
 ### Test Structure
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { functionUnderTest } from "~lib/module"
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { functionUnderTest } from "~lib/module";
 
 describe("module-name", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe("functionUnderTest", () => {
     it("should return expected result when given valid input", async () => {
       // Arrange
-      const input = "test"
+      const input = "test";
 
       // Act
-      const result = await functionUnderTest(input)
+      const result = await functionUnderTest(input);
 
       // Assert
-      expect(result).toBe("expected")
-    })
+      expect(result).toBe("expected");
+    });
 
     it("should throw error when given invalid input", async () => {
-      await expect(functionUnderTest(null)).rejects.toThrow(ExpectedError)
-    })
-  })
-})
+      await expect(functionUnderTest(null)).rejects.toThrow(ExpectedError);
+    });
+  });
+});
 ```
 
 ### Test Naming
@@ -394,12 +394,12 @@ describe("module-name", () => {
 
 ### Coverage Requirements
 
-| Metric | Minimum |
-|--------|---------|
-| Statements | 80% |
-| Branches | 75% |
-| Functions | 80% |
-| Lines | 80% |
+| Metric     | Minimum |
+| ---------- | ------- |
+| Statements | 80%     |
+| Branches   | 75%     |
+| Functions  | 80%     |
+| Lines      | 80%     |
 
 ### What to Test
 
@@ -433,18 +433,23 @@ describe("module-name", () => {
 ```typescript
 // ✅ Good: Validated message handling
 export interface OptimizeRequest {
-  draft: string
-  platform: Platform
+  draft: string;
+  platform: Platform;
 }
 
-const handler: PlasmoMessaging.MessageHandler<OptimizeRequest, OptimizeResponse> = 
-  async (req, res) => {
-    if (!req.body?.draft || typeof req.body.draft !== "string") {
-      res.send({ success: false, error: { code: "INVALID_REQUEST", message: "Invalid draft" } })
-      return
-    }
-    // Process validated input
+const handler: PlasmoMessaging.MessageHandler<
+  OptimizeRequest,
+  OptimizeResponse
+> = async (req, res) => {
+  if (!req.body?.draft || typeof req.body.draft !== "string") {
+    res.send({
+      success: false,
+      error: { code: "INVALID_REQUEST", message: "Invalid draft" },
+    });
+    return;
   }
+  // Process validated input
+};
 ```
 
 ### Port-Based Messaging for Streaming
@@ -453,25 +458,25 @@ For streaming data or maintaining long-lived connections, use `chrome.runtime.Po
 
 ```typescript
 // Content script - open port
-const port = chrome.runtime.connect({ name: "optimize-port" })
+const port = chrome.runtime.connect({ name: "optimize-port" });
 
 port.onMessage.addListener((message) => {
   if (message.type === "CHUNK") {
     // Handle streaming chunk
   }
-})
+});
 
-port.postMessage({ type: "START_OPTIMIZATION", draft: "text" })
+port.postMessage({ type: "START_OPTIMIZATION", draft: "text" });
 
 // Background - handle port connections
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== "optimize-port") return
-  
+  if (port.name !== "optimize-port") return;
+
   port.onMessage.addListener((message) => {
     // Validate and process
-    port.postMessage({ type: "CHUNK", data: "..." })
-  })
-})
+    port.postMessage({ type: "CHUNK", data: "..." });
+  });
+});
 ```
 
 ### Main World Injection
@@ -483,13 +488,13 @@ For bypassing React/Vue Virtual DOM restrictions, use Main World injection:
 export const config: PlasmoCSConfig = {
   matches: ["https://example.com/*"],
   world: "MAIN",
-}
+};
 
 // Communicate via window.postMessage
 window.addEventListener("message", (event) => {
-  if (event.origin !== window.location.origin) return
+  if (event.origin !== window.location.origin) return;
   // Process message
-})
+});
 ```
 
 ### Runtime Validation with Zod
@@ -497,22 +502,22 @@ window.addEventListener("message", (event) => {
 All external data (fetched rules, user input, storage) must be validated at runtime:
 
 ```typescript
-import { z } from "zod"
+import { z } from "zod";
 
 const RuleSchema = z.object({
   id: z.string(),
   platform: z.enum(["openai", "anthropic", "google"]),
   rule: z.string(),
   tags: z.array(z.string()),
-})
+});
 
-const RulesArraySchema = z.array(RuleSchema)
+const RulesArraySchema = z.array(RuleSchema);
 
 // Validate before use
-const result = RulesArraySchema.safeParse(jsonData)
+const result = RulesArraySchema.safeParse(jsonData);
 if (!result.success) {
   // Fall back to bundled rules
-  return BUNDLED_RULES
+  return BUNDLED_RULES;
 }
 ```
 
@@ -530,13 +535,15 @@ Always check for valid extension context before Chrome API calls:
 ```typescript
 const isExtensionContextValid = (): boolean => {
   try {
-    return typeof chrome !== "undefined" && 
-           chrome.runtime && 
-           typeof chrome.runtime.id !== "undefined"
+    return (
+      typeof chrome !== "undefined" &&
+      chrome.runtime &&
+      typeof chrome.runtime.id !== "undefined"
+    );
   } catch {
-    return false
+    return false;
   }
-}
+};
 ```
 
 ---
@@ -559,14 +566,14 @@ const isExtensionContextValid = (): boolean => {
 
 ```typescript
 useEffect(() => {
-  const abortController = new AbortController()
+  const abortController = new AbortController();
 
-  fetchData(abortController.signal)
+  fetchData(abortController.signal);
 
   return () => {
-    abortController.abort()
-  }
-}, [])
+    abortController.abort();
+  };
+}, []);
 ```
 
 ### Session Caching
@@ -575,35 +582,37 @@ Cache expensive resources to reduce latency:
 
 ```typescript
 // Global cache for reusable sessions
-let cachedSession: LanguageModel | null = null
-let cachedSystemPrompt: string | null = null
+let cachedSession: LanguageModel | null = null;
+let cachedSystemPrompt: string | null = null;
 
-async function getOrCreateSession(systemPrompt: string): Promise<LanguageModel> {
+async function getOrCreateSession(
+  systemPrompt: string,
+): Promise<LanguageModel> {
   // Reuse if system prompt matches
   if (cachedSession && cachedSystemPrompt === systemPrompt) {
-    return cachedSession
+    return cachedSession;
   }
-  
+
   // Clear old session
   if (cachedSession) {
-    cachedSession.destroy()
+    cachedSession.destroy();
   }
-  
+
   // Create and cache new session
-  cachedSession = await LanguageModel.create({ 
-    initialPrompts: [{ role: "system", content: systemPrompt }] 
-  })
-  cachedSystemPrompt = systemPrompt
-  
-  return cachedSession
+  cachedSession = await LanguageModel.create({
+    initialPrompts: [{ role: "system", content: systemPrompt }],
+  });
+  cachedSystemPrompt = systemPrompt;
+
+  return cachedSession;
 }
 
 // Clear cache on rule changes
 export function clearSessionCache(): void {
   if (cachedSession) {
-    cachedSession.destroy()
-    cachedSession = null
-    cachedSystemPrompt = null
+    cachedSession.destroy();
+    cachedSession = null;
+    cachedSystemPrompt = null;
   }
 }
 ```
@@ -616,22 +625,22 @@ Implement streaming for better UX on long-running operations:
 // Streaming with callback for progress updates
 async function optimizePromptStreaming(
   draft: string,
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: string) => void,
 ): Promise<string> {
-  const stream = session.promptStreaming(draft)
-  const reader = stream.getReader()
-  let result = ""
-  
+  const stream = session.promptStreaming(draft);
+  const reader = stream.getReader();
+  let result = "";
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    
-    result += value
-    onChunk(value) // Update UI incrementally
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    result += value;
+    onChunk(value); // Update UI incrementally
   }
-  
-  return result
+
+  return result;
 }
 ```
 
@@ -649,7 +658,7 @@ async function optimizePromptStreaming(
 
 All public functions must have JSDoc comments:
 
-```typescript
+````typescript
 /**
  * Optimizes a prompt using Gemini Nano with the given rules
  *
@@ -667,9 +676,9 @@ All public functions must have JSDoc comments:
 export async function optimizePrompt(
   draft: string,
   rules: string[],
-  options?: AIOptimizeOptions
-): Promise<string>
-```
+  options?: AIOptimizeOptions,
+): Promise<string>;
+````
 
 ### Section Separators
 
@@ -680,7 +689,7 @@ Use section separators to organize code:
 // Constants
 // =============================================================================
 
-const MAX_RETRIES = 3
+const MAX_RETRIES = 3;
 
 // =============================================================================
 // Helper Functions
@@ -708,13 +717,13 @@ export function publicFunction() {}
 
 ### Branch Naming
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Feature | `feature/description` | `feature/streaming-optimization` |
-| Bug fix | `fix/description` | `fix/widget-positioning` |
-| Hotfix | `hotfix/description` | `hotfix/security-patch` |
-| Refactor | `refactor/description` | `refactor/ai-engine-cleanup` |
-| Docs | `docs/description` | `docs/api-documentation` |
+| Type     | Pattern                | Example                          |
+| -------- | ---------------------- | -------------------------------- |
+| Feature  | `feature/description`  | `feature/streaming-optimization` |
+| Bug fix  | `fix/description`      | `fix/widget-positioning`         |
+| Hotfix   | `hotfix/description`   | `hotfix/security-patch`          |
+| Refactor | `refactor/description` | `refactor/ai-engine-cleanup`     |
+| Docs     | `docs/description`     | `docs/api-documentation`         |
 
 ### Commit Messages
 
@@ -729,6 +738,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 ```
 
 **Types:**
+
 - `feat` — New feature
 - `fix` — Bug fix
 - `docs` — Documentation only
@@ -738,6 +748,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 - `chore` — Build process, dependencies, tooling
 
 **Examples:**
+
 ```
 feat(ai-engine): add streaming optimization support
 
@@ -793,6 +804,7 @@ The following checks run automatically via Husky:
 ### ESLint
 
 Key rules enforced:
+
 - `@typescript-eslint/strict-type-checked`
 - `@typescript-eslint/consistent-type-imports`
 - `react-hooks/rules-of-hooks`
@@ -833,58 +845,63 @@ For rules and configuration that need updates without Chrome Web Store review:
 
 ```typescript
 // 1. Bundle rules as fallback
-import bundledRules from "../../rules/platform.json"
+import bundledRules from "../../rules/platform.json";
 
-const BUNDLED_RULES = bundledRules as OptimizationRule[]
+const BUNDLED_RULES = bundledRules as OptimizationRule[];
 
 // 2. Fetch remote rules with validation
-async function fetchRemoteRules(platform: string): Promise<OptimizationRule[] | null> {
+async function fetchRemoteRules(
+  platform: string,
+): Promise<OptimizationRule[] | null> {
   try {
-    const response = await fetch(`${GITHUB_PAGES_URL}/rules/${platform}.json`)
-    const data = await response.json()
-    
+    const response = await fetch(`${GITHUB_PAGES_URL}/rules/${platform}.json`);
+    const data = await response.json();
+
     // Validate with Zod
-    const result = RulesArraySchema.safeParse(data)
+    const result = RulesArraySchema.safeParse(data);
     if (!result.success) {
-      return null // Fall back to bundled
+      return null; // Fall back to bundled
     }
-    
-    return result.data
+
+    return result.data;
   } catch {
-    return null // Fall back to bundled
+    return null; // Fall back to bundled
   }
 }
 
 // 3. Cache in chrome.storage.local with expiration
-const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-async function cacheRules(platform: string, rules: OptimizationRule[]): Promise<void> {
+async function cacheRules(
+  platform: string,
+  rules: OptimizationRule[],
+): Promise<void> {
   await chrome.storage.local.set({
     [`rules_cache_${platform}`]: {
       rules,
       fetchedAt: Date.now(),
       source: "remote",
     },
-  })
+  });
 }
 
 // 4. Load with cache-first strategy
 async function loadRules(platform: string): Promise<OptimizationRule[]> {
   // Try cache first
-  const cached = await getCachedRules(platform)
+  const cached = await getCachedRules(platform);
   if (cached && Date.now() - cached.fetchedAt < CACHE_DURATION_MS) {
-    return cached.rules
+    return cached.rules;
   }
-  
+
   // Try remote
-  const remote = await fetchRemoteRules(platform)
+  const remote = await fetchRemoteRules(platform);
   if (remote) {
-    await cacheRules(platform, remote)
-    return remote
+    await cacheRules(platform, remote);
+    return remote;
   }
-  
+
   // Fall back to bundled
-  return BUNDLED_RULES
+  return BUNDLED_RULES;
 }
 ```
 
@@ -894,36 +911,41 @@ Always validate messages with type guards:
 
 ```typescript
 interface OptimizeRequest {
-  type: "START_OPTIMIZATION"
-  draft: string
-  platform: Platform
+  type: "START_OPTIMIZATION";
+  draft: string;
+  platform: Platform;
 }
 
-const VALID_PLATFORMS: Platform[] = ["openai", "anthropic", "google", "unknown"]
+const VALID_PLATFORMS: Platform[] = [
+  "openai",
+  "anthropic",
+  "google",
+  "unknown",
+];
 
 function isOptimizeRequest(data: unknown): data is OptimizeRequest {
-  if (!data || typeof data !== "object") return false
-  
-  const request = data as Record<string, unknown>
-  
+  if (!data || typeof data !== "object") return false;
+
+  const request = data as Record<string, unknown>;
+
   return (
     request.type === "START_OPTIMIZATION" &&
     typeof request.draft === "string" &&
     request.draft.trim().length > 0 &&
     VALID_PLATFORMS.includes(request.platform as Platform)
-  )
+  );
 }
 
 // Usage
 port.onMessage.addListener((message: unknown) => {
   if (!isOptimizeRequest(message)) {
-    sendError(port, "INVALID_REQUEST", "Invalid message format")
-    return
+    sendError(port, "INVALID_REQUEST", "Invalid message format");
+    return;
   }
-  
+
   // message is now typed as OptimizeRequest
-  handleRequest(message)
-})
+  handleRequest(message);
+});
 ```
 
 ### Output Cleaning Patterns
@@ -936,20 +958,20 @@ For AI responses, always clean and extract the desired content:
  */
 function cleanModelOutput(rawOutput: string): string {
   // Try to extract from structured tags
-  const match = /<result>([\s\S]*?)<\/result>/i.exec(rawOutput)
-  
+  const match = /<result>([\s\S]*?)<\/result>/i.exec(rawOutput);
+
   if (match && match[1]) {
-    return match[1].trim()
+    return match[1].trim();
   }
-  
+
   // Fallback: strip common meta-phrases
   const cleaned = rawOutput
-    .replace(/^(?:here is|here's|sure,?\s*|okay,?\s*)/i, '')
-    .replace(/^(?:the\s+)?(?:optimized|improved|rewritten)\s+prompt:?\s*/i, '')
-    .replace(/^["']|["']$/g, '')
-    .trim()
-  
-  return cleaned || rawOutput.trim()
+    .replace(/^(?:here is|here's|sure,?\s*|okay,?\s*)/i, "")
+    .replace(/^(?:the\s+)?(?:optimized|improved|rewritten)\s+prompt:?\s*/i, "")
+    .replace(/^["']|["']$/g, "")
+    .trim();
+
+  return cleaned || rawOutput.trim();
 }
 ```
 
