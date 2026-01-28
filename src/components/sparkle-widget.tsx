@@ -11,12 +11,11 @@
 import * as React from "react"
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useFloating, autoUpdate, offset, shift } from "@floating-ui/react"
-import { sendToBackground } from "@plasmohq/messaging"
-import { Sparkles, Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { Wrench, Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { replaceText, isElementValid, getElementText } from "~lib/dom-injector"
 import { detectPlatform } from "~lib/platform-detector"
 import { cn } from "~lib/utils"
-import { type OptimizeRequest, type OptimizeResponse, type TextInputElement } from "~types"
+import { type TextInputElement } from "~types"
 
 // =============================================================================
 // Types
@@ -39,12 +38,14 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
 }) => {
   const [status, setStatus] = useState<WidgetStatus>("idle")
   const [message, setMessage] = useState<string | null>(null)
+  const [streamedText, setStreamedText] = useState<string>("")
 
   // Refs for race condition protection
   const isProcessingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const activeElementRef = useRef(activeElement)
   const isMountedRef = useRef(true)
+  const portRef = useRef<chrome.runtime.Port | null>(null)
 
   // Keep refs in sync
   useEffect(() => {
@@ -56,6 +57,15 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
     return () => {
       isMountedRef.current = false
       abortControllerRef.current?.abort()
+      // Disconnect port on unmount
+      if (portRef.current) {
+        try {
+          portRef.current.disconnect()
+        } catch (e) {
+          // Port may already be disconnected
+        }
+        portRef.current = null
+      }
     }
   }, [])
 
@@ -116,7 +126,7 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
   }, [])
 
   /**
-   * Handles the sparkle button click
+   * Handles the sparkle button click with streaming support
    */
   const handleClick = useCallback(async (): Promise<void> => {
     if (isProcessingRef.current) return
@@ -153,88 +163,108 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
     if (isMounted()) {
       setStatus("processing")
       setMessage("Analyzing prompt...")
+      setStreamedText("")
     }
-
-    // Create AbortController
-    abortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
 
     try {
       const platform = detectPlatform()
       if (isMounted()) setMessage(`Optimizing for ${platform}...`)
 
-      const request: OptimizeRequest = {
-        draft: currentText,
-        platform,
+      // Open long-lived port for streaming
+      const port = chrome.runtime.connect({ name: "optimize-port" })
+      portRef.current = port
+
+      let fullOptimizedText = ""
+      let appliedRulesCount = 0
+
+      // Set up port message listener for streaming chunks
+      const handlePortMessage = (message: unknown): void => {
+        if (!message || typeof message !== "object") return
+
+        const msg = message as Record<string, unknown>
+
+        if (msg.type === "CHUNK") {
+          // Accumulate streamed text
+          const chunk = msg.data as string
+          fullOptimizedText += chunk
+          if (isMounted()) {
+            setStreamedText(fullOptimizedText)
+            // Show character count as feedback
+            setMessage(`Generating... (${fullOptimizedText.length} chars)`)
+          }
+        } else if (msg.type === "COMPLETE") {
+          // Optimization complete
+          const optimizedPrompt = msg.optimizedPrompt as string
+          const appliedRules = msg.appliedRules as string[]
+          appliedRulesCount = appliedRules.length
+
+          // Replace text in the input
+          void (async () => {
+            if (isMounted()) setMessage("Updating text...")
+
+            const currentElement = activeElementRef.current
+            if (!isElementValid(currentElement) || currentElement !== element) {
+              if (isMounted()) {
+                setStatus("error")
+                setMessage("Target element changed during processing")
+              }
+              return
+            }
+
+            const result = await replaceText(currentElement, optimizedPrompt)
+
+            if (!result.success) {
+              if (isMounted()) {
+                setStatus("error")
+                setMessage(result.error ?? "Failed to replace text")
+              }
+              return
+            }
+
+            // Success
+            if (isMounted()) {
+              setStatus("success")
+              setMessage(`Applied ${String(appliedRulesCount)} rules`)
+            }
+
+            // Clear success message after delay
+            setTimeout(() => {
+              if (isMounted()) {
+                setStatus("idle")
+                setMessage(null)
+                setStreamedText("")
+              }
+            }, 2500)
+
+            onProcessingComplete?.()
+          })()
+        } else if (msg.type === "ERROR") {
+          // Error occurred
+          const errorMessage = (msg.message as string) ?? "Optimization failed"
+          if (isMounted()) {
+            setStatus("error")
+            setMessage(errorMessage)
+          }
+        }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      const response: OptimizeResponse = await (sendToBackground as any)({
-        name: "optimize",
-        body: request,
+      port.onMessage.addListener(handlePortMessage)
+
+      // Handle port disconnect
+      port.onDisconnect.addListener(() => {
+        if (isProcessingRef.current && isMounted()) {
+          setStatus("error")
+          setMessage("Connection lost during optimization")
+        }
       })
 
-      if (abortController.signal.aborted) return
-
-      // Re-validate element
-      const currentElement = activeElementRef.current
-      if (!isElementValid(currentElement) || currentElement !== element) {
-        if (isMounted()) {
-          setStatus("error")
-          setMessage("Target element changed during processing")
-        }
-        return
-      }
-
-      if (!response.success) {
-        const errorMessage = response.error?.message ?? "Optimization failed"
-        if (isMounted()) {
-          setStatus("error")
-          setMessage(errorMessage)
-        }
-        return
-      }
-
-      // Replace text
-      if (isMounted()) setMessage("Updating text...")
-      const result = replaceText(currentElement, response.optimizedPrompt)
-
-      if (!result.success) {
-        if (isMounted()) {
-          setStatus("error")
-          setMessage(result.error ?? "Failed to replace text")
-        }
-        return
-      }
-
-      // Success
-      const rulesCount = response.appliedRules.length
-      if (isMounted()) {
-        setStatus("success")
-        setMessage(`Applied ${String(rulesCount)} rules`)
-      }
-
-      // Clear success message after delay
-      setTimeout(() => {
-        if (isMounted()) {
-          setStatus("idle")
-          setMessage(null)
-        }
-      }, 2500)
-
-      onProcessingComplete?.()
+      // Send optimization request
+      port.postMessage({
+        type: "START_OPTIMIZATION",
+        draft: currentText,
+        platform,
+      })
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return
-
-      if (err instanceof Error && err.message.includes("Extension context invalidated")) {
-        if (isMounted()) {
-          setStatus("error")
-          setMessage("Extension was reloaded. Please refresh.")
-        }
-        return
-      }
-
       console.error("[SparkleWidget] Error:", err)
       if (isMounted()) {
         setStatus("error")
@@ -299,13 +329,13 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
         type="button"
       >
         {status === "processing" ? (
-          <Loader2 className="sparkle-button-icon animate-spin" />
+          <Wrench className="sparkle-button-icon animate-wiggle" />
         ) : status === "success" ? (
           <CheckCircle className="sparkle-button-icon text-green-400" />
         ) : status === "error" ? (
           <AlertCircle className="sparkle-button-icon text-red-400" />
         ) : (
-          <Sparkles className="sparkle-button-icon" />
+          <Wrench className="sparkle-button-icon" />
         )}
       </button>
 
@@ -320,6 +350,13 @@ export const SparkleWidget: React.FC<SparkleWidgetProps> = ({
           aria-live="polite"
         >
           {message}
+          {/* Show streaming preview during processing */}
+          {status === "processing" && streamedText && (
+            <div className="mt-2 text-xs opacity-75 max-h-20 overflow-y-auto">
+              {streamedText.slice(0, 100)}
+              {streamedText.length > 100 && "..."}
+            </div>
+          )}
         </div>
       )}
     </div>
