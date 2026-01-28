@@ -1,11 +1,126 @@
 /**
  * DOM Injector - Safe text replacement for LLM platform inputs
  *
- * Handles both textarea and contenteditable elements with proper
- * event dispatching to ensure React/Vue frameworks detect changes.
+ * Features:
+ * - Main World Bridge: Tries injection via Main World script first (better React compat)
+ * - Isolated World Fallback: Falls back to content script injection if Main World unavailable
+ * - Proper event dispatching to ensure React/Vue frameworks detect changes
+ *
+ * Architecture:
+ * 1. Primary: Send message to Main World injector (runs in page context)
+ * 2. Fallback: Direct manipulation from Isolated World (content script context)
  */
 
 import { type ReplaceTextResult, type TextInputElement } from "~types"
+
+// =============================================================================
+// Main World Bridge
+// =============================================================================
+
+const MAIN_WORLD_TIMEOUT = 1000 // 1 second timeout for Main World response
+const MESSAGE_SOURCE = "prompt-tuner"
+
+interface MainWorldResponse {
+  type: "REPLACE_TEXT_RESPONSE"
+  source: typeof MESSAGE_SOURCE
+  id: string
+  success: boolean
+  error?: string
+}
+
+/**
+ * Generates a unique CSS selector for an element
+ */
+function getElementSelector(element: HTMLElement): string | undefined {
+  // Try ID first
+  if (element.id) {
+    return `#${element.id}`
+  }
+
+  // Try common data attributes
+  const dataId = element.getAttribute("data-id")
+  if (dataId) {
+    return `[data-id="${dataId}"]`
+  }
+
+  // Try class + tag combination
+  if (element.className && typeof element.className === "string") {
+    const classes = element.className.trim().split(/\s+/).slice(0, 2).join(".")
+    if (classes) {
+      const selector = `${element.tagName.toLowerCase()}.${classes}`
+      // Verify uniqueness
+      if (document.querySelectorAll(selector).length === 1) {
+        return selector
+      }
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Attempts text replacement via Main World injector
+ * Returns null if Main World is unavailable, otherwise returns result
+ */
+async function tryMainWorldReplacement(
+  element: TextInputElement,
+  newText: string
+): Promise<ReplaceTextResult | null> {
+  try {
+    const messageId = `replace-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const selector = getElementSelector(element)
+
+    // Send message to Main World
+    const message = {
+      type: "REPLACE_TEXT",
+      source: MESSAGE_SOURCE,
+      id: messageId,
+      selector,
+      text: newText,
+    }
+
+    // Listen for response
+    const responsePromise = new Promise<MainWorldResponse>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        window.removeEventListener("message", handler)
+        reject(new Error("Main World injection timeout"))
+      }, MAIN_WORLD_TIMEOUT)
+
+      const handler = (event: MessageEvent): void => {
+        if (
+          event.source === window &&
+          event.data?.type === "REPLACE_TEXT_RESPONSE" &&
+          event.data?.source === MESSAGE_SOURCE &&
+          event.data?.id === messageId
+        ) {
+          clearTimeout(timeout)
+          window.removeEventListener("message", handler)
+          resolve(event.data as MainWorldResponse)
+        }
+      }
+
+      window.addEventListener("message", handler)
+    })
+
+    // Send the message
+    window.postMessage(message, window.location.origin)
+
+    // Wait for response
+    const response = await responsePromise
+
+    return {
+      success: response.success,
+      error: response.error,
+    }
+  } catch (error) {
+    // Main World unavailable or timed out - will fallback to Isolated World
+    return null
+  }
+}
+
+// =============================================================================
+// Isolated World Injection (Fallback)
+// =============================================================================
 
 /**
  * Checks if an element is currently in the DOM and editable
@@ -172,20 +287,49 @@ function replaceContentEditable(element: HTMLDivElement, newText: string): Repla
 }
 
 /**
+ * Replaces text in a textarea or contenteditable element using Isolated World
+ * This is the fallback when Main World injection is unavailable
+ */
+function replaceTextIsolated(element: TextInputElement): ReplaceTextResult {
+  if (element instanceof HTMLTextAreaElement) {
+    return replaceTextarea(element, "")
+  }
+
+  if (element instanceof HTMLDivElement && element.contentEditable === "true") {
+    return replaceContentEditable(element, "")
+  }
+
+  return { success: false, error: "Unsupported element type" }
+}
+
+/**
  * Replaces text in a textarea or contenteditable element
+ *
+ * Strategy:
+ * 1. Try Main World injection first (better compatibility with React/Vue)
+ * 2. Fallback to Isolated World injection if Main World unavailable
  *
  * @param element - The textarea or contenteditable element to update
  * @param newText - The new text content to set
  * @returns Result indicating success or failure
  */
-export function replaceText(
+export async function replaceText(
   element: TextInputElement | null,
   newText: string
-): ReplaceTextResult {
+): Promise<ReplaceTextResult> {
   if (!isElementValid(element)) {
     return { success: false, error: "Element is not valid or not in DOM" }
   }
 
+  // Try Main World injection first
+  const mainWorldResult = await tryMainWorldReplacement(element, newText)
+
+  if (mainWorldResult !== null) {
+    // Main World injection attempted - return its result (success or failure)
+    return mainWorldResult
+  }
+
+  // Fallback: Use Isolated World injection
   if (element instanceof HTMLTextAreaElement) {
     return replaceTextarea(element, newText)
   }
