@@ -13,6 +13,8 @@ import {
   PromptTunerError,
 } from "~types";
 
+import { logger } from "~lib/logger";
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -120,11 +122,11 @@ function estimateTokenCount(text: string): number {
  */
 function validateInputLength(text: string): void {
   const estimatedTokens = estimateTokenCount(text);
-  
+
   if (estimatedTokens > MAX_INPUT_TOKENS) {
     const maxChars = MAX_INPUT_TOKENS * CHARS_PER_TOKEN;
     throw new PromptTunerError(
-      `Input too long (${text.length} chars, ~${estimatedTokens} tokens). Please shorten your prompt to ~${maxChars} characters or less.`,
+      `Input too long (${String(text.length)} chars, ~${String(estimatedTokens)} tokens). Please shorten your prompt to ~${String(maxChars)} characters or less.`,
       "INPUT_TOO_LONG",
     );
   }
@@ -138,19 +140,6 @@ function validateInputLength(text: string): void {
  * @param maxTokens - Maximum token count
  * @returns Truncated text with marker
  */
-function truncateText(text: string, maxTokens: number): string {
-  const maxChars = maxTokens * CHARS_PER_TOKEN;
-  if (text.length <= maxChars) return text;
-
-  const markerLength = 17; // "\n[...truncated...]\n".length
-  const availableChars = maxChars - markerLength;
-  const halfChars = Math.floor(availableChars / 2);
-
-  const start = text.slice(0, halfChars).trim();
-  const end = text.slice(-halfChars).trim();
-
-  return `${start}\n[...truncated...]\n${end}`;
-}
 
 /**
  * Extracts the optimized prompt from XML tags, stripping meta-commentary
@@ -159,7 +148,7 @@ function cleanModelOutput(rawOutput: string): string {
   // Try to extract content from <result> tags
   const resultMatch = /<result>([\s\S]*?)<\/result>/i.exec(rawOutput);
 
-  if (resultMatch && resultMatch[1]) {
+  if (resultMatch?.[1]) {
     return resultMatch[1].trim();
   }
 
@@ -195,7 +184,9 @@ export async function checkAIAvailability(): Promise<AIAvailability> {
   }
 
   try {
-    const availability = await LanguageModel.availability();
+    const availability = await LanguageModel.availability({
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
 
     switch (availability) {
       case "available":
@@ -225,6 +216,7 @@ export async function checkAIAvailability(): Promise<AIAvailability> {
         };
     }
   } catch (error) {
+    logger.error("AI availability check failed", error);
     return {
       available: false,
       reason:
@@ -266,6 +258,7 @@ async function getOrCreateSession(
       initialPrompts: [{ role: "system", content: systemPrompt }],
       temperature: options?.temperature ?? 0.3,
       topK: 40,
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
     });
 
     // Cache the session
@@ -274,6 +267,7 @@ async function getOrCreateSession(
 
     return session;
   } catch (error) {
+    logger.error("Failed to create AI session", error);
     throw new PromptTunerError(
       error instanceof Error ? error.message : "Failed to create AI session",
       "AI_SESSION_FAILED",
@@ -327,6 +321,7 @@ export async function optimizePrompt(
     // Return the optimized prompt, or original if empty
     return cleaned || draft;
   } catch (error) {
+    logger.error("Optimization failed", error);
     if (error instanceof PromptTunerError) {
       throw error;
     }
@@ -381,6 +376,35 @@ export async function optimizePromptStreaming(
 
     const reader = stream.getReader();
     let result = "";
+    let buffer = "";
+    let isFlushing = false;
+
+    /**
+     * Flushes the current buffer to the onChunk callback
+     * batches high-frequency token bursts to avoid UI stutter
+     */
+    const flush = () => {
+      if (buffer) {
+        onChunk(buffer);
+        buffer = "";
+      }
+      isFlushing = false;
+    };
+
+    /**
+     * Schedules a flush on the next animation frame (or 16ms timeout)
+     */
+    const scheduleFlush = () => {
+      if (isFlushing) return;
+      isFlushing = true;
+
+      // Use RAF if available (content script), fallback to 16ms (background/SW)
+      if (typeof requestAnimationFrame !== "undefined") {
+        requestAnimationFrame(flush);
+      } else {
+        setTimeout(flush, 16);
+      }
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
@@ -389,16 +413,19 @@ export async function optimizePromptStreaming(
 
       // Chrome 138+ streaming returns delta tokens (new content only)
       result += value;
-      onChunk(value);
+      buffer += value;
+      scheduleFlush();
     }
+
+    // Final flush to ensure no tokens are left in buffer
+    flush();
 
     // Clean up the response - extract from XML tags and strip meta-text
     const cleaned = cleanModelOutput(result);
     return cleaned || draft;
   } catch (error) {
-    if (error instanceof PromptTunerError) {
-      throw error;
-    }
+    logger.error("Streaming optimization failed", error);
+    if (error instanceof PromptTunerError) throw error;
 
     throw new PromptTunerError(
       error instanceof Error

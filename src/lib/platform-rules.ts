@@ -69,23 +69,8 @@ import {
 } from "~types";
 import { clearSessionCache } from "~lib/ai-engine";
 
-// =============================================================================
-// Constants
-// =============================================================================
-
-/**
- * GitHub Pages base URL for fetching remote rules
- *
- * IMPORTANT: Replace with your actual GitHub Pages URL after deployment
- * Format: https://{username}.github.io/{repo-name}
- *
- * Example: https://myusername.github.io/prompt-tuner
- *
- * If not configured, the extension will use bundled rules as fallback
- */
-const GITHUB_PAGES_BASE_URL = "https://akshatvasisht.github.io/prompt-tuner/";
-const CACHE_KEY_PREFIX = "rules_cache_";
-const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+import { logger } from "~lib/logger";
+import { STORAGE_KEYS, CONFIG } from "~lib/constants";
 
 // =============================================================================
 // Bundled Rules (Fallback)
@@ -94,146 +79,19 @@ const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 /**
  * Convert hardcoded rules to match OptimizationRule interface
  */
-const OPENAI_RULES: OptimizationRule[] = [
-  {
-    id: "openai-1",
-    platform: "openai",
-    title: "Clear Instructions with Delimiters",
-    rule: "Use clear, specific instructions with delimiters like triple quotes, XML tags, or markdown headers to separate different parts of the input.",
-    description:
-      "Structure your prompts with distinct sections for better comprehension",
-    tags: ["structure", "clarity", "formatting"],
-  },
-  {
-    id: "openai-2",
-    platform: "openai",
-    title: "Few-Shot Examples",
-    rule: "Provide 2-3 examples of desired input-output pairs before your actual request. This demonstrates the expected format and behavior.",
-    description: "Demonstrate expected behavior through concrete examples",
-    tags: ["examples", "few-shot", "demonstration"],
-  },
-  {
-    id: "openai-3",
-    platform: "openai",
-    title: "Role Assignment",
-    rule: "Start with a role or persona: 'You are an expert [role] with deep knowledge in [domain].' This sets context and expertise level.",
-    description:
-      "Give the model a specific identity to improve response quality",
-    tags: ["persona", "role", "context"],
-  },
-  {
-    id: "openai-4",
-    platform: "openai",
-    title: "Step-by-Step Breakdown",
-    rule: "For complex tasks, instruct the model to 'think step by step' or break down its reasoning before providing the final answer.",
-    description: "Enable systematic problem-solving for complex queries",
-    tags: ["reasoning", "steps", "chain-of-thought"],
-  },
-  {
-    id: "openai-5",
-    platform: "openai",
-    title: "Output Format Specification",
-    rule: "Explicitly specify the desired output format: JSON, markdown, bullet points, table, etc. Include an example of the exact structure.",
-    description: "Define clear output expectations for consistent results",
-    tags: ["format", "output", "structure"],
-  },
-];
-
-const ANTHROPIC_RULES: OptimizationRule[] = [
-  {
-    id: "anthropic-1",
-    platform: "anthropic",
-    title: "XML Tag Structure",
-    rule: "Use XML tags like <context>, <task>, <instructions>, and <output> to structure prompts. Claude responds exceptionally well to XML-structured input.",
-    description: "Leverage Claude's preference for XML-structured prompts",
-    tags: ["structure", "xml", "formatting"],
-  },
-  {
-    id: "anthropic-2",
-    platform: "anthropic",
-    title: "Chain of Thought with Tags",
-    rule: "Request reasoning with <thinking> tags: 'Before answering, show your reasoning in <thinking> tags, then provide your final answer.'",
-    description: "Enable step-by-step reasoning for complex problems",
-    tags: ["reasoning", "thinking", "chain-of-thought"],
-  },
-  {
-    id: "anthropic-3",
-    platform: "anthropic",
-    title: "Explicit Constraints",
-    rule: "List constraints explicitly: 'You MUST: [list]. You MUST NOT: [list].' Claude follows explicit boundaries well.",
-    description: "Set clear boundaries and requirements",
-    tags: ["constraints", "boundaries", "explicit"],
-  },
-  {
-    id: "anthropic-4",
-    platform: "anthropic",
-    title: "Document in Context",
-    rule: "When providing documents, wrap them in <document> tags and reference them explicitly: 'Based on the document above...'",
-    description: "Properly structure document-based queries",
-    tags: ["documents", "context", "reference"],
-  },
-  {
-    id: "anthropic-5",
-    platform: "anthropic",
-    title: "Multi-Turn Context",
-    rule: "For multi-step tasks, use <previous_response> to reference earlier outputs and build on them systematically.",
-    description: "Maintain context across complex interactions",
-    tags: ["multi-turn", "context", "continuity"],
-  },
-];
-
-const GOOGLE_RULES: OptimizationRule[] = [
-  {
-    id: "google-1",
-    platform: "google",
-    title: "Markdown Formatting",
-    rule: "Use markdown formatting (headers, lists, bold) for structure. Gemini parses and responds well to markdown-formatted prompts.",
-    description: "Structure prompts using markdown for better parsing",
-    tags: ["structure", "markdown", "formatting"],
-  },
-  {
-    id: "google-2",
-    platform: "google",
-    title: "Concrete Examples",
-    rule: "Include concrete, specific examples with real details. Gemini performs better with grounded scenarios rather than abstract requests.",
-    description: "Ground your prompts in specific, real-world examples",
-    tags: ["examples", "specificity", "grounding"],
-  },
-  {
-    id: "google-3",
-    platform: "google",
-    title: "Explicit Requirements",
-    rule: "List requirements as a numbered checklist: '1. Must include X, 2. Should avoid Y, 3. Format as Z.' Be explicit about all constraints.",
-    description: "Clearly state all requirements and constraints",
-    tags: ["requirements", "constraints", "explicit"],
-  },
-  {
-    id: "google-4",
-    platform: "google",
-    title: "Context Window Optimization",
-    rule: "Place the most important context and instructions at the beginning and end of long prompts. Middle content may receive less attention.",
-    description: "Optimize prompt structure for attention patterns",
-    tags: ["context", "attention", "optimization"],
-  },
-  {
-    id: "google-5",
-    platform: "google",
-    title: "Task Decomposition",
-    rule: "Break complex requests into subtasks: 'First, analyze X. Then, based on that analysis, do Y. Finally, synthesize into Z.'",
-    description: "Structure complex tasks as sequential steps",
-    tags: ["decomposition", "steps", "complex"],
-  },
-];
+import OPENAI_BUNDLE from "../../rules/openai.json";
+import ANTHROPIC_BUNDLE from "../../rules/anthropic.json";
+import GOOGLE_BUNDLE from "../../rules/google.json";
 
 // Bundled rules as fallback
 const BUNDLED_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
-  openai: OPENAI_RULES,
-  anthropic: ANTHROPIC_RULES,
-  google: GOOGLE_RULES,
+  openai: OPENAI_BUNDLE as OptimizationRule[],
+  anthropic: ANTHROPIC_BUNDLE as OptimizationRule[],
+  google: GOOGLE_BUNDLE as OptimizationRule[],
 };
 
 // Runtime rules (may be updated from remote)
-let RUNTIME_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
+const RUNTIME_RULES: Record<SupportedPlatform, OptimizationRule[]> = {
   ...BUNDLED_RULES,
 };
 
@@ -265,7 +123,7 @@ async function fetchRemoteRules(
   platform: SupportedPlatform,
 ): Promise<OptimizationRule[] | null> {
   try {
-    const url = `${GITHUB_PAGES_BASE_URL}/rules/${platform}.json`;
+    const url = `${CONFIG.GITHUB_PAGES_BASE_URL}/rules/${platform}.json`;
 
     // SECURITY: CSP restricts this fetch to whitelisted origins only
     // Only *.github.io and *.githubusercontent.com are allowed
@@ -277,15 +135,15 @@ async function fetchRemoteRules(
     });
 
     if (!response.ok) {
-      console.warn(
-        `[PlatformRules] Failed to fetch remote rules for ${platform}: ${response.status}`,
+      logger.warn(
+        `Failed to fetch remote rules for ${platform}: ${String(response.status)}`,
       );
       return null; // Triggers bundled fallback
     }
 
     // SECURITY: response.json() parses JSON as DATA, not code
     // No dynamic evaluation - safe JSON parsing only
-    const jsonData = await response.json();
+    const jsonData = (await response.json()) as unknown;
 
     // SECURITY: Zod schema validation is the critical defense layer
     // Validates structure, types, and constraints before use
@@ -293,24 +151,24 @@ async function fetchRemoteRules(
     const validationResult = OptimizationRulesArraySchema.safeParse(jsonData);
 
     if (!validationResult.success) {
-      console.error(
-        `[PlatformRules] Validation failed for ${platform}:`,
+      logger.error(
+        `Validation failed for ${platform}:`,
         validationResult.error,
       );
       // SECURITY: Validation failure = potential attack → reject and use bundled fallback
       return null;
     }
 
-    console.log(
-      `[PlatformRules] Successfully fetched and validated ${validationResult.data.length} rules for ${platform}`,
+    logger.info(
+      `Successfully fetched and validated ${String(validationResult.data.length)} rules for ${platform}`,
     );
 
     // SECURITY: validationResult.data is type-safe and structurally validated
     // Rules contain only text strings (never executable code)
     return validationResult.data as OptimizationRule[];
   } catch (error) {
-    console.error(
-      `[PlatformRules] Error fetching remote rules for ${platform}:`,
+    logger.error(
+      `Error fetching remote rules for ${platform}:`,
       error,
     );
     // SECURITY: Any error (network, parse, etc.) → safe fallback to bundled rules
@@ -325,7 +183,8 @@ async function getCachedRules(
   platform: SupportedPlatform,
 ): Promise<CachedRules | null> {
   try {
-    const key = `${CACHE_KEY_PREFIX}${platform}`;
+    const key = `${STORAGE_KEYS.RULES_CACHE_PREFIX}${platform}`;
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const result = await chrome.storage.local.get(key);
 
     if (!result[key]) {
@@ -335,14 +194,14 @@ async function getCachedRules(
     const cached = result[key] as CachedRules;
 
     // Check if cache is expired
-    if (Date.now() - cached.fetchedAt > CACHE_DURATION_MS) {
+    if (Date.now() - cached.fetchedAt > CONFIG.CACHE_DURATION_MS) {
       return null;
     }
 
     return cached;
   } catch (error) {
-    console.error(
-      `[PlatformRules] Error reading cache for ${platform}:`,
+    logger.error(
+      `Error reading cache for ${platform}:`,
       error,
     );
     return null;
@@ -358,16 +217,17 @@ async function cacheRules(
   source: "bundled" | "remote",
 ): Promise<void> {
   try {
-    const key = `${CACHE_KEY_PREFIX}${platform}`;
+    const key = `${STORAGE_KEYS.RULES_CACHE_PREFIX}${platform}`;
     const cached: CachedRules = {
       rules,
       fetchedAt: Date.now(),
       source,
     };
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await chrome.storage.local.set({ [key]: cached });
   } catch (error) {
-    console.error(
-      `[PlatformRules] Error caching rules for ${platform}:`,
+    logger.error(
+      `Error caching rules for ${platform}:`,
       error,
     );
   }
@@ -398,8 +258,8 @@ export async function updateRulesForPlatform(
   if (cached) {
     // SECURITY: Cached rules were previously validated, safe to use
     RUNTIME_RULES[platform] = cached.rules;
-    console.log(
-      `[PlatformRules] Using cached rules for ${platform} (source: ${cached.source})`,
+    logger.info(
+      `Using cached rules for ${platform} (source: ${cached.source})`,
     );
     return;
   }
@@ -413,14 +273,14 @@ export async function updateRulesForPlatform(
     RUNTIME_RULES[platform] = remoteRules;
     await cacheRules(platform, remoteRules, "remote");
     clearSessionCache(); // Invalidate AI session cache when rules change
-    console.log(`[PlatformRules] Updated to remote rules for ${platform}`);
+    logger.info(`Updated to remote rules for ${platform}`);
   } else {
     // Failure: network error, validation error, or CSP blocked fetch
     // SECURITY: Fallback to bundled rules (bundled at build time, trusted)
     RUNTIME_RULES[platform] = BUNDLED_RULES[platform];
     await cacheRules(platform, BUNDLED_RULES[platform], "bundled");
-    console.log(
-      `[PlatformRules] Falling back to bundled rules for ${platform}`,
+    logger.info(
+      `Falling back to bundled rules for ${platform}`,
     );
   }
 }
@@ -438,10 +298,11 @@ export async function initializeRules(): Promise<void> {
  */
 export async function refreshRules(): Promise<void> {
   // Clear cache
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   await chrome.storage.local.remove([
-    `${CACHE_KEY_PREFIX}openai`,
-    `${CACHE_KEY_PREFIX}anthropic`,
-    `${CACHE_KEY_PREFIX}google`,
+    `${STORAGE_KEYS.RULES_CACHE_PREFIX}openai`,
+    `${STORAGE_KEYS.RULES_CACHE_PREFIX}anthropic`,
+    `${STORAGE_KEYS.RULES_CACHE_PREFIX}google`,
   ]);
 
   // Re-fetch
