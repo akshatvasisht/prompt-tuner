@@ -1,63 +1,10 @@
 /**
- * Platform Rules - Hybrid Loading Strategy
+ * Platform Rules - Hybrid Loading
  *
- * Architecture:
- * 1. Bundled Rules: Import JSON files as fallback (offline capability)
- * 2. Remote Rules: Fetch from GitHub Pages on startup (quarterly updates)
- * 3. Validation: Zod schemas validate all fetched rules
- * 4. Caching: Store in chrome.storage.local to avoid excessive fetches
- * 5. Fallback: Always revert to bundled rules on failure
- *
- * Benefits:
- * - Offline capability (bundled rules)
- * - Dynamic updates without Chrome Web Store review
- * - Security (Zod validation)
- * - Performance (7-day cache)
- *
- * =============================================================================
- * SECURITY ARCHITECTURE
- * =============================================================================
- *
- * This file implements defense-in-depth against Remote Code Execution (RCE):
- *
- * Layer 1: Content Security Policy (CSP)
- * - Restricts fetch() to *.github.io and *.githubusercontent.com only
- * - Configured in package.json manifest.content_security_policy
- * - Browser-enforced, cannot be bypassed by compromised code
- *
- * Layer 2: Zod Schema Validation
- * - All fetched JSON validated with OptimizationRulesArraySchema
- * - Type safety enforced at runtime
- * - Malformed data rejected before use
- *
- * Layer 3: Data-Only Treatment
- * - Rules are text strings, never evaluated as code
- * - No eval(), new Function(), or dynamic execution
- * - Rules rendered via React (auto-escaped for XSS protection)
- *
- * Layer 4: Fail-Safe Fallback
- * - Any validation failure → bundled rules used instead
- * - Network errors → bundled rules used
- * - Extension always functional, even under attack
- *
- * Layer 5: Immutable Bundled Rules
- * - Bundled at build time from rules/*.json
- * - Cannot be modified post-deployment
- * - Guaranteed safe fallback exists
- *
- * Attack Scenarios Mitigated:
- * ✅ Compromised GitHub Pages → Zod validation rejects → bundled fallback
- * ✅ Man-in-the-middle (MITM) → HTTPS + CSP → prevented
- * ✅ Prototype pollution → Zod creates new objects → safe
- * ✅ XSS via rules → React auto-escaping → sanitized
- * ✅ Remote code injection → No eval() anywhere → impossible
- *
- * Compliance:
- * - Chrome Web Store Remote Code Policy: ✅ PASS (rules are data)
- * - Chrome Web Store User Data Privacy: ✅ PASS (no user data in rules)
- *
- * Audit Status: ✅ Security audit passed (see docs/SECURITY_AUDIT.md)
- * =============================================================================
+ * 1. Bundled Rules: Fallback assets.
+ * 2. Remote Rules: Optimization heuristics from GitHub Pages.
+ * 3. Validation: Data validated via Zod schemas.
+ * 4. Persistence: Local storage caching (7-day TTL).
  */
 
 import {

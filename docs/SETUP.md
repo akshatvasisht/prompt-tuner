@@ -66,8 +66,8 @@ Set **"Prompt API for Gemini Nano"** to **Enabled**
 Open Chrome DevTools console and run:
 
 ```javascript
-await LanguageModel.availability();
-// Should return: "available"
+// Check availability (should return "available")
+await ai.languageModel.availability();
 ```
 
 If it returns `"downloadable"` or `"downloading"`, wait for the model download to complete.

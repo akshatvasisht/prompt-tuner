@@ -7,41 +7,29 @@
 ![Playwright](https://img.shields.io/badge/Testing-Playwright-2EAD33?logo=playwright&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-Prompt Tuner is a lightweight, privacy-focused Chrome extension that acts as a "Grammarly for Prompts." It intercepts user input in browser-based LLM chats (like ChatGPT or Claude) and optimizes prompts using Google's built-in edge AI model (Gemini Nano). The system remains platform-agnostic by automatically scraping, distilling, and ingesting the latest prompt engineering documentation from major AI providers, ensuring the optimization logic stays current without manual code updates.
+Prompt Tuner is a Chrome extension for prompt optimization on sites like ChatGPT and Claude. It uses on-device AI (Gemini Nano) to optimize input prompts locally.
 
-Unlike traditional prompt optimization tools that require manual updates or cloud-based processing, this system leverages local AI processing and automated knowledge distillation to achieve complete privacy, offline capability, and always-current optimization rules.
+### Features
 
-### Core Functionality
+- **Automated Detection:** Identifies the LLM platform and applies relevant optimization rules.
+- **Local AI Processing:** Uses Chrome's built-in Gemini Nano for optimization. All data stays in the browser.
+- **Streaming UI:** Tokens are streamed into a glassmorphism overlay.
+- **Rule Lifecycle:** A GitHub Actions pipeline updates platform rules quarterly.
 
-- **Platform-Agnostic Optimization:** Automatically detects the LLM platform (ChatGPT, Claude, etc.) and applies platform-specific optimization rules.
-- **Edge AI Processing:** Uses Chrome's built-in Gemini Nano model to optimize prompts entirely on-device within the browser, ensuring zero data leaves your device.
-- **Automated Knowledge Updates:** Quarterly GitHub Actions pipeline distills the latest prompt engineering documentation from major AI providers into compact "Golden Rules" that stay current without manual intervention.
+### Technical Implementation
 
-## Engineering Standards
-
-This project adheres to high-fidelity Chrome extension standards to ensure stability across complex host environments:
-
-- **Shadow DOM Isolation:** All UI components are injected into a Shadow Root with encapsulated styling. We use Plasmo's `data-text` injection pattern to ensure our CSS never leaks into or is overwritten by the host website.
-- **Strict Type Safety:** The codebase avoids `any` type casts for Chrome APIs and implements strongly typed messaging via discriminated unions.
-- **Hybrid Rule Loading:** Optimization rules are multi-layered: validated by Zod at runtime, cached locally for performance, and backed by bundled fallbacks for offline reliability.
-- **Headless Background:** The background service worker is kept minimal and headless, prioritizing low memory footprint and reliable long-lived port connections for AI streaming.
-
----
-
-## Impact & Performance
-
-- **Privacy:** All processing happens locally in the browser using Gemini Nano—no data is sent to external servers.
-- **Cost:** Completely free—leverages Chrome's built-in AI capabilities and free hosting via GitHub Pages.
-- **Offline Capability:** Once rules are cached, the extension works offline for prompt optimization.
+- **Isolation:** UI components are injected via Shadow DOM to prevent host style conflicts.
+- **Data Flow:** Uses `chrome.runtime.Port` for token streaming between content scripts and background workers.
+- **Validation:** Platform rules are validated at runtime via Zod schemas.
 
 ## Documentation
 
-- **[SETUP.md](docs/SETUP.md):** Installation, environment configuration, and startup instructions.
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design, data flow, glossary, and design decisions.
-- **[TESTING.md](docs/TESTING.md):** Testing guidelines.
-- **[STYLE.md](docs/STYLE.md):** Coding standards, testing guidelines, and repository conventions.
-- **[PRIVACY.md](docs/PRIVACY.md):** Privacy policy and data handling practices.
+- **[SETUP.md](docs/SETUP.md):** Environment configuration and startup.
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design and data flow.
+- **[TESTING.md](docs/TESTING.md):** Testing guide.
+- **[STYLE.md](docs/STYLE.md):** Developer conventions.
+- **[PRIVACY.md](docs/PRIVACY.md):** Privacy policy.
 
 ## License
 
-See **[LICENSE](LICENSE)** file for details.
+MIT

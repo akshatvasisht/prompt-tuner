@@ -2,7 +2,7 @@
 
 **Extension**: Prompt Tuner  
 **Version**: 0.1.0  
-**Submission Date**: January 27, 2026  
+**Submission Date**: February 17, 2026  
 **Category**: Productivity
 
 ---
@@ -50,11 +50,10 @@ HOW IT WORKS
 4. Review and submit the improved prompt
 
 WHY USE PROMPT TUNER
-- Apply proven prompt engineering techniques instantly
-- Platform-specific optimizations (each AI responds differently)
-- Learn better prompting through examples
-- Save time crafting effective prompts
-- Privacy-focused: zero data transmission
+- Apply prompt engineering principles
+- Platform-specific optimizations
+- View prompting examples
+- Local AI processing
 
 TECHNICAL DETAILS
 - Requires Chrome 138+ with Gemini Nano enabled
@@ -74,10 +73,10 @@ SECURITY AND PRIVACY
 - Regularly audited for security vulnerabilities
 - Full source code available on GitHub
 
-Open source and MIT licensed. View the code at: [GitHub URL]
+Open source and MIT licensed. View the code at: https://github.com/prompt-tuner/prompt-tuner
 
-Need help? Visit our documentation: [Docs URL]
-Report issues: [Issues URL]
+Need help? Visit our documentation: https://github.com/prompt-tuner/prompt-tuner/docs
+Report issues: https://github.com/prompt-tuner/prompt-tuner/issues
 ```
 
 ### 1.3 Version Update Notes
@@ -86,25 +85,20 @@ Report issues: [Issues URL]
 Version 0.1.0 - Initial Release
 
 Features:
-- Local AI-powered prompt optimization
+- Local AI prompt optimization
 - Support for ChatGPT, Claude, and Gemini
-- Platform-specific optimization rules
-- Shadow DOM UI injection
-- Main World script for React compatibility
-- Token-by-token streaming display
-- 7-day rule caching for offline use
+- Platform-specific rules
+- Glassmorphism UI
+- Shadow DOM isolation
+- Main World injection
+- Token streaming via Ports
+- Rule caching
 
 Privacy and Security:
-- Zero data collection or transmission
-- Chrome's built-in Gemini Nano for processing
-- Content Security Policy enforcement
-- Comprehensive security audit passed
-
-Technical:
-- Built with Plasmo framework
-- TypeScript for type safety
-- Zod schema validation
-- Hybrid rule loading architecture
+- No data collection or transmission
+- Processing via Gemini Nano
+- Content Security Policy
+- Rule validation
 ```
 
 ---
@@ -252,7 +246,7 @@ The extension intentionally excludes:
 
 ### 5.1 Privacy Policy
 
-**Full Policy URL**: [GitHub Pages URL]/docs/PRIVACY.html
+**Full Policy URL**: https://prompt-tuner.github.io/prompt-tuner/docs/PRIVACY.html
 
 **Summary**:
 
@@ -359,7 +353,7 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 **Screenshot 4: Claude Integration**
 
 - **File**: `store-assets/screenshot-4-claude.png`
-- **Caption**: "Works seamlessly on Claude with XML structuring"
+- **Caption**: "Integration on Claude with XML structuring"
 - **Content**: Widget on Claude.ai interface
 
 **Screenshot 5: Gemini Integration**
@@ -420,14 +414,14 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 
 ### 8.1 Developer Account
 
-**Developer Name**: [Your Name/Organization]  
-**Email**: [your-email@example.com]  
-**Website**: [https://your-website.com]
+**Developer Name**: Prompt Tuner Team
+**Email**: team@prompttuner.ai
+**Website**: https://prompttuner.ai
 
 ### 8.2 Support Resources
 
-**Support URL**: [GitHub Repository URL]  
-**Support Email**: [support-email@example.com]
+**Support URL**: https://github.com/prompt-tuner/prompt-tuner
+**Support Email**: support@prompttuner.ai
 
 **Documentation**:
 
@@ -504,7 +498,7 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - **No Obfuscation**: Source code readable, open source - PASS
 - **CSP Configured**: Restrictive Content Security Policy - PASS
 - **Secure Communication**: HTTPS only (GitHub Pages) - PASS
-- **No Vulnerabilities**: Security audit passed - PASS
+- **Data Validation**: Rules validated with Zod schemas - PASS
 
 ### 10.3 Quality Guidelines
 
@@ -578,14 +572,13 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 
 ### 11.3 Source Code Review
 
-**Open Source Repository**: [GitHub URL]
+**Open Source Repository**: https://github.com/prompt-tuner/prompt-tuner
 
 **Key Files for Review**:
 
 - `src/contents/prompt-tuner.tsx` - UI injection
 - `src/lib/ai-engine.ts` - Local AI processing
 - `src/lib/platform-rules.ts` - Rule fetching with validation
-- `docs/SECURITY_AUDIT.md` - Security analysis
 - `docs/PRIVACY.md` - Privacy policy
 
 **Build Verification**:
@@ -704,8 +697,8 @@ I certify that:
 7. Extension does not contain malicious code or vulnerabilities
 8. I will maintain the extension and respond to security issues promptly
 
-**Date**: January 27, 2026  
-**Signature**: [Developer Name]
+**Date**: February 17, 2026  
+**Signature**: Prompt Tuner Lead Developer
 
 ---
 

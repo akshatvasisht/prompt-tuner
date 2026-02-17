@@ -21,19 +21,8 @@ This document defines the coding standards, conventions, and best practices for 
 
 ## General Principles
 
-### Code Quality Philosophy
-
-- **Readability over cleverness** — Code is read far more often than it is written. Prioritize clarity.
-- **Intent over implementation** — Comments should explain _why_, not _what_. Let the code speak for itself.
-- **Fail fast, fail loud** — Errors should surface immediately with clear messages.
-- **Single responsibility** — Functions and components should do one thing well.
-- **Defensive coding** — Validate inputs, handle edge cases, never trust external data.
-
-### Professionalism
-
-- Documentation and comments must be objective and professional. Avoid slang, humor, or colloquialisms.
-- Use inclusive language. Avoid terms like "whitelist/blacklist" (use "allowlist/blocklist").
-- Error messages should be actionable and user-friendly.
+- **Terminology:** Use inclusive language (e.g., "allowlist/blocklist").
+- **Error Messages:** Must be actionable.
 
 ---
 
