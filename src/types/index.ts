@@ -40,17 +40,79 @@ export interface OptimizationRule {
 // Message Types (Plasmo Messaging)
 // =============================================================================
 
+/** Base interface for all messages */
+export interface BaseMessage {
+  type: string;
+}
+
+/** Toggles the main overlay UI */
+export interface ToggleOverlayMessage extends BaseMessage {
+  type: "TOGGLE_OVERLAY";
+}
+
+/** Legacy status checks (kept for background consistency) */
+export interface StatusCheckMessage extends BaseMessage {
+  type: "PING" | "CHECK_STATUS" | "CHECK_DB_STATUS";
+}
+
 /** Request payload for prompt optimization */
 export interface OptimizeRequest {
-  /** The draft prompt to optimize */
   draft: string;
-  /** The platform the user is on */
   platform: Platform;
-  /** Optional additional context */
   context?: string;
 }
 
-/** Response payload from prompt optimization */
+/** Message to start optimization from the overlay */
+export interface StartOptimizationMessage extends BaseMessage {
+  type: "START_OPTIMIZATION";
+  payload: OptimizeRequest;
+}
+
+/** Union of all possible extension messages */
+export type ExtensionMessage =
+  | ToggleOverlayMessage
+  | StatusCheckMessage
+  | StartOptimizationMessage;
+
+// =============================================================================
+// Port-based Streaming Types (optimize-port)
+// =============================================================================
+
+/** Request message sent from overlay to background over port */
+export interface OptimizePortRequest {
+  type: "START_OPTIMIZATION";
+  draft: string;
+  platform: Platform;
+}
+
+/** Streaming chunk message sent from background to overlay */
+export interface OptimizePortChunk {
+  type: "CHUNK";
+  data: string;
+}
+
+/** Final completion message sent from background to overlay */
+export interface OptimizePortComplete {
+  type: "COMPLETE";
+  optimizedPrompt: string;
+  appliedRules: string[];
+}
+
+/** Error message sent from background to overlay */
+export interface OptimizePortError {
+  type: "ERROR";
+  code: ErrorCode;
+  message: string;
+}
+
+/** Union of all possible messages sent OVER the optimize-port */
+export type OptimizePortMessage =
+  | OptimizePortRequest
+  | OptimizePortChunk
+  | OptimizePortComplete
+  | OptimizePortError;
+
+/** Response payload from single-fire prompt optimization (legacy/fallback) */
 export interface OptimizeResponse {
   /** Whether the optimization was successful */
   success: boolean;

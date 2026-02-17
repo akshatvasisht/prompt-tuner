@@ -30,3 +30,5 @@ coverage/
 
 # Scraped content (generated)
 rules/scraped/
+
+agentcontext/
