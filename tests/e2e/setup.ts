@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * E2E Test Setup Utilities
  *
@@ -8,10 +9,10 @@
  * - Platform navigation helpers
  */
 
-import { Page, BrowserContext } from "@playwright/test";
+import type { Page, BrowserContext } from "@playwright/test";
+import { WIDGET_IDS } from "~lib/constants";
 
-// =============================================================================
-// Extension Management
+// Custom type for global with mocks
 // =============================================================================
 
 /**
@@ -19,22 +20,25 @@ import { Page, BrowserContext } from "@playwright/test";
  * Chrome extensions have dynamic IDs that must be extracted at runtime
  */
 export async function getExtensionId(context: BrowserContext): Promise<string> {
+  await Promise.resolve();
   // Extension ID is available in the service worker
   const serviceWorkers = context.serviceWorkers();
   if (serviceWorkers.length > 0 && serviceWorkers[0]) {
     const url = serviceWorkers[0].url();
-    const match = url.match(/chrome-extension:\/\/([a-z]+)\//);
-    if (match && match[1]) {
-      return match[1];
+    const regex = /chrome-extension:\/\/([a-z]+)\//;
+    const match = regex.exec(url);
+    if (match?.[1]) {
+      return Promise.resolve(match[1]);
     }
   }
 
-  // Fallback: check background pages
-  const backgroundPages = context.backgroundPages();
-  if (backgroundPages.length > 0 && backgroundPages[0]) {
-    const url = backgroundPages[0].url();
-    const match = url.match(/chrome-extension:\/\/([a-z]+)\//);
-    if (match && match[1]) {
+  // Fallback: check pages (backgroundPages is deprecated in MV3/Playwright)
+  const pages = context.pages();
+  for (const page of pages) {
+    const url = page.url();
+    const regex = /chrome-extension:\/\/([a-z]+)\//;
+    const match = regex.exec(url);
+    if (match?.[1]) {
       return match[1];
     }
   }
@@ -86,13 +90,13 @@ export async function waitForExtensionLoad(
         throw new Error("Timeout");
       })(),
     ]);
-  } catch (error) {
+  } catch {
     const workers = context.serviceWorkers().map((w) => w.url());
     const pages = context.pages().map((p) => p.url());
     console.log(`[E2E] Failed to detect service worker.`);
     console.log(`[E2E] Background workers found: ${JSON.stringify(workers)}`);
     console.log(`[E2E] Pages found: ${JSON.stringify(pages)}`);
-    throw new Error(`Extension did not load within ${timeout}ms timeout. Check build path and manifest.`);
+    throw new Error(`Extension did not load within ${String(timeout)}ms timeout. Check build path and manifest.`);
   }
 }
 
@@ -123,25 +127,26 @@ export async function mockGeminiNanoAPI(
   await page.addInitScript(
     ({ available, mockResponse, streamingTokens, simulateError }) => {
       // Mock LanguageModel API
-      (window as any).ai = {
+      (window as unknown as { ai: unknown }).ai = {
         languageModel: {
-          availability: async () => (available ? "available" : "unavailable"),
+          availability: async () => Promise.resolve(available ? "available" : "unavailable"),
 
           create: async () => {
+            await Promise.resolve();
             if (simulateError) {
               throw new Error("Mock AI session creation failed");
             }
 
             return {
               prompt: async () => {
-                if (simulateError) {
+                if (simulateError) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
                   throw new Error("Mock AI prompt failed");
                 }
-                return mockResponse;
+                return Promise.resolve(mockResponse);
               },
 
               promptStreaming: async function* () {
-                if (simulateError) {
+                if (simulateError) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
                   throw new Error("Mock AI streaming failed");
                 }
 
@@ -160,7 +165,17 @@ export async function mockGeminiNanoAPI(
         },
       };
     },
-    { available, mockResponse, streamingTokens, simulateError },
+    {
+      available,
+      mockResponse,
+      streamingTokens,
+      simulateError,
+    } as {
+      available: boolean;
+      mockResponse: string;
+      streamingTokens: string[];
+      simulateError: boolean;
+    },
   );
 }
 
@@ -249,7 +264,9 @@ export function monitorConsoleErrors(page: Page): string[] {
 
   page.on("console", (msg) => {
     if (msg.type() === "error") {
-      errors.push(msg.text());
+      const errorText = msg.text();
+      errors.push(errorText);
+      console.log(`Console Error observed: ${errorText}`);
     }
   });
 
@@ -341,8 +358,48 @@ export async function getChatTextareaContent(
   }
 
   if (platform === "gemini") {
-    return (await element.inputValue()) || "";
+    return await element.inputValue();
   } else {
-    return (await element.textContent()) || "";
+    return (await element.textContent()) ?? "";
   }
+}
+
+/**
+ * Waits for the trigger button to be injected into the DOM
+ */
+export async function waitForTriggerInjection(
+  page: Page,
+  timeout = 10000,
+): Promise<void> {
+  await page.waitForSelector(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`, {
+    timeout,
+    state: "visible",
+  });
+}
+
+/**
+ * Simulates text selection in a contenteditable or textarea
+ */
+export async function selectTextInArea(page: Page, selector: string): Promise<void> {
+  await page.waitForSelector(selector);
+  await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+
+    // Create a selection
+    const range = document.createRange();
+    if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+      el.focus();
+      el.setSelectionRange(0, el.value.length);
+    } else {
+      range.selectNodeContents(el);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+    // Dispatch mouseup to trigger the extension's selection listener
+    el.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+  }, selector);
 }

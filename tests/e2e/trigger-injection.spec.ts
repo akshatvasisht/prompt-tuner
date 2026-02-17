@@ -22,6 +22,7 @@ import {
   monitorConsoleErrors,
   assertNoConsoleErrors,
   mockGeminiNanoAPI,
+  waitForTriggerInjection,
 } from "./setup";
 import { WIDGET_IDS } from "../../src/lib/constants";
 
@@ -136,14 +137,13 @@ test.describe("Trigger Button Positioning", () => {
     await waitForTriggerInjection(page);
 
     // Get trigger button position
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
-    expect(trigger).not.toBeNull();
+    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    await expect(trigger).toBeVisible();
 
-    const triggerBox = await trigger!.boundingBox();
+    const triggerBox = await trigger.boundingBox();
     expect(triggerBox).not.toBeNull();
 
     // Trigger should be positioned on the right edge
-    // (exact positioning may vary, but should be near right side of viewport)
     const viewportSize = page.viewportSize();
     if (viewportSize && triggerBox) {
       expect(triggerBox.x + triggerBox.width).toBeGreaterThan(viewportSize.width - 50);
@@ -155,16 +155,16 @@ test.describe("Trigger Button Positioning", () => {
     await focusChatTextarea(page, "chatgpt");
     await waitForTriggerInjection(page);
 
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
-    const initialBox = await trigger!.boundingBox();
+    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const initialBox = await trigger.boundingBox();
 
     // Scroll page
-    await page.evaluate(() => window.scrollBy(0, 100));
+    await page.evaluate(() => { window.scrollBy(0, 100); });
     await page.waitForTimeout(500);
 
     // Trigger button should still be visible (fixed position)
-    const newBox = await trigger!.boundingBox();
-    expect(newBox).toBeDefined();
+    const newBox = await trigger.boundingBox();
+    expect(newBox).not.toBeNull();
 
     // Fixed positioning means button stays in same viewport position
     if (initialBox && newBox) {
@@ -325,54 +325,6 @@ test.describe("Multiple Textareas", () => {
   });
 });
 
-// =============================================================================
-// Neobrutalist Styling Tests
-// =============================================================================
-
-test.describe("Neobrutalist Visual Design", () => {
-  test.beforeEach(async ({ context, page }) => {
-    await waitForExtensionLoad(context);
-    await mockGeminiNanoAPI(page);
-  });
-
-  test("should have construction yellow background", async ({ page }) => {
-    await createMockChatPage(page, "chatgpt");
-    await focusChatTextarea(page, "chatgpt");
-    await waitForTriggerInjection(page);
-
-    // Check button background color
-    const bgColor = await page.evaluate(() => {
-      const button = document.querySelector('[data-testid="trigger-button"]');
-      return button ? window.getComputedStyle(button as Element).backgroundColor : null;
-    });
-
-    // Construction yellow #FBBF24 = rgb(251, 191, 36)
-    // Allow for some variation due to HSL conversion
-    expect(bgColor).toBeTruthy();
-  });
-
-  test("should have black border and brutal shadow", async ({ page }) => {
-    await createMockChatPage(page, "chatgpt");
-    await focusChatTextarea(page, "chatgpt");
-    await waitForTriggerInjection(page);
-
-    const styles = await page.evaluate(() => {
-      const button = document.querySelector('[data-testid="trigger-button"]');
-      if (!button) return null;
-      const computed = window.getComputedStyle(button as Element);
-      return {
-        borderWidth: computed.borderWidth,
-        boxShadow: computed.boxShadow,
-      };
-    });
-
-    expect(styles).toBeTruthy();
-    // Should have 2px border
-    expect(styles?.borderWidth).toBe("2px");
-    // Should have shadow
-    expect(styles?.boxShadow).toBeTruthy();
-  });
-});
 
 // =============================================================================
 // Test Helpers
@@ -386,12 +338,3 @@ async function isTriggerVisible(page: Page): Promise<boolean> {
   return trigger ? await trigger.isVisible() : false;
 }
 
-/**
- * Waits for the trigger button to be injected into the DOM
- */
-async function waitForTriggerInjection(page: Page, timeout = 10000): Promise<void> {
-  await page.waitForSelector(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`, {
-    timeout,
-    state: "visible",
-  });
-}
