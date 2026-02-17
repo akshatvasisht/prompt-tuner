@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { checkAIAvailability, optimizePrompt } from "~lib/ai-engine";
+import { checkAIAvailability, optimizePrompt, clearSessionCache } from "~lib/ai-engine";
 import { PromptTunerError } from "~types";
 
 import { createMockLanguageModel, resetLanguageModelMock } from "../setup";
@@ -9,6 +9,7 @@ describe("ai-engine", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetLanguageModelMock();
+    clearSessionCache();
   });
 
   afterEach(() => {
@@ -104,7 +105,7 @@ describe("ai-engine", () => {
       expect(result).toBeTruthy();
     });
 
-    it("should call destroy on session after completion", async () => {
+    it("should call destroy on session when cache is cleared", async () => {
       const mockDestroy = vi.fn();
       const mockSession = {
         prompt: vi.fn().mockResolvedValue("Optimized result"),
@@ -119,6 +120,7 @@ describe("ai-engine", () => {
       });
 
       await optimizePrompt("test", ["rule"]);
+      clearSessionCache();
 
       expect(mockDestroy).toHaveBeenCalled();
     });

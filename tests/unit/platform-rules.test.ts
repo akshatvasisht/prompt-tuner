@@ -12,41 +12,42 @@ import {
 } from "~lib/platform-rules";
 
 // Mock chrome.storage for hybrid loading tests
-declare global {
-  // eslint-disable-next-line no-var
-  var chrome: {
-    storage: {
-      local: {
-        get: ReturnType<typeof vi.fn>;
-        set: ReturnType<typeof vi.fn>;
-        remove: ReturnType<typeof vi.fn>;
-      };
-    };
-  };
-  // eslint-disable-next-line no-var
-  var fetch: ReturnType<typeof vi.fn>;
-}
+// Mock chrome and fetch globally
+const mockChrome = {
+  storage: {
+    local: {
+      get: vi.fn(),
+      set: vi.fn(),
+      remove: vi.fn(),
+    },
+  },
+};
+
+const mockFetch = vi.fn();
+
+vi.stubGlobal("chrome", mockChrome);
+vi.stubGlobal("fetch", mockFetch);
 
 describe("platform-rules", () => {
   describe("getRulesForPlatform", () => {
     it("should return rules for openai platform", () => {
       const rules = getRulesForPlatform("openai");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       expect(rules[0]).toContain("instructions");
     });
 
     it("should return rules for anthropic platform", () => {
       const rules = getRulesForPlatform("anthropic");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       expect(rules[0]).toContain("XML");
     });
 
     it("should return rules for google platform", () => {
       const rules = getRulesForPlatform("google");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       expect(rules[0]).toContain("markdown");
     });
 
@@ -71,7 +72,7 @@ describe("platform-rules", () => {
     it("should return full rule objects for openai", () => {
       const rules = getFullRulesForPlatform("openai");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       expect(rules[0]).toHaveProperty("id");
       expect(rules[0]).toHaveProperty("platform", "openai");
       expect(rules[0]).toHaveProperty("rule");
@@ -81,7 +82,7 @@ describe("platform-rules", () => {
     it("should return full rule objects for anthropic", () => {
       const rules = getFullRulesForPlatform("anthropic");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       rules.forEach((rule) => {
         expect(rule.platform).toBe("anthropic");
       });
@@ -90,7 +91,7 @@ describe("platform-rules", () => {
     it("should return full rule objects for google", () => {
       const rules = getFullRulesForPlatform("google");
 
-      expect(rules.length).toBe(5);
+      expect(rules.length).toBe(7);
       rules.forEach((rule) => {
         expect(rule.platform).toBe("google");
       });
@@ -116,8 +117,8 @@ describe("platform-rules", () => {
     it("should return total count of all rules", () => {
       const count = getRuleCount();
 
-      // 5 rules per platform (openai, anthropic, google) = 15 total
-      expect(count).toBe(15);
+      // 7 rules per platform (openai, anthropic, google) = 21 total
+      expect(count).toBe(21);
     });
   });
 
@@ -125,7 +126,7 @@ describe("platform-rules", () => {
     it("should return all rules from all platforms", () => {
       const allRules = getAllRules();
 
-      expect(allRules.length).toBe(15);
+      expect(allRules.length).toBe(21);
     });
 
     it("should include rules from all platforms", () => {
@@ -246,8 +247,7 @@ describe("platform-rules", () => {
     beforeEach(() => {
       // Reset chrome.storage mocks
       vi.clearAllMocks();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (global as any).fetch = vi.fn();
+      (global as unknown as { fetch: unknown }).fetch = vi.fn();
     });
 
     it("should use bundled rules when fetch fails", async () => {
@@ -255,7 +255,7 @@ describe("platform-rules", () => {
       global.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
 
       // Mock chrome.storage to return no cache
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({});
+      mockChrome.storage.local.get.mockResolvedValue({});
 
       await updateRulesForPlatform("openai");
 
@@ -281,7 +281,7 @@ describe("platform-rules", () => {
         source: "remote" as const,
       };
 
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      mockChrome.storage.local.get.mockResolvedValue({
         [cacheKey]: cachedData,
       });
 
@@ -307,7 +307,7 @@ describe("platform-rules", () => {
         source: "remote" as const,
       };
 
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      mockChrome.storage.local.get.mockResolvedValue({
         rules_cache_openai: expiredCache,
       });
 
@@ -322,7 +322,7 @@ describe("platform-rules", () => {
       await updateRulesForPlatform("openai");
 
       expect(global.fetch).toHaveBeenCalled();
-      expect(chrome.storage.local.set).toHaveBeenCalled();
+      expect(mockChrome.storage.local.set).toHaveBeenCalled();
     });
 
     it("should fallback to bundled rules when remote validation fails", async () => {
@@ -331,7 +331,7 @@ describe("platform-rules", () => {
         platform: "openai",
       };
 
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({});
+      mockChrome.storage.local.get.mockResolvedValue({});
 
       global.fetch = vi.fn(() =>
         Promise.resolve({
@@ -345,11 +345,11 @@ describe("platform-rules", () => {
       // Should fallback to bundled rules
       const rules = getRulesForPlatform("openai");
       expect(rules.length).toBeGreaterThan(0);
-      expect(chrome.storage.local.set).toHaveBeenCalled();
+      expect(mockChrome.storage.local.set).toHaveBeenCalled();
     });
 
     it("should initialize rules for all platforms", async () => {
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({});
+      mockChrome.storage.local.get.mockResolvedValue({});
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
@@ -364,7 +364,7 @@ describe("platform-rules", () => {
 
     it("should refresh rules by clearing cache", async () => {
       const cacheKey = "rules_cache_openai";
-      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      mockChrome.storage.local.get.mockResolvedValue({
         [cacheKey]: {
           rules: [],
           fetchedAt: Date.now(),
@@ -382,7 +382,7 @@ describe("platform-rules", () => {
       await refreshRules();
 
       // Should have cleared cache
-      expect(chrome.storage.local.remove).toHaveBeenCalled();
+      expect(mockChrome.storage.local.remove).toHaveBeenCalled();
       // Should have re-fetched
       expect(global.fetch).toHaveBeenCalled();
     });

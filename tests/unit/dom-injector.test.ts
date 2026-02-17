@@ -70,70 +70,72 @@ describe("dom-injector", () => {
   });
 
   describe("replaceText", () => {
-    it("should replace text in textarea", () => {
+    it("should replace text in textarea", async () => {
       const textarea = document.createElement("textarea");
       textarea.value = "old text";
       container.appendChild(textarea);
 
-      const result = replaceText(textarea, "new text");
+      const result = await replaceText(textarea, "new text");
 
       expect(result.success).toBe(true);
       expect(textarea.value).toBe("new text");
     });
 
-    it("should dispatch input event on textarea", () => {
+    it("should dispatch input event on textarea", async () => {
       const textarea = document.createElement("textarea");
       container.appendChild(textarea);
 
       const inputHandler = vi.fn();
       textarea.addEventListener("input", inputHandler);
 
-      replaceText(textarea, "test");
+      await replaceText(textarea, "test");
 
       expect(inputHandler).toHaveBeenCalled();
     });
 
-    it("should dispatch change event on textarea", () => {
+    it("should dispatch change event on textarea", async () => {
       const textarea = document.createElement("textarea");
       container.appendChild(textarea);
 
       const changeHandler = vi.fn();
       textarea.addEventListener("change", changeHandler);
 
-      replaceText(textarea, "test");
+      await replaceText(textarea, "test");
 
       expect(changeHandler).toHaveBeenCalled();
     });
 
-    it("should replace text in contenteditable", () => {
+    it("should replace text in contenteditable", async () => {
       const div = document.createElement("div");
       div.contentEditable = "true";
+      div.tabIndex = 0; // Ensure focusable in JSDOM
+      div.setAttribute("role", "textbox"); // matches DOM_SELECTORS.INPUTS
       div.textContent = "old text";
       container.appendChild(div);
 
       // Focus the element (required for execCommand)
       div.focus();
 
-      const result = replaceText(div, "new text");
+      const result = await replaceText(div, "new text");
 
       expect(result.success).toBe(true);
       // Note: In JSDOM, execCommand might not work perfectly
       // The test verifies the function doesn't throw
     });
 
-    it("should return error for invalid element", () => {
-      const result = replaceText(null, "text");
+    it("should return error for invalid element", async () => {
+      const result = await replaceText(null, "text");
 
       expect(result.success).toBe(false);
       expect(result.error).toBeTruthy();
     });
 
-    it("should return error for unsupported element type", () => {
+    it("should return error for unsupported element type", async () => {
       const input = document.createElement("input");
       container.appendChild(input);
 
       // Cast to bypass type checking - testing runtime behavior
-      const result = replaceText(
+      const result = await replaceText(
         input as unknown as HTMLTextAreaElement,
         "text",
       );
@@ -156,6 +158,8 @@ describe("dom-injector", () => {
     it("should return active contenteditable div", () => {
       const div = document.createElement("div");
       div.contentEditable = "true";
+      div.tabIndex = 0; // Ensure focusable in JSDOM
+      div.setAttribute("role", "textbox"); // matches fallback loop
       container.appendChild(div);
       div.focus();
 
