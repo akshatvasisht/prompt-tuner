@@ -8,7 +8,7 @@
 | -------------------- | ------------------------------------------------- |
 | **Chrome Version**   | 138 or higher                                     |
 | **Operating System** | Windows 10/11, macOS 13+, or Linux (Desktop only) |
-| **Free Storage**     | 22 GB (for Gemini Nano model download)            |
+| **Free Storage**     | 22 GB (Recommended free space for stability)      |
 | **GPU VRAM**         | > 4 GB                                            |
 | **OR CPU/RAM**       | 16 GB RAM with 4+ CPU cores                       |
 | **Network**          | Unmetered connection (for initial model download) |
@@ -137,8 +137,8 @@ npm run test:e2e
 **Fix:**
 
 - Ensure you have > 4 GB GPU VRAM, or 16 GB RAM with 4+ CPU cores
-- Check that you have at least 22 GB free disk space
-- Try on a different device that meets requirements
+- Check- **Explanation**: While the Gemini Nano model itself is approximately **2 GB**, Google recommends at least **22 GB** of free disk space on your Chrome profile volume. If free space drops below **10 GB**, Chrome automatically purges the model to protect system stability.
+- Ensure you have at least 22 GB free, then try manually triggering the download at `chrome://components/`.
 
 ### Issue: Model download not starting
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-deprecated */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CommandEmpty,
   CommandGroup,
@@ -20,6 +20,7 @@ import {
 } from "~types";
 
 import { logger } from "~lib/logger";
+import { isWarmed, checkAIAvailability } from "~lib/ai-engine";
 
 export interface CommandPaletteContentProps {
   onClose: () => void;
@@ -206,7 +207,47 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
             <kbd className="flex h-5 items-center justify-center rounded-[4px] bg-white/10 px-1 font-sans text-[10px] font-bold text-white min-w-[20px]">esc</kbd> Close
           </span>
         </div>
+
+        <AIStatusIndicator />
       </div>
     </>
+  );
+}
+
+function AIStatusIndicator() {
+  const [status, setStatus] = useState<"ready" | "loading" | "error">("loading");
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (isWarmed()) {
+        setStatus("ready");
+      } else {
+        const availability = await checkAIAvailability();
+        if (availability.available) {
+          setStatus("loading");
+        } else {
+          setStatus("error");
+        }
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 2000);
+    return () => { clearInterval(interval); };
+  }, []);
+
+  const Config = {
+    ready: { color: "bg-emerald-500", label: "AI Engine Ready" },
+    loading: { color: "bg-amber-500", label: "AI Engine Warming..." },
+    error: { color: "bg-red-500", label: "AI Engine Unavailable" },
+  };
+
+  const current = Config[status];
+
+  return (
+    <div className="flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100">
+      <div className={`h-1.5 w-1.5 rounded-full ${current.color} shadow-[0_0_8px_rgba(0,0,0,0.3)]`} />
+      <span className="text-[10px] font-semibold uppercase tracking-wider">{current.label}</span>
+    </div>
   );
 }

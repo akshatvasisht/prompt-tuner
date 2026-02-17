@@ -21,6 +21,10 @@ export const getStyle: PlasmoGetStyle = () => {
 };
 
 import { KEYBOARD_SHORTCUTS, MESSAGE_TYPES, WIDGET_IDS } from "~lib/constants";
+import { getRulesForPlatform } from "~lib/platform-rules";
+import { detectPlatform } from "~lib/platform-detector";
+import { warmup, shutdown, isWarmed } from "~lib/ai-engine";
+import { logger } from "~lib/logger";
 
 import { ErrorBoundary } from "~components/ErrorBoundary";
 
@@ -54,6 +58,53 @@ function PromptTunerOverlay() {
       document.body.classList.remove("prompt-tuner-overlay-open");
     };
   }, [isOpen]);
+
+  // ===========================================================================
+  // Smart Lifecycle Management
+  // ===========================================================================
+
+  useEffect(() => {
+    let shutdownTimeout: NodeJS.Timeout | null = null;
+    const GRACE_PERIOD_MS = 10000; // 10s grace period for re-entry
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Start grace period before shutdown
+        shutdownTimeout = setTimeout(() => {
+          shutdown();
+        }, GRACE_PERIOD_MS);
+      } else {
+        // Cancel shutdown if user returns within grace period
+        if (shutdownTimeout) {
+          clearTimeout(shutdownTimeout);
+          shutdownTimeout = null;
+        }
+      }
+    };
+
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      const isTextarea = target.tagName === "TEXTAREA" || target.getAttribute("contenteditable") === "true";
+
+      if (isTextarea && !isWarmed()) {
+        const platform = detectPlatform();
+        if (platform !== "unknown") {
+          const rules = getRulesForPlatform(platform);
+          logger.info(`Detected interaction on ${platform}, warming up AI engine...`);
+          void warmup(rules);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("focusin", handleFocus); // focusin bubbles, focus doesn't
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("focusin", handleFocus);
+      if (shutdownTimeout) clearTimeout(shutdownTimeout);
+    };
+  }, []);
 
   return (
     <div id={WIDGET_IDS.OVERLAY_CONTAINER}>

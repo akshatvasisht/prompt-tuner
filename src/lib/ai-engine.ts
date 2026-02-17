@@ -49,7 +49,11 @@ let cachedSystemPrompt: string | null = null;
  */
 export function clearSessionCache(): void {
   if (cachedSession) {
-    cachedSession.destroy();
+    try {
+      cachedSession.destroy();
+    } catch (e) {
+      logger.warn("Error destroying session during cache clear", e);
+    }
     cachedSession = null;
     cachedSystemPrompt = null;
   }
@@ -248,9 +252,7 @@ async function getOrCreateSession(
   }
 
   // Clear old session if exists
-  if (cachedSession) {
-    cachedSession.destroy();
-  }
+  clearSessionCache();
 
   // Create new session
   try {
@@ -268,11 +270,56 @@ async function getOrCreateSession(
     return session;
   } catch (error) {
     logger.error("Failed to create AI session", error);
+    // Ensure cache is cleared if session creation fails
+    clearSessionCache();
     throw new PromptTunerError(
       error instanceof Error ? error.message : "Failed to create AI session",
       "AI_SESSION_FAILED",
     );
   }
+}
+
+/**
+ * Proactively warms up the AI engine by creating a session.
+ * Used to hide the 2-3s cold-start latency behind user interaction.
+ *
+ * @param rules - Array of optimization rules to apply to the system prompt
+ */
+export async function warmup(rules: string[]): Promise<void> {
+  const formattedRules = formatRulesForPrompt(rules);
+  const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace(
+    "{rules}",
+    formattedRules,
+  );
+
+  try {
+    // Check availability first without throwing to avoid noisy errors during warmup
+    const status = await checkAIAvailability();
+    if (!status.available) return;
+
+    await getOrCreateSession(systemPrompt);
+    logger.info("AI Engine warmed up successfully");
+  } catch (error) {
+    logger.warn("AI Engine warmup failed (non-critical):", error);
+  }
+}
+
+/**
+ * Explicitly shuts down the AI engine and releases RAM.
+ * Recommended to call when tab is hidden or user has been idle.
+ */
+export function shutdown(): void {
+  if (cachedSession) {
+    logger.info("Shutting down AI Engine to release RAM");
+    clearSessionCache();
+  }
+}
+
+/**
+ * Returns true if a session is currently warmed and ready for use.
+ */
+export function isWarmed(): boolean {
+  return cachedSession !== null;
 }
 
 /**
