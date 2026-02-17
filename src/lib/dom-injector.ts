@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated */
 /**
  * DOM Injector - Safe text replacement for LLM platform inputs
  *
@@ -17,11 +18,13 @@ import { type ReplaceTextResult, type TextInputElement } from "~types";
 // Main World Bridge
 // =============================================================================
 
+import { MESSAGE_SOURCES, MESSAGE_TYPES, DOM_SELECTORS } from "~lib/constants";
+
 const MAIN_WORLD_TIMEOUT = 1000; // 1 second timeout for Main World response
-const MESSAGE_SOURCE = "prompt-tuner";
+const MESSAGE_SOURCE = MESSAGE_SOURCES.PROMPT_TUNER;
 
 interface MainWorldResponse {
-  type: "REPLACE_TEXT_RESPONSE";
+  type: typeof MESSAGE_TYPES.REPLACE_TEXT_RESPONSE;
   source: typeof MESSAGE_SOURCE;
   id: string;
   success: boolean;
@@ -67,12 +70,12 @@ async function tryMainWorldReplacement(
   newText: string,
 ): Promise<ReplaceTextResult | null> {
   try {
-    const messageId = `replace-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const messageId = `replace-${String(Date.now())}-${Math.random().toString(36).slice(2)}`;
     const selector = getElementSelector(element);
 
     // Send message to Main World
     const message = {
-      type: "REPLACE_TEXT",
+      type: MESSAGE_TYPES.REPLACE_TEXT,
       source: MESSAGE_SOURCE,
       id: messageId,
       selector,
@@ -88,15 +91,16 @@ async function tryMainWorldReplacement(
         }, MAIN_WORLD_TIMEOUT);
 
         const handler = (event: MessageEvent): void => {
+          const data = event.data as Record<string, unknown>;
           if (
             event.source === window &&
-            event.data?.type === "REPLACE_TEXT_RESPONSE" &&
-            event.data?.source === MESSAGE_SOURCE &&
-            event.data?.id === messageId
+            data.type === MESSAGE_TYPES.REPLACE_TEXT_RESPONSE &&
+            data.source === MESSAGE_SOURCE &&
+            data.id === messageId
           ) {
             clearTimeout(timeout);
             window.removeEventListener("message", handler);
-            resolve(event.data as MainWorldResponse);
+            resolve(data as unknown as MainWorldResponse);
           }
         };
 
@@ -114,7 +118,7 @@ async function tryMainWorldReplacement(
       success: response.success,
       error: response.error,
     };
-  } catch (error) {
+  } catch {
     // Main World unavailable or timed out - will fallback to Isolated World
     return null;
   }
@@ -256,7 +260,6 @@ function replaceContentEditable(
     selection.addRange(range);
 
     // Try execCommand first - preserves editor state and undo history
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const execCommandSuccess = document.execCommand(
       "insertText",
       false,
@@ -304,17 +307,6 @@ function replaceContentEditable(
  * Replaces text in a textarea or contenteditable element using Isolated World
  * This is the fallback when Main World injection is unavailable
  */
-function replaceTextIsolated(element: TextInputElement): ReplaceTextResult {
-  if (element instanceof HTMLTextAreaElement) {
-    return replaceTextarea(element, "");
-  }
-
-  if (element instanceof HTMLDivElement && element.contentEditable === "true") {
-    return replaceContentEditable(element, "");
-  }
-
-  return { success: false, error: "Unsupported element type" };
-}
 
 /**
  * Replaces text in a textarea or contenteditable element
@@ -377,13 +369,7 @@ export function getActiveTextInput(): TextInputElement | null {
   }
 
   // Fallback: search for common selectors
-  const selectors = [
-    'textarea[placeholder*="Message"]',
-    'textarea[data-id="root"]',
-    "textarea#prompt-textarea",
-    'div[contenteditable="true"][role="textbox"]',
-    'div[contenteditable="true"].ProseMirror',
-  ];
+  const selectors = DOM_SELECTORS.INPUTS;
 
   for (const selector of selectors) {
     const element = document.querySelector(selector);

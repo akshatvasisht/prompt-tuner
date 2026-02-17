@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated */
 /**
  * Background Service Worker for Prompt Tuner
  *
@@ -10,21 +11,16 @@
 
 import { registerOptimizePortHandler } from "./messages/optimize-port";
 import { getRuleCount, initializeRules } from "~lib/platform-rules";
+import { logger } from "~lib/logger";
+import { STORAGE_KEYS, MESSAGE_TYPES, ALARM_NAMES, COMMAND_IDS } from "~lib/constants";
 
-// =============================================================================
-// Types
-// =============================================================================
 
-interface BackgroundMessage {
-  type: "PING" | "CHECK_STATUS";
-}
 
 // =============================================================================
 // Extension Lifecycle Events
 // =============================================================================
 
-/* eslint-disable @typescript-eslint/no-deprecated, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
-chrome.runtime.onInstalled.addListener((details): void => {
+chrome.runtime.onInstalled.addListener((details) => {
   void (async (): Promise<void> => {
     try {
       // Initialize rules (fetch remote or use bundled)
@@ -33,24 +29,22 @@ chrome.runtime.onInstalled.addListener((details): void => {
       const ruleCount = getRuleCount();
 
       await chrome.storage.local.set({
-        installedAt: Date.now(),
-        lastUpdated: Date.now(),
-        version: chrome.runtime.getManifest().version,
+        [STORAGE_KEYS.INSTALLED_AT]: Date.now(),
+        [STORAGE_KEYS.LAST_UPDATED]: Date.now(),
+        [STORAGE_KEYS.VERSION]: chrome.runtime.getManifest().version,
       });
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-        // eslint-disable-next-line no-console
-        console.log(
-          `[Background] Fresh installation - ${String(ruleCount)} rules loaded`,
+        logger.info(
+          `Fresh installation - ${String(ruleCount)} rules loaded`,
         );
       } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-        // eslint-disable-next-line no-console
-        console.log(
-          `[Background] Extension updated - ${String(ruleCount)} rules loaded`,
+        logger.info(
+          `Extension updated - ${String(ruleCount)} rules loaded`,
         );
       }
     } catch (error: unknown) {
-      console.error("[Background] Failed to initialize:", error);
+      logger.error("Failed to initialize background script:", error);
     }
   })();
 });
@@ -59,87 +53,26 @@ chrome.runtime.onInstalled.addListener((details): void => {
 // Message Handling
 // =============================================================================
 
-interface OpenSidePanelMessage {
-  type: "OPEN_SIDE_PANEL";
-}
-
-interface InjectTextMessage {
-  type: "INJECT_TEXT";
-  tabId: number;
-  text: string;
-}
-
-type ExtendedBackgroundMessage =
-  | BackgroundMessage
-  | OpenSidePanelMessage
-  | InjectTextMessage;
+import type { ExtensionMessage } from "~types";
 
 chrome.runtime.onMessage.addListener(
-  (
-    message: ExtendedBackgroundMessage,
-    sender,
-    sendResponse,
-  ) => {
+  (message: ExtensionMessage, _sender, sendResponse) => {
+    if (typeof message !== "object") {
+      return false;
+    }
+
     switch (message.type) {
-      case "PING":
-        sendResponse({ type: "PONG", ready: true });
+      case MESSAGE_TYPES.PING:
+        sendResponse({ type: MESSAGE_TYPES.PONG, ready: true });
         return true;
 
       case "CHECK_STATUS":
+      case "CHECK_DB_STATUS":
         sendResponse({
           ready: true,
           ruleCount: getRuleCount(),
         });
         return true;
-
-      case "OPEN_SIDE_PANEL": {
-        // Get the tab ID from sender
-        const tabId = sender.tab?.id;
-
-        if (tabId) {
-          // Open side panel for this tab
-          void chrome.sidePanel
-            .open({ tabId })
-            .then(() => {
-              sendResponse({ success: true });
-            })
-            .catch((error: unknown) => {
-              console.error("[Background] Failed to open side panel:", error);
-              sendResponse({
-                success: false,
-                error:
-                  error instanceof Error ? error.message : "Unknown error",
-              });
-            });
-        } else {
-          sendResponse({ success: false, error: "No tab ID available" });
-        }
-
-        return true; // Keep channel open for async response
-      }
-
-      case "INJECT_TEXT": {
-        // Route message to content script in specified tab
-        const { tabId, text } = message as InjectTextMessage;
-
-        void chrome.tabs
-          .sendMessage(tabId, {
-            type: "INJECT_TEXT",
-            text,
-          })
-          .then((response: unknown) => {
-            sendResponse(response);
-          })
-          .catch((error: unknown) => {
-            console.error("[Background] Failed to inject text:", error);
-            sendResponse({
-              success: false,
-              error: error instanceof Error ? error.message : "Unknown error",
-            });
-          });
-
-        return true; // Keep channel open for async response
-      }
 
       default:
         return false;
@@ -148,35 +81,44 @@ chrome.runtime.onMessage.addListener(
 );
 
 // =============================================================================
+// Keyboard Command (Toggle Overlay)
+// =============================================================================
+
+chrome.commands.onCommand.addListener((command) => {
+  if (command === COMMAND_IDS.TOGGLE_OVERLAY) {
+    void chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+      const tabId = tabs[0]?.id;
+      if (tabId != null) {
+        void chrome.tabs.sendMessage(tabId, { type: "TOGGLE_OVERLAY" });
+      }
+    });
+  }
+});
+
+// =============================================================================
 // Keep Alive (MV3 Service Workers)
 // =============================================================================
 
-const KEEP_ALIVE_ALARM = "prompt-tuner-keep-alive";
-
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 try {
   chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === KEEP_ALIVE_ALARM) {
+    if (alarm.name === ALARM_NAMES.KEEP_ALIVE) {
       // Keep service worker active
     }
   });
 } catch (error: unknown) {
-  console.error("[Background] Failed to set up alarms listener:", error);
+  logger.error("Failed to set up alarms listener:", error);
 }
-/* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 /**
  * Sets or clears the keep-alive alarm for the service worker
  */
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 export function setKeepAlive(active: boolean): void {
   if (active) {
-    void chrome.alarms.create(KEEP_ALIVE_ALARM, { periodInMinutes: 0.5 });
+    void chrome.alarms.create(ALARM_NAMES.KEEP_ALIVE, { periodInMinutes: 0.5 });
   } else {
-    void chrome.alarms.clear(KEEP_ALIVE_ALARM);
+    void chrome.alarms.clear(ALARM_NAMES.KEEP_ALIVE);
   }
 }
-/* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
 // =============================================================================
 // Port Handlers Registration

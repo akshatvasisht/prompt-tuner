@@ -17,45 +17,20 @@
  * - Connection stays alive during streaming
  */
 
+/* eslint-disable @typescript-eslint/no-deprecated */
+
 import { checkAIAvailability, optimizePromptStreaming } from "~lib/ai-engine";
+import { logger } from "~lib/logger";
 import { getRulesForPlatform } from "~lib/platform-rules";
-import { type ErrorCode, type Platform, PromptTunerError } from "~types";
-
-// =============================================================================
-// Types
-// =============================================================================
-
-interface OptimizePortRequest {
-  type: "START_OPTIMIZATION";
-  draft: string;
-  platform: Platform;
-}
-
-interface OptimizePortChunk {
-  type: "CHUNK";
-  data: string;
-}
-
-interface OptimizePortComplete {
-  type: "COMPLETE";
-  optimizedPrompt: string;
-  appliedRules: string[];
-}
-
-interface OptimizePortError {
-  type: "ERROR";
-  code: ErrorCode;
-  message: string;
-}
-
-type OptimizePortMessage =
-  | OptimizePortChunk
-  | OptimizePortComplete
-  | OptimizePortError;
-
-// Suppress warning about unused type (used for documentation)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _OptimizePortResponse = OptimizePortMessage;
+import {
+  type ErrorCode,
+  type Platform,
+  PromptTunerError,
+  type OptimizePortRequest,
+  type OptimizePortChunk,
+  type OptimizePortComplete,
+  type OptimizePortError,
+} from "~types";
 
 // =============================================================================
 // Validation
@@ -74,7 +49,7 @@ function validateRequest(data: unknown): data is OptimizePortRequest {
   const request = data as Record<string, unknown>;
 
   return (
-    request.type === "START_OPTIMIZATION" &&
+    request.type === MESSAGE_TYPES.START_OPTIMIZATION &&
     typeof request.draft === "string" &&
     request.draft.trim().length > 0 &&
     VALID_PLATFORMS.includes(request.platform as Platform)
@@ -94,7 +69,7 @@ function sendChunk(port: chrome.runtime.Port, data: string): void {
     port.postMessage(message);
   } catch (error) {
     // Port disconnected - silently fail
-    console.warn("[OptimizePort] Failed to send chunk:", error);
+    logger.warn("Failed to send chunk:", error);
   }
 }
 
@@ -111,7 +86,7 @@ function sendComplete(
   try {
     port.postMessage(message);
   } catch (error) {
-    console.warn("[OptimizePort] Failed to send completion:", error);
+    logger.warn("Failed to send completion:", error);
   }
 }
 
@@ -128,7 +103,7 @@ function sendError(
   try {
     port.postMessage(message);
   } catch (error) {
-    console.warn("[OptimizePort] Failed to send error:", error);
+    logger.warn("Failed to send error:", error);
   }
 }
 
@@ -137,7 +112,8 @@ function sendError(
 // =============================================================================
 
 /**
- * Handles optimization requests on a long-lived port
+ * Port handler for streaming AI optimization results
+ * on a long-lived port
  */
 async function handleOptimizationRequest(
   port: chrome.runtime.Port,
@@ -157,7 +133,7 @@ async function handleOptimizationRequest(
         port,
         "AI_UNAVAILABLE",
         aiStatus.reason ??
-          "Gemini Nano is not available. Requires Chrome 138+.",
+        "Gemini Nano is not available. Requires Chrome 138+.",
       );
       return;
     }
@@ -174,7 +150,7 @@ async function handleOptimizationRequest(
     // Step 4: Send completion message
     sendComplete(port, optimizedPrompt, rules);
   } catch (error) {
-    console.error("[OptimizePort] Error during optimization:", error);
+    logger.error("Error during optimization:", error);
 
     if (error instanceof PromptTunerError) {
       sendError(port, error.code, error.message);
@@ -193,15 +169,16 @@ async function handleOptimizationRequest(
 // Port Connection Listener
 // =============================================================================
 
+import { PORT_NAMES, MESSAGE_TYPES } from "~lib/constants";
+
 /**
  * Registers the port connection listener
  * Call this from background/index.ts during initialization
  */
 export function registerOptimizePortHandler(): void {
-  /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
   chrome.runtime.onConnect.addListener((port) => {
     // Only handle ports with the correct name
-    if (port.name !== "optimize-port") {
+    if (port.name !== PORT_NAMES.OPTIMIZE) {
       return;
     }
 
@@ -210,8 +187,17 @@ export function registerOptimizePortHandler(): void {
 
     // Handle messages on this port
     port.onMessage.addListener((message: unknown) => {
+      if (typeof message !== "object" || message === null) {
+        logger.error("Received invalid message from optimize port.");
+        sendError(
+          port,
+          "INVALID_REQUEST",
+          "Invalid optimization request format",
+        );
+        return;
+      }
       if (!validateRequest(message)) {
-        console.error("[OptimizePort] Invalid request:", message);
+        logger.error("Invalid request:", message);
         sendError(
           port,
           "INVALID_REQUEST",
@@ -231,10 +217,6 @@ export function registerOptimizePortHandler(): void {
       // Cleanup if needed
     });
   });
-  /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-
-  // Handler registered (debug)
-  // console.log("[OptimizePort] Handler registered");
 }
 
 // =============================================================================
@@ -247,5 +229,5 @@ export function registerOptimizePortHandler(): void {
  */
 export default function (): void {
   // No-op: Port handler is registered in background/index.ts
-  console.log("[OptimizePort] Dummy handler - using manual port registration");
+  logger.info("Dummy handler - using manual port registration");
 }
