@@ -1,24 +1,8 @@
-/**
- * Extension Popup UI
- *
- * Displays:
- * - AI availability status
- * - Quick settings toggle
- * - Extension info
- */
-
 import { useEffect, useState, useCallback } from "react";
-import {
-  Wrench,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
-import { Button } from "~components/ui/button";
+import { Wrench, ArrowClockwise } from "phosphor-react";
+import { Button } from "~components/ui/Button";
+import { Switch } from "~components/ui/Switch";
 import { checkAIAvailability } from "~lib/ai-engine";
-import { cn } from "~lib/utils";
-import { type AIAvailability } from "~types";
 import "./styles/globals.css";
 
 // =============================================================================
@@ -33,7 +17,6 @@ type Status = "checking" | "ready" | "unavailable" | "needs-download";
 
 export default function Popup(): React.JSX.Element {
   const [status, setStatus] = useState<Status>("checking");
-  const [aiInfo, setAiInfo] = useState<AIAvailability | null>(null);
   const [isEnabled, setIsEnabled] = useState(true);
   const [ruleCount, setRuleCount] = useState<number | null>(null);
 
@@ -45,7 +28,6 @@ export default function Popup(): React.JSX.Element {
 
     try {
       const availability = await checkAIAvailability();
-      setAiInfo(availability);
 
       if (availability.available) {
         setStatus("ready");
@@ -56,7 +38,7 @@ export default function Popup(): React.JSX.Element {
       }
 
       // Check database status
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      /* eslint-disable-next-line @typescript-eslint/no-deprecated */
       chrome.runtime.sendMessage(
         { type: "CHECK_DB_STATUS" },
         (response: { ruleCount?: number } | undefined) => {
@@ -75,10 +57,8 @@ export default function Popup(): React.JSX.Element {
    * Loads extension settings from storage
    */
   const loadSettings = useCallback(async (): Promise<void> => {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const result = (await chrome.storage.local.get(["enabled"])) as {
-      enabled?: boolean;
-    };
+    /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+    const result = await chrome.storage.local.get(["enabled"]);
     setIsEnabled(result.enabled !== false);
   }, []);
 
@@ -88,7 +68,7 @@ export default function Popup(): React.JSX.Element {
   const toggleEnabled = useCallback(async (): Promise<void> => {
     const newValue = !isEnabled;
     setIsEnabled(newValue);
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    /* eslint-disable-next-line @typescript-eslint/no-deprecated */
     await chrome.storage.local.set({ enabled: newValue });
   }, [isEnabled]);
 
@@ -96,7 +76,7 @@ export default function Popup(): React.JSX.Element {
    * Opens Chrome flags page for enabling Gemini Nano
    */
   const openFlags = useCallback((): void => {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    /* eslint-disable-next-line @typescript-eslint/no-deprecated */
     void chrome.tabs.create({
       url: "chrome://flags/#optimization-guide-on-device-model",
     });
@@ -109,128 +89,87 @@ export default function Popup(): React.JSX.Element {
   }, [checkStatus, loadSettings]);
 
   return (
-    <div className="w-80 p-4 bg-background text-foreground">
+    <div
+      className="w-[300px] overflow-hidden rounded-[var(--pt-radius)] border border-[var(--pt-glass-border)] bg-[var(--pt-glass-bg)] text-[var(--pt-text-primary)] [backdrop-filter:var(--pt-glass-blur)]"
+      style={{ boxShadow: "var(--pt-shadow), var(--pt-inner-glow)" }}
+    >
       {/* Header */}
-      <div className="brutal-header px-4 py-3 flex items-center gap-3 mb-4 -m-4 mb-4">
-        <div className="p-2 bg-black rounded">
-          <Wrench className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-black">Prompt Tuner</h1>
-          <p className="text-xs text-black/70">
-            100% Local AI
-          </p>
-        </div>
+      <div className="flex items-center gap-2.5 border-b border-[var(--pt-glass-border)] px-5 py-4">
+        <Wrench className="h-4.5 w-4.5 text-[var(--pt-text-secondary)]" weight="regular" />
+        <h1 className="text-[14px] font-semibold tracking-tight">Prompt Tuner</h1>
       </div>
 
-      {/* Status Card */}
-      <div className="brutal-card p-3 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold">AI Status</span>
-          <button
-            onClick={() => void checkStatus()}
-            className="brutal-button p-1.5 bg-primary"
-            title="Refresh status"
-          >
-            <RefreshCw className="w-4 h-4 text-black" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {status === "checking" && (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Checking...</span>
-            </>
-          )}
-          {status === "ready" && (
-            <>
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-600 dark:text-green-400">
-                Gemini Nano Ready
-              </span>
-            </>
-          )}
-          {status === "unavailable" && (
-            <>
-              <XCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-red-600 dark:text-red-400">
-                Not Available
-              </span>
-            </>
-          )}
-          {status === "needs-download" && (
-            <>
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <span className="text-sm text-amber-600 dark:text-amber-400">
-                Downloading...
-              </span>
-            </>
-          )}
-        </div>
-
-        {aiInfo?.reason && status !== "ready" && (
-          <p className="mt-2 text-xs text-muted-foreground">{aiInfo.reason}</p>
-        )}
-
-        {status === "unavailable" && (
-          <Button
-            onClick={openFlags}
-            variant="outline"
-            size="sm"
-            className="mt-3 w-full"
-          >
-            Enable in Chrome Flags
-          </Button>
-        )}
-      </div>
-
-      {/* Settings */}
-      <div className="brutal-card p-3 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-sm font-bold">Extension Enabled</span>
-            <p className="text-xs text-muted-foreground">
-              Show trigger button
-            </p>
-          </div>
-          <button
-            onClick={() => void toggleEnabled()}
-            className={cn(
-              "relative w-11 h-6 border-2 border-black rounded-full transition-colors",
-              isEnabled ? "bg-primary" : "bg-muted-foreground/30",
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-0.5 left-0.5 w-4 h-4 bg-black rounded-full shadow-brutal-sm transition-transform",
-                isEnabled && "translate-x-5",
-              )}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      {ruleCount !== null && (
-        <div className="brutal-card p-3 mb-4">
+      <div className="p-1.5 flex flex-col gap-1">
+        {/* Status Section */}
+        <div className="group flex flex-col gap-3 px-3.5 py-4 transition-colors hover:bg-[var(--pt-hover-bg)] rounded-[10px]">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold">Optimization Rules</span>
-            <span className="text-sm font-bold text-primary">
+            <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-[var(--pt-text-secondary)] opacity-80">
+              Model Loaded
+            </span>
+            <button
+              onClick={() => void checkStatus()}
+              className="rounded-md p-1 text-[var(--pt-text-secondary)] transition-colors hover:text-white"
+              title="Refresh status"
+            >
+              <ArrowClockwise className={status === "checking" ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} weight="regular" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {status === "checking" && (
+              <span className="text-[14px] font-medium text-[var(--pt-text-secondary)]">Checking engine...</span>
+            )}
+            {status === "ready" && (
+              <div className="flex items-center gap-2.5 text-[14px] font-medium">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+                <span>Ready</span>
+              </div>
+            )}
+            {status === "unavailable" && (
+              <div className="flex items-center gap-2.5 text-[14px] font-medium">
+                <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                <span className="text-red-400">Not Available</span>
+              </div>
+            )}
+            {status === "needs-download" && (
+              <div className="flex items-center gap-2.5 text-[14px] font-medium">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-amber-400">Downloading...</span>
+              </div>
+            )}
+          </div>
+
+          {status === "unavailable" && (
+            <Button
+              onClick={openFlags}
+              variant="outline"
+              size="sm"
+              className="mt-1 w-full border-[var(--pt-glass-border)] bg-white/5 text-[11px] font-medium hover:bg-white/10"
+            >
+              Enable Gemini Nano
+            </Button>
+          )}
+        </div>
+
+        {/* Global Toggle */}
+        <div className="flex items-center justify-between px-3.5 py-4 transition-colors hover:bg-[var(--pt-hover-bg)] rounded-[10px]">
+          <span className="text-[14px] font-medium tracking-tight">Extension Enabled</span>
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={() => void toggleEnabled()}
+            className="scale-90"
+          />
+        </div>
+
+        {/* Stats Section */}
+        {ruleCount !== null && (
+          <div className="flex items-center justify-between px-3.5 py-4 transition-colors hover:bg-[var(--pt-hover-bg)] rounded-[10px]">
+            <span className="text-[14px] font-medium tracking-tight">Active Rules</span>
+            <span className="rounded-[4px] bg-white/10 px-1.5 py-0.5 text-[10px] font-mono font-bold text-[var(--pt-text-secondary)]">
               {ruleCount}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Platform-specific rules loaded
-          </p>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="pt-3 border-t border-border">
-        <p className="text-xs text-center text-muted-foreground">
-          100% local processing • Zero cloud uploads
-        </p>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,11 @@
+/* Ensure overlay appears above all page content */
+.prompt-tuner-overlay-root {
+  all: initial;
+  font-family: Inter, "Geist Sans", sans-serif;
+  letter-spacing: -0.025em;
+}
+
+/* Prevent body scroll when overlay is open */
+body.prompt-tuner-overlay-open {
+  overflow: hidden;
+}
