@@ -27,7 +27,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    
+
     // Increased timeout for AI operations
     actionTimeout: 30000,
     navigationTimeout: 30000,

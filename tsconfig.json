@@ -2,8 +2,15 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["dom-chromium-ai"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "dom-chromium-ai",
+      "chrome"
+    ],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": false,
@@ -34,12 +41,33 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "~lib/*": ["./src/lib/*"],
-      "~types": ["./src/types/index.ts"],
-      "~components/*": ["./src/components/*"]
+      "~/*": [
+        "./src/*"
+      ],
+      "~lib/*": [
+        "./src/lib/*"
+      ],
+      "~types": [
+        "./src/types/index.ts"
+      ],
+      "~hooks/*": [
+        "./src/hooks/*"
+      ],
+      "~components/*": [
+        "./src/components/*"
+      ]
     }
   },
-  "include": [".plasmo/index.d.ts", "src/**/*", "pipeline/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", "build", ".plasmo"]
+  "include": [
+    ".plasmo/index.d.ts",
+    "src/**/*",
+    "pipeline/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".plasmo"
+  ]
 }

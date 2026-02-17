@@ -17,6 +17,15 @@ Unlike traditional prompt optimization tools that require manual updates or clou
 - **Edge AI Processing:** Uses Chrome's built-in Gemini Nano model to optimize prompts entirely on-device within the browser, ensuring zero data leaves your device.
 - **Automated Knowledge Updates:** Quarterly GitHub Actions pipeline distills the latest prompt engineering documentation from major AI providers into compact "Golden Rules" that stay current without manual intervention.
 
+## Engineering Standards
+
+This project adheres to high-fidelity Chrome extension standards to ensure stability across complex host environments:
+
+- **Shadow DOM Isolation:** All UI components are injected into a Shadow Root with encapsulated styling. We use Plasmo's `data-text` injection pattern to ensure our CSS never leaks into or is overwritten by the host website.
+- **Strict Type Safety:** The codebase avoids `any` type casts for Chrome APIs and implements strongly typed messaging via discriminated unions.
+- **Hybrid Rule Loading:** Optimization rules are multi-layered: validated by Zod at runtime, cached locally for performance, and backed by bundled fallbacks for offline reliability.
+- **Headless Background:** The background service worker is kept minimal and headless, prioritizing low memory footprint and reliable long-lived port connections for AI streaming.
+
 ---
 
 ## Impact & Performance

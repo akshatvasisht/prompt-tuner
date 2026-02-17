@@ -21,6 +21,7 @@ export default defineConfig({
       "~": resolve(__dirname, "./src"),
       "~lib": resolve(__dirname, "./src/lib"),
       "~types": resolve(__dirname, "./src/types/index.ts"),
+      "~hooks": resolve(__dirname, "./src/hooks"),
       "~components": resolve(__dirname, "./src/components"),
     },
   },

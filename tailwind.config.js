@@ -1,83 +1,61 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ["class"],
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
+        // "Zinc" Palette - No pure black
+        background: "#18181b", // zinc-900
+        foreground: "#f4f4f5", // zinc-100
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#27272a", // zinc-800
+          foreground: "#a1a1aa", // zinc-400
         },
+        border: "rgba(255, 255, 255, 0.08)", // 8% white opacity
+        input: "rgba(255, 255, 255, 0.05)",
+        primary: {
+          DEFAULT: "#fafafa", // zinc-50
+          foreground: "#18181b", // zinc-900
+        },
+        // Accent for "Active" states (e.g. cursor in cmdk)
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#27272a", // zinc-800
+          foreground: "#fafafa",
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-      },
-      boxShadow: {
-        'brutal': '4px 4px 0px 0px #000000',
-        'brutal-sm': '2px 2px 0px 0px #000000',
-        'brutal-lg': '6px 6px 0px 0px #000000',
       },
       borderRadius: {
-        lg: "0.25rem",  // Reduced from var(--radius) for sharper edges
-        md: "0.125rem", // Reduced
-        sm: "0rem",     // Sharp edges
+        lg: "8px",
+        md: "6px",
+        sm: "4px",
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        sparkle: {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.8", transform: "scale(1.1)" },
-        },
-        "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(251, 191, 36, 0.4)" },
-          "50%": { boxShadow: "0 0 0 8px rgba(251, 191, 36, 0)" },
-        },
-        wiggle: {
-          "0%, 100%": { transform: "rotate(-15deg)" },
-          "50%": { transform: "rotate(15deg)" },
-        },
+      fontFamily: {
+        sans: ["Inter", "Geist Sans", "sans-serif"],
+      },
+      letterSpacing: {
+        tight: "-0.025em",
+      },
+      boxShadow: {
+        glass: "0 8px 30px rgb(0 0 0 / 0.12)",
+        "glass-sm": "0 2px 8px rgb(0 0 0 / 0.08)",
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        sparkle: "sparkle 2s ease-in-out infinite",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        wiggle: "wiggle 0.5s ease-in-out infinite",
+        in: "enter 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        out: "exit 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+      },
+      keyframes: {
+        enter: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        exit: {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.95)" },
+        },
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };
