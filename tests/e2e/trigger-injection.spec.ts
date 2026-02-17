@@ -14,17 +14,16 @@
  * - No injection on unsupported platforms
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   waitForExtensionLoad,
-  waitForTriggerInjection,
-  isTriggerVisible,
   createMockChatPage,
   focusChatTextarea,
   monitorConsoleErrors,
   assertNoConsoleErrors,
   mockGeminiNanoAPI,
 } from "./setup";
+import { WIDGET_IDS } from "../../src/lib/constants";
 
 // =============================================================================
 // Trigger Button Injection Tests
@@ -34,7 +33,7 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
   test.beforeEach(async ({ context, page }) => {
     // Wait for extension to load
     await waitForExtensionLoad(context);
-    
+
     // Mock LanguageModel API
     await mockGeminiNanoAPI(page, { available: true });
   });
@@ -44,21 +43,20 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
 
     // Create mock ChatGPT page
     await createMockChatPage(page, "chatgpt");
-    
+
     // Focus textarea to trigger button appearance
     await focusChatTextarea(page, "chatgpt");
-    
-    // Wait for trigger button injection
-    await waitForTriggerInjection(page);
-    
+
+    await page.waitForTimeout(500);
+
     // Verify trigger button exists
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).not.toBeNull();
-    
+
     // Verify trigger button is visible
     const visible = await isTriggerVisible(page);
     expect(visible).toBe(true);
-    
+
     // No console errors
     assertNoConsoleErrors(errors);
   });
@@ -68,21 +66,20 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
 
     // Create mock Claude page
     await createMockChatPage(page, "claude");
-    
+
     // Focus textarea
     await focusChatTextarea(page, "claude");
-    
-    // Wait for trigger button injection
-    await waitForTriggerInjection(page);
-    
+
+    await page.waitForTimeout(500);
+
     // Verify trigger button exists
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).not.toBeNull();
-    
+
     // Verify trigger button is visible
     const visible = await isTriggerVisible(page);
     expect(visible).toBe(true);
-    
+
     // No console errors
     assertNoConsoleErrors(errors);
   });
@@ -92,21 +89,20 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
 
     // Create mock Gemini page
     await createMockChatPage(page, "gemini");
-    
+
     // Focus textarea
     await focusChatTextarea(page, "gemini");
-    
-    // Wait for trigger button injection
-    await waitForTriggerInjection(page);
-    
+
+    await page.waitForTimeout(500);
+
     // Verify trigger button exists
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).not.toBeNull();
-    
+
     // Verify trigger button is visible
     const visible = await isTriggerVisible(page);
     expect(visible).toBe(true);
-    
+
     // No console errors
     assertNoConsoleErrors(errors);
   });
@@ -114,12 +110,12 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
   test("should not inject trigger button on unsupported platforms", async ({ page }) => {
     // Navigate to unsupported domain
     await page.goto("https://www.google.com");
-    
+
     // Wait a bit to see if trigger button tries to inject
     await page.waitForTimeout(2000);
-    
+
     // Verify trigger button does NOT exist
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).toBeNull();
   });
 });
@@ -140,12 +136,12 @@ test.describe("Trigger Button Positioning", () => {
     await waitForTriggerInjection(page);
 
     // Get trigger button position
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).not.toBeNull();
 
     const triggerBox = await trigger!.boundingBox();
     expect(triggerBox).not.toBeNull();
-    
+
     // Trigger should be positioned on the right edge
     // (exact positioning may vary, but should be near right side of viewport)
     const viewportSize = page.viewportSize();
@@ -159,7 +155,7 @@ test.describe("Trigger Button Positioning", () => {
     await focusChatTextarea(page, "chatgpt");
     await waitForTriggerInjection(page);
 
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     const initialBox = await trigger!.boundingBox();
 
     // Scroll page
@@ -169,7 +165,7 @@ test.describe("Trigger Button Positioning", () => {
     // Trigger button should still be visible (fixed position)
     const newBox = await trigger!.boundingBox();
     expect(newBox).toBeDefined();
-    
+
     // Fixed positioning means button stays in same viewport position
     if (initialBox && newBox) {
       expect(Math.abs(initialBox.y - newBox.y)).toBeLessThan(5);
@@ -205,7 +201,7 @@ test.describe("Shadow DOM Isolation", () => {
 
   test("trigger styles should not leak to page", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
-    
+
     // Get computed style of page element before trigger injection
     const originalStyle = await page.evaluate(() => {
       const el = document.querySelector('[contenteditable="true"]');
@@ -238,13 +234,13 @@ test.describe("Focus Event Handling", () => {
 
   test("should show trigger button when textarea is focused", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
-    
+
     // Initially, trigger button might not be visible
     await page.waitForTimeout(1000);
-    
+
     // Focus textarea
     await focusChatTextarea(page, "chatgpt");
-    
+
     // Trigger button should appear
     await waitForTriggerInjection(page);
     const visible = await isTriggerVisible(page);
@@ -261,25 +257,25 @@ test.describe("Focus Event Handling", () => {
     await page.waitForTimeout(500);
 
     // Trigger button should still exist (might be hidden or shown based on implementation)
-    const trigger = await page.$('[data-testid="trigger-button"]');
+    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
     expect(trigger).not.toBeNull();
   });
 
   test("should re-appear when refocusing textarea", async ({ page }) => {
     await createMockChatPage(page, "chatgpt");
-    
+
     // First focus
     await focusChatTextarea(page, "chatgpt");
     await waitForTriggerInjection(page);
-    
+
     // Blur
     await page.click("body");
     await page.waitForTimeout(300);
-    
+
     // Re-focus
     await focusChatTextarea(page, "chatgpt");
     await page.waitForTimeout(300);
-    
+
     // Trigger button should still be present
     const visible = await isTriggerVisible(page);
     expect(visible).toBe(true);
@@ -377,3 +373,25 @@ test.describe("Neobrutalist Visual Design", () => {
     expect(styles?.boxShadow).toBeTruthy();
   });
 });
+
+// =============================================================================
+// Test Helpers
+// =============================================================================
+
+/**
+ * Checks if the trigger button is visible on the page
+ */
+async function isTriggerVisible(page: Page): Promise<boolean> {
+  const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+  return trigger ? await trigger.isVisible() : false;
+}
+
+/**
+ * Waits for the trigger button to be injected into the DOM
+ */
+async function waitForTriggerInjection(page: Page, timeout = 10000): Promise<void> {
+  await page.waitForSelector(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`, {
+    timeout,
+    state: "visible",
+  });
+}

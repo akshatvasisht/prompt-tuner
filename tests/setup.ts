@@ -38,6 +38,11 @@ const mockChrome = {
       set: vi.fn(),
     },
   },
+  tabs: {
+    create: vi.fn(),
+    query: vi.fn(),
+    sendMessage: vi.fn(),
+  },
   alarms: {
     create: vi.fn(),
     clear: vi.fn(),

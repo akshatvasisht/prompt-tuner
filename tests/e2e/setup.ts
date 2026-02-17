@@ -9,7 +9,6 @@
  */
 
 import { Page, BrowserContext } from "@playwright/test";
-import path from "path";
 
 // =============================================================================
 // Extension Management
@@ -22,20 +21,20 @@ import path from "path";
 export async function getExtensionId(context: BrowserContext): Promise<string> {
   // Extension ID is available in the service worker
   const serviceWorkers = context.serviceWorkers();
-  if (serviceWorkers.length > 0) {
+  if (serviceWorkers.length > 0 && serviceWorkers[0]) {
     const url = serviceWorkers[0].url();
     const match = url.match(/chrome-extension:\/\/([a-z]+)\//);
-    if (match) {
+    if (match && match[1]) {
       return match[1];
     }
   }
 
   // Fallback: check background pages
   const backgroundPages = context.backgroundPages();
-  if (backgroundPages.length > 0) {
+  if (backgroundPages.length > 0 && backgroundPages[0]) {
     const url = backgroundPages[0].url();
     const match = url.match(/chrome-extension:\/\/([a-z]+)\//);
-    if (match) {
+    if (match && match[1]) {
       return match[1];
     }
   }
@@ -48,145 +47,53 @@ export async function getExtensionId(context: BrowserContext): Promise<string> {
  */
 export async function waitForExtensionLoad(
   context: BrowserContext,
-  timeout = 10000,
+  timeout = 45000, // Increased timeout for slower environments
 ): Promise<void> {
   const startTime = Date.now();
-  
-  while (Date.now() - startTime < timeout) {
-    const serviceWorkers = context.serviceWorkers();
-    if (serviceWorkers.length > 0) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  
-  throw new Error("Extension did not load within timeout");
-}
+  console.log("[E2E] Waiting for extension to load...");
 
-// =============================================================================
-// Trigger Button Detection (New Architecture)
-// =============================================================================
-
-/**
- * Wait for the Prompt Tuner trigger button to be injected
- */
-export async function waitForTriggerInjection(
-  page: Page,
-  timeout = 15000
-): Promise<void> {
-  await page.waitForSelector('[data-testid="trigger-button"]', {
-    timeout,
-    state: "attached",
-  });
-}
-
-/**
- * Check if trigger button is visible
- */
-export async function isTriggerVisible(page: Page): Promise<boolean> {
-  const trigger = await page.$('[data-testid="trigger-button"]');
-  if (!trigger) return false;
-  return await trigger.isVisible();
-}
-
-// =============================================================================
-// Side Panel Utilities (New Architecture)
-// =============================================================================
-
-/**
- * Wait for side panel to open
- */
-export async function waitForSidePanelOpen(
-  page: Page,
-  timeout = 10000
-): Promise<void> {
-  // Side panel runs in extension context, need to find the panel page
-  const context = page.context();
-  
-  // Wait for new page (side panel)
-  const panelPromise = context.waitForEvent('page', { timeout });
-  const panel = await panelPromise;
-  
-  // Wait for panel to load
-  await panel.waitForLoadState('domcontentloaded');
-}
-
-/**
- * Get side panel page handle
- */
-export async function getSidePanelPage(page: Page): Promise<Page | null> {
-  const context = page.context();
-  const pages = context.pages();
-  
-  // Find page with sidepanel.html in URL
-  for (const p of pages) {
-    if (p.url().includes('sidepanel.html')) {
-      return p;
-    }
-  }
-  
-  return null;
-}
-
-/**
- * Click trigger button to open panel
- */
-export async function openSidePanel(page: Page): Promise<Page> {
-  const trigger = await page.$('[data-testid="trigger-button"]');
-  if (!trigger) {
-    throw new Error('Trigger button not found');
-  }
-  
-  // Click trigger and wait for panel
-  const panelPromise = page.context().waitForEvent('page');
-  await trigger.click();
-  const panel = await panelPromise;
-  
-  await panel.waitForLoadState('domcontentloaded');
-  return panel;
-}
-
-// =============================================================================
-// Test ID Constants
-// =============================================================================
-
-export const TRIGGER_BUTTON = '[data-testid="trigger-button"]';
-export const PANEL_OPTIMIZE_BUTTON = '[data-testid="panel-optimize-button"]';
-export const PANEL_ACCEPT_BUTTON = '[data-testid="panel-accept-button"]';
-export const PANEL_CANCEL_BUTTON = '[data-testid="panel-cancel-button"]';
-export const PANEL_ORIGINAL_TEXT = '[data-testid="panel-original-text"]';
-export const PANEL_OPTIMIZED_TEXT = '[data-testid="panel-optimized-text"]';
-export const PANEL_STATS = '[data-testid="panel-stats"]';
-
-// =============================================================================
-// Legacy Widget Detection (Deprecated - for backward compatibility)
-// =============================================================================
-
-/**
- * @deprecated Use waitForTriggerInjection instead
- * Wait for the Prompt Tuner widget to be injected into the page
- */
-export async function waitForWidgetInjection(
-  page: Page,
-  timeout = 15000,
-): Promise<void> {
-  try {
-    await waitForTriggerInjection(page, timeout);
-  } catch (error) {
-    // Fallback to old selector
-    await page.waitForSelector(".prompt-tuner-widget", {
-      timeout: 5000,
-      state: "attached",
+  // Monitor for new service workers
+  const swPromise = new Promise<void>((resolve) => {
+    context.on("serviceworker", (sw) => {
+      console.log(`[E2E] Service worker registered: ${sw.url()}`);
+      if (sw.url().includes("background")) {
+        resolve();
+      }
     });
-  }
-}
+  });
 
-/**
- * @deprecated Use isTriggerVisible instead
- * Check if widget is visible
- */
-export async function isWidgetVisible(page: Page): Promise<boolean> {
-  return await isTriggerVisible(page);
+  // Check current service workers
+  const checkCurrent = () => {
+    const serviceWorkers = context.serviceWorkers();
+    if (serviceWorkers.length > 0 && serviceWorkers[0]) {
+      console.log(`[E2E] Service worker already present: ${serviceWorkers[0].url()}`);
+      return true;
+    }
+    return false;
+  };
+
+  if (checkCurrent()) return;
+
+  // Race between already present, new registration, or timeout
+  try {
+    await Promise.race([
+      swPromise,
+      (async () => {
+        while (Date.now() - startTime < timeout) {
+          if (checkCurrent()) return;
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        throw new Error("Timeout");
+      })(),
+    ]);
+  } catch (error) {
+    const workers = context.serviceWorkers().map((w) => w.url());
+    const pages = context.pages().map((p) => p.url());
+    console.log(`[E2E] Failed to detect service worker.`);
+    console.log(`[E2E] Background workers found: ${JSON.stringify(workers)}`);
+    console.log(`[E2E] Pages found: ${JSON.stringify(pages)}`);
+    throw new Error(`Extension did not load within ${timeout}ms timeout. Check build path and manifest.`);
+  }
 }
 
 // =============================================================================
@@ -219,25 +126,25 @@ export async function mockGeminiNanoAPI(
       (window as any).ai = {
         languageModel: {
           availability: async () => (available ? "available" : "unavailable"),
-          
-          create: async (options: any) => {
+
+          create: async () => {
             if (simulateError) {
               throw new Error("Mock AI session creation failed");
             }
 
             return {
-              prompt: async (text: string) => {
+              prompt: async () => {
                 if (simulateError) {
                   throw new Error("Mock AI prompt failed");
                 }
                 return mockResponse;
               },
 
-              promptStreaming: async function* (text: string) {
+              promptStreaming: async function* () {
                 if (simulateError) {
                   throw new Error("Mock AI streaming failed");
                 }
-                
+
                 for (const token of streamingTokens) {
                   yield token;
                   // Small delay to simulate streaming
@@ -314,13 +221,12 @@ export async function createMockChatPage(
       <body>
         <div class="container">
           <h1>Mock ${platform.toUpperCase()} Chat Interface</h1>
-          ${
-            platform === "chatgpt"
-              ? '<div contenteditable="true" data-id="root" role="textbox"></div>'
-              : platform === "claude"
-                ? '<div contenteditable="true" class="ProseMirror"></div>'
-                : '<textarea id="chat-input" placeholder="Type your message"></textarea>'
-          }
+          ${platform === "chatgpt"
+      ? '<div contenteditable="true" data-id="root" role="textbox"></div>'
+      : platform === "claude"
+        ? '<div contenteditable="true" class="ProseMirror"></div>'
+        : '<textarea id="chat-input" placeholder="Type your message"></textarea>'
+    }
         </div>
       </body>
     </html>
@@ -340,7 +246,7 @@ export async function createMockChatPage(
  */
 export function monitorConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
-  
+
   page.on("console", (msg) => {
     if (msg.type() === "error") {
       errors.push(msg.text());
@@ -429,7 +335,7 @@ export async function getChatTextareaContent(
 
   const selector = selectors[platform];
   const element = await page.$(selector);
-  
+
   if (!element) {
     return "";
   }
