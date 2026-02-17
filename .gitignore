@@ -28,7 +28,14 @@ npm-debug.log*
 # Test coverage
 coverage/
 
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
 # Scraped content (generated)
 rules/scraped/
 
+# Agent context
 agentcontext/
