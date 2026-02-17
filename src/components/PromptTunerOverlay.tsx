@@ -27,6 +27,9 @@ export interface CommandPaletteContentProps {
 
 export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"selection" | "streaming" | "complete">("selection");
+  const [streamBuffer, setStreamBuffer] = useState("");
+  const [activeAction, setActiveAction] = useState<string | null>(null);
 
   const handleAction = (actionId: string) => {
     const action = ACTIONS.find((a) => a.id === actionId);
@@ -41,9 +44,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
       return;
     }
 
-    onClose();
-
-    const toastId = toast.loading(`${action.label}...`);
+    setStatus("streaming");
+    setActiveAction(action.label);
+    setStreamBuffer("");
 
     let completed = false;
 
@@ -58,26 +61,25 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         const msg = message as OptimizePortMessage;
 
         if (msg.type === "CHUNK") {
-          // Optional: stream into field; we only replace on COMPLETE for simplicity
+          setStreamBuffer((prev) => prev + msg.data);
         } else if (msg.type === "COMPLETE") {
           completed = true;
-          const success = replaceSelectedText(msg.optimizedPrompt);
-          if (success) {
-            toast.success("Done!", { id: toastId });
-          } else {
-            toast.error("Failed to replace text", { id: toastId });
-          }
+          // Use the complete draft to ensure consistency
+          setStreamBuffer(msg.optimizedPrompt);
+          setStatus("complete");
           port.disconnect();
         } else if (msg.type === "ERROR") {
           completed = true;
-          toast.error(msg.message, { id: toastId });
+          toast.error(msg.message);
+          setStatus("selection");
           port.disconnect();
         }
       });
 
       port.onDisconnect.addListener(() => {
         if (!completed) {
-          toast.error("Connection lost", { id: toastId });
+          toast.error("Connection lost");
+          setStatus("selection");
         }
       });
 
@@ -90,9 +92,67 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
       port.postMessage(request);
     } catch {
       logger.error("Overlay optimization error: Something went wrong");
-      toast.error("Something went wrong", { id: toastId });
+      toast.error("Something went wrong");
+      setStatus("selection");
     }
   };
+
+  const handleApply = () => {
+    const success = replaceSelectedText(streamBuffer);
+    if (success) {
+      toast.success("Applied!");
+      onClose();
+    } else {
+      toast.error("Failed to replace text");
+    }
+  };
+
+  if (status === "streaming" || status === "complete") {
+    return (
+      <div className="flex flex-col h-full min-h-[300px]">
+        <div className="flex items-center justify-between border-b border-[var(--pt-glass-border)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+            <span className="text-[13px] font-semibold uppercase tracking-wider text-[var(--pt-text-primary)]">
+              {activeAction}
+            </span>
+          </div>
+          {status === "streaming" && (
+            <span className="text-[11px] font-medium text-[var(--pt-text-secondary)]">
+              Streaming tokens...
+            </span>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-6">
+          <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-[var(--pt-text-primary)] antialiased">
+            {streamBuffer}
+            {status === "streaming" && (
+              <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-500/50 align-middle" />
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-[var(--pt-glass-border)] px-5 py-4">
+          <button
+            onClick={() => { setStatus("selection"); }}
+            className="text-[13px] font-medium text-[var(--pt-text-secondary)] hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+
+          {status === "complete" && (
+            <button
+              onClick={handleApply}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-[13px] font-semibold text-white shadow-lg hover:bg-blue-500 transition-all active:scale-95"
+            >
+              Apply Changes
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

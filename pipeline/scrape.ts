@@ -56,10 +56,10 @@ function createTurndownService(): TurndownService {
 function extractContent(html: string, url: string): string | null {
   try {
     const dom = new JSDOM(html, { url });
-    const reader = new Readability(dom.window.document);
+    const reader = new Readability(dom.window.document as unknown as Document);
     const article = reader.parse();
 
-    if (!article) {
+    if (!article?.content) {
       return null;
     }
 
@@ -110,10 +110,12 @@ async function scrapeWithPlaywright(url: string): Promise<string | null> {
     const markdown = extractContent(html, url);
 
     return markdown;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("  [Playwright] Error:", error);
     if (browser) {
-      await browser.close().catch(() => {});
+      await browser.close().catch((_err: unknown) => {
+        // Silently handle close errors
+      });
     }
     return null;
   }
