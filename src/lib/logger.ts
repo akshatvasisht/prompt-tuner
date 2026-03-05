@@ -10,20 +10,21 @@ const PREFIX = "[PromptTuner]";
 
 /* eslint-disable no-console */
 export const logger = {
-    info: (message: string, ...args: unknown[]) => {
-        console.log(`${PREFIX} 🔵 INFO: ${message}`, ...args);
-    },
-    warn: (message: string, ...args: unknown[]) => {
-        console.warn(`${PREFIX} 🟠 WARN: ${message}`, ...args);
-    },
-    error: (message: string, ...args: unknown[]) => {
-        console.error(`${PREFIX} 🔴 ERROR: ${message}`, ...args);
-    },
-    debug: (message: string, ...args: unknown[]) => {
-        // Safe check for process.env in various environments
-        const isDev = typeof process !== "undefined" && process.env.NODE_ENV === "development";
-        if (isDev) {
-            console.debug(`${PREFIX} ⚪ DEBUG: ${message}`, ...args);
-        }
-    },
+  info: (message: string, ...args: unknown[]) => {
+    console.log(`${PREFIX} 🔵 INFO: ${message}`, ...args);
+  },
+  warn: (message: string, ...args: unknown[]) => {
+    console.warn(`${PREFIX} 🟠 WARN: ${message}`, ...args);
+  },
+  error: (message: string, ...args: unknown[]) => {
+    console.error(`${PREFIX} 🔴 ERROR: ${message}`, ...args);
+  },
+  debug: (message: string, ...args: unknown[]) => {
+    // Safe check for process.env in various environments
+    const isDev =
+      typeof process !== "undefined" && process.env.NODE_ENV === "development";
+    if (isDev) {
+      console.debug(`${PREFIX} ⚪ DEBUG: ${message}`, ...args);
+    }
+  },
 };

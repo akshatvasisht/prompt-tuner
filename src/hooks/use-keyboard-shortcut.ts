@@ -7,11 +7,9 @@ export function useKeyboardShortcut(
 ): void {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const isMac =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-        (navigator as any).userAgentData?.platform?.toLowerCase().includes("mac") ??
-        (typeof navigator.platform === "string" && navigator.platform.toLowerCase().includes("mac"));
+      const nav = navigator as unknown as { userAgentData?: { platform?: string } };
+      const platformStr = nav.userAgentData?.platform ?? navigator.platform;
+      const isMac = /mac/i.test(platformStr);
       const keys = keyCombo.split("+");
 
       const key = keys[keys.length - 1]?.toLowerCase();

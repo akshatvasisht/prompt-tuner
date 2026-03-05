@@ -114,10 +114,7 @@ async function fetchRemoteRules(
     // Rules contain only text strings (never executable code)
     return validationResult.data as OptimizationRule[];
   } catch (error) {
-    logger.error(
-      `Error fetching remote rules for ${platform}:`,
-      error,
-    );
+    logger.error(`Error fetching remote rules for ${platform}:`, error);
     // SECURITY: Any error (network, parse, etc.) → safe fallback to bundled rules
     return null;
   }
@@ -147,10 +144,7 @@ async function getCachedRules(
 
     return cached;
   } catch (error) {
-    logger.error(
-      `Error reading cache for ${platform}:`,
-      error,
-    );
+    logger.error(`Error reading cache for ${platform}:`, error);
     return null;
   }
 }
@@ -173,10 +167,7 @@ async function cacheRules(
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     await chrome.storage.local.set({ [key]: cached });
   } catch (error) {
-    logger.error(
-      `Error caching rules for ${platform}:`,
-      error,
-    );
+    logger.error(`Error caching rules for ${platform}:`, error);
   }
 }
 
@@ -226,9 +217,7 @@ export async function updateRulesForPlatform(
     // SECURITY: Fallback to bundled rules (bundled at build time, trusted)
     RUNTIME_RULES[platform] = BUNDLED_RULES[platform];
     await cacheRules(platform, BUNDLED_RULES[platform], "bundled");
-    logger.info(
-      `Falling back to bundled rules for ${platform}`,
-    );
+    logger.info(`Falling back to bundled rules for ${platform}`);
   }
 }
 

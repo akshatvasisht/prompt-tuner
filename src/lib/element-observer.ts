@@ -14,6 +14,8 @@
  * 4. Clean up with AbortSignal when done
  */
 
+import { logger } from "~lib/logger";
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -36,7 +38,7 @@ const SEEN_CLASS = "pt-seen";
  * @example
  * ```typescript
  * const controller = new AbortController();
- * 
+ *
  * observeElements(
  *   'textarea[placeholder*="Message"]',
  *   (element) => {
@@ -44,7 +46,7 @@ const SEEN_CLASS = "pt-seen";
  *   },
  *   controller.signal
  * );
- * 
+ *
  * // Later: cleanup
  * controller.abort();
  * ```
@@ -98,7 +100,7 @@ export function observeElements(
     try {
       callback(element);
     } catch (error) {
-      console.error("[ElementObserver] Callback error:", error);
+      logger.error("[ElementObserver] Callback error:", error);
     }
   };
 
@@ -120,7 +122,7 @@ export function observeElements(
       try {
         callback(element);
       } catch (error) {
-        console.error("[ElementObserver] Callback error:", error);
+        logger.error("[ElementObserver] Callback error:", error);
       }
     }
   });
@@ -191,9 +193,9 @@ export function observeWithClickOutside(
  * @example
  * ```typescript
  * const observer = createObserverController();
- * 
+ *
  * observeElements('textarea', callback, observer.signal);
- * 
+ *
  * // Stop observing
  * observer.abort();
  * ```

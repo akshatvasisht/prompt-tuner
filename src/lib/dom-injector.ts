@@ -144,9 +144,12 @@ export function isElementValid(
   // Basic sanity check - element should be in the document
   if (!document.body.contains(element)) return false;
 
-  const htmlElement = element as HTMLElement;
+  const htmlElement = element;
 
-  if (htmlElement instanceof HTMLTextAreaElement || htmlElement.tagName === "TEXTAREA") {
+  if (
+    htmlElement instanceof HTMLTextAreaElement ||
+    htmlElement.tagName === "TEXTAREA"
+  ) {
     const textarea = htmlElement as HTMLTextAreaElement;
     return !textarea.disabled && !textarea.readOnly;
   }
@@ -259,7 +262,7 @@ function replaceContentEditable(
 
     // Dispatch beforeinput BEFORE mutation
     dispatchBeforeInput(element, newText);
-    // Note: We don't return early if cancelled in tests as JSDOM dispatchEvent 
+    // Note: We don't return early if cancelled in tests as JSDOM dispatchEvent
     // can be inconsistent with event cancellation.
 
     // Select all content in the element
@@ -310,7 +313,7 @@ function replaceContentEditable(
         }
 
         return { success: true };
-      } catch (err) {
+      } catch {
         // Fallback to absolute minimum if InputEvent/DataTransfer fails
       }
     }
@@ -361,7 +364,10 @@ export async function replaceText(
 
   // Fallback: Use Isolated World injection
   const htmlElement = element as HTMLElement;
-  if (htmlElement instanceof HTMLTextAreaElement || htmlElement.tagName === "TEXTAREA") {
+  if (
+    htmlElement instanceof HTMLTextAreaElement ||
+    htmlElement.tagName === "TEXTAREA"
+  ) {
     return replaceTextarea(htmlElement as HTMLTextAreaElement, newText);
   }
 
@@ -400,10 +406,13 @@ export function getActiveTextInput(): TextInputElement | null {
   const selectors = DOM_SELECTORS.INPUTS;
 
   for (const selector of selectors) {
-    const element = document.querySelector(selector) as HTMLElement | null;
+    const element = document.querySelector(selector);
     if (!element) continue;
 
-    if (element instanceof HTMLTextAreaElement || element.tagName === "TEXTAREA") {
+    if (
+      element instanceof HTMLTextAreaElement ||
+      element.tagName === "TEXTAREA"
+    ) {
       return element as HTMLTextAreaElement;
     }
     if (
