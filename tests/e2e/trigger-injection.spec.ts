@@ -39,7 +39,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     await mockGeminiNanoAPI(page, { available: true });
   });
 
-  test("should inject trigger button on ChatGPT (chat.openai.com)", async ({ page }) => {
+  test("should inject trigger button on ChatGPT (chat.openai.com)", async ({
+    page,
+  }) => {
     const errors = monitorConsoleErrors(page);
 
     // Create mock ChatGPT page
@@ -51,7 +53,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     await page.waitForTimeout(500);
 
     // Verify trigger button exists
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = await page.$(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     expect(trigger).not.toBeNull();
 
     // Verify trigger button is visible
@@ -62,7 +66,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     assertNoConsoleErrors(errors);
   });
 
-  test("should inject trigger button on Claude (claude.ai)", async ({ page }) => {
+  test("should inject trigger button on Claude (claude.ai)", async ({
+    page,
+  }) => {
     const errors = monitorConsoleErrors(page);
 
     // Create mock Claude page
@@ -74,7 +80,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     await page.waitForTimeout(500);
 
     // Verify trigger button exists
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = await page.$(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     expect(trigger).not.toBeNull();
 
     // Verify trigger button is visible
@@ -85,7 +93,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     assertNoConsoleErrors(errors);
   });
 
-  test("should inject trigger button on Gemini (gemini.google.com)", async ({ page }) => {
+  test("should inject trigger button on Gemini (gemini.google.com)", async ({
+    page,
+  }) => {
     const errors = monitorConsoleErrors(page);
 
     // Create mock Gemini page
@@ -97,7 +107,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     await page.waitForTimeout(500);
 
     // Verify trigger button exists
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = await page.$(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     expect(trigger).not.toBeNull();
 
     // Verify trigger button is visible
@@ -108,7 +120,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     assertNoConsoleErrors(errors);
   });
 
-  test("should not inject trigger button on unsupported platforms", async ({ page }) => {
+  test("should not inject trigger button on unsupported platforms", async ({
+    page,
+  }) => {
     // Navigate to unsupported domain
     await page.goto("https://www.google.com");
 
@@ -116,7 +130,9 @@ test.describe("Trigger Button Injection on Supported Platforms", () => {
     await page.waitForTimeout(2000);
 
     // Verify trigger button does NOT exist
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = await page.$(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     expect(trigger).toBeNull();
   });
 });
@@ -137,7 +153,9 @@ test.describe("Trigger Button Positioning", () => {
     await waitForTriggerInjection(page);
 
     // Get trigger button position
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await expect(trigger).toBeVisible();
 
     const triggerBox = await trigger.boundingBox();
@@ -146,7 +164,9 @@ test.describe("Trigger Button Positioning", () => {
     // Trigger should be positioned on the right edge
     const viewportSize = page.viewportSize();
     if (viewportSize && triggerBox) {
-      expect(triggerBox.x + triggerBox.width).toBeGreaterThan(viewportSize.width - 50);
+      expect(triggerBox.x + triggerBox.width).toBeGreaterThan(
+        viewportSize.width - 50,
+      );
     }
   });
 
@@ -155,11 +175,15 @@ test.describe("Trigger Button Positioning", () => {
     await focusChatTextarea(page, "chatgpt");
     await waitForTriggerInjection(page);
 
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     const initialBox = await trigger.boundingBox();
 
     // Scroll page
-    await page.evaluate(() => { window.scrollBy(0, 100); });
+    await page.evaluate(() => {
+      window.scrollBy(0, 100);
+    });
     await page.waitForTimeout(500);
 
     // Trigger button should still be visible (fixed position)
@@ -232,7 +256,9 @@ test.describe("Focus Event Handling", () => {
     await mockGeminiNanoAPI(page);
   });
 
-  test("should show trigger button when textarea is focused", async ({ page }) => {
+  test("should show trigger button when textarea is focused", async ({
+    page,
+  }) => {
     await createMockChatPage(page, "chatgpt");
 
     // Initially, trigger button might not be visible
@@ -257,7 +283,9 @@ test.describe("Focus Event Handling", () => {
     await page.waitForTimeout(500);
 
     // Trigger button should still exist (might be hidden or shown based on implementation)
-    const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = await page.$(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     expect(trigger).not.toBeNull();
   });
 
@@ -325,7 +353,6 @@ test.describe("Multiple Textareas", () => {
   });
 });
 
-
 // =============================================================================
 // Test Helpers
 // =============================================================================
@@ -337,4 +364,3 @@ async function isTriggerVisible(page: Page): Promise<boolean> {
   const trigger = await page.$(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
   return trigger ? await trigger.isVisible() : false;
 }
-

@@ -70,7 +70,9 @@ export async function waitForExtensionLoad(
   const checkCurrent = () => {
     const serviceWorkers = context.serviceWorkers();
     if (serviceWorkers.length > 0 && serviceWorkers[0]) {
-      console.log(`[E2E] Service worker already present: ${serviceWorkers[0].url()}`);
+      console.log(
+        `[E2E] Service worker already present: ${serviceWorkers[0].url()}`,
+      );
       return true;
     }
     return false;
@@ -96,7 +98,9 @@ export async function waitForExtensionLoad(
     console.log(`[E2E] Failed to detect service worker.`);
     console.log(`[E2E] Background workers found: ${JSON.stringify(workers)}`);
     console.log(`[E2E] Pages found: ${JSON.stringify(pages)}`);
-    throw new Error(`Extension did not load within ${String(timeout)}ms timeout. Check build path and manifest.`);
+    throw new Error(
+      `Extension did not load within ${String(timeout)}ms timeout. Check build path and manifest.`,
+    );
   }
 }
 
@@ -129,7 +133,8 @@ export async function mockGeminiNanoAPI(
       // Mock LanguageModel API
       (window as unknown as { ai: unknown }).ai = {
         languageModel: {
-          availability: async () => Promise.resolve(available ? "available" : "unavailable"),
+          availability: async () =>
+            Promise.resolve(available ? "available" : "unavailable"),
 
           create: async () => {
             await Promise.resolve();
@@ -139,14 +144,16 @@ export async function mockGeminiNanoAPI(
 
             return {
               prompt: async () => {
-                if (simulateError) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                if (simulateError) {
                   throw new Error("Mock AI prompt failed");
                 }
                 return Promise.resolve(mockResponse);
               },
 
               promptStreaming: async function* () {
-                if (simulateError) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                if (simulateError) {
                   throw new Error("Mock AI streaming failed");
                 }
 
@@ -236,12 +243,13 @@ export async function createMockChatPage(
       <body>
         <div class="container">
           <h1>Mock ${platform.toUpperCase()} Chat Interface</h1>
-          ${platform === "chatgpt"
-      ? '<div contenteditable="true" data-id="root" role="textbox"></div>'
-      : platform === "claude"
-        ? '<div contenteditable="true" class="ProseMirror"></div>'
-        : '<textarea id="chat-input" placeholder="Type your message"></textarea>'
-    }
+          ${
+            platform === "chatgpt"
+              ? '<div contenteditable="true" data-id="root" role="textbox"></div>'
+              : platform === "claude"
+                ? '<div contenteditable="true" class="ProseMirror"></div>'
+                : '<textarea id="chat-input" placeholder="Type your message"></textarea>'
+          }
         </div>
       </body>
     </html>
@@ -290,9 +298,7 @@ export function assertNoConsoleErrors(errors: string[]): void {
   );
 
   if (relevantErrors.length > 0) {
-    throw new Error(
-      `Console errors detected:\n${relevantErrors.join("\n")}`,
-    );
+    throw new Error(`Console errors detected:\n${relevantErrors.join("\n")}`);
   }
 }
 
@@ -310,7 +316,7 @@ export async function focusChatTextarea(
   const selectors = {
     chatgpt: '[contenteditable="true"][data-id="root"]',
     claude: '[contenteditable="true"].ProseMirror',
-    gemini: 'textarea#chat-input, textarea[placeholder]',
+    gemini: "textarea#chat-input, textarea[placeholder]",
   };
 
   const selector = selectors[platform];
@@ -330,7 +336,7 @@ export async function typeInChatTextarea(
   const selectors = {
     chatgpt: '[contenteditable="true"][data-id="root"]',
     claude: '[contenteditable="true"].ProseMirror',
-    gemini: 'textarea#chat-input, textarea[placeholder]',
+    gemini: "textarea#chat-input, textarea[placeholder]",
   };
 
   const selector = selectors[platform];
@@ -347,7 +353,7 @@ export async function getChatTextareaContent(
   const selectors = {
     chatgpt: '[contenteditable="true"][data-id="root"]',
     claude: '[contenteditable="true"].ProseMirror',
-    gemini: 'textarea#chat-input, textarea[placeholder]',
+    gemini: "textarea#chat-input, textarea[placeholder]",
   };
 
   const selector = selectors[platform];
@@ -380,7 +386,10 @@ export async function waitForTriggerInjection(
 /**
  * Simulates text selection in a contenteditable or textarea
  */
-export async function selectTextInArea(page: Page, selector: string): Promise<void> {
+export async function selectTextInArea(
+  page: Page,
+  selector: string,
+): Promise<void> {
   await page.waitForSelector(selector);
   await page.evaluate((sel) => {
     const el = document.querySelector(sel);

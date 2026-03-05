@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { checkAIAvailability, optimizePrompt, clearSessionCache } from "~lib/ai-engine";
+import {
+  checkAIAvailability,
+  optimizePrompt,
+  clearSessionCache,
+} from "~lib/ai-engine";
 import { PromptTunerError } from "~types";
 
 import { createMockLanguageModel, resetLanguageModelMock } from "../setup";

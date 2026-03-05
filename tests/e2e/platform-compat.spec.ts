@@ -88,11 +88,15 @@ test.describe("Platform-Specific Textarea Handling", () => {
     expect(content).toContain("Test prompt");
 
     // Click Mini-Pill
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
 
     // Verify Overlay
-    await expect(page.locator(`[id="${WIDGET_IDS.OVERLAY_CONTAINER}"]`)).toBeVisible();
+    await expect(
+      page.locator(`[id="${WIDGET_IDS.OVERLAY_CONTAINER}"]`),
+    ).toBeVisible();
 
     // Select Polish and Apply
     await page.click('text="Polish"');
@@ -119,7 +123,9 @@ test.describe("Platform-Specific Textarea Handling", () => {
     expect(content).toContain("Test prompt");
 
     // Click Mini-Pill
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
 
     // Select Polish and Apply
@@ -148,7 +154,9 @@ test.describe("Platform-Specific Textarea Handling", () => {
     expect(content).toContain("Test prompt");
 
     // Click Mini-Pill
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
 
     // Select Polish and Apply
@@ -185,7 +193,9 @@ test.describe("React-Controlled Input Compatibility", () => {
     await waitForTriggerInjection(page);
 
     // Click Mini-Pill
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
 
     // Select Polish and Apply
@@ -233,7 +243,9 @@ test.describe("React-Controlled Input Compatibility", () => {
     await waitForTriggerInjection(page);
 
     // Click Mini-Pill
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
 
     // Select Polish and Apply
@@ -243,7 +255,11 @@ test.describe("React-Controlled Input Compatibility", () => {
     await page.click('button:has-text("Apply Changes")');
 
     // Check if events were triggered
-    const events = await page.evaluate(() => (window as unknown as { reactEventsTriggered: string[] }).reactEventsTriggered);
+    const events = await page.evaluate(
+      () =>
+        (window as unknown as { reactEventsTriggered: string[] })
+          .reactEventsTriggered,
+    );
 
     // Input events should have been triggered
     expect(events.length).toBeGreaterThan(0);
@@ -310,7 +326,9 @@ test.describe("SPA Navigation Compatibility", () => {
     await page.waitForTimeout(1000);
 
     // Trigger should be gone
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await expect(trigger).not.toBeVisible();
   });
 });
@@ -391,7 +409,9 @@ test.describe("No Interference with Platform Functionality", () => {
     await page.click('button[type="submit"]');
     await page.waitForTimeout(500);
 
-    const submitted = await page.evaluate(() => (window as unknown as { formSubmitted: boolean }).formSubmitted);
+    const submitted = await page.evaluate(
+      () => (window as unknown as { formSubmitted: boolean }).formSubmitted,
+    );
     expect(submitted).toBe(true);
   });
 });
@@ -432,7 +452,9 @@ test.describe("No Console Errors", () => {
     await selectTextInArea(page, selector);
     await waitForTriggerInjection(page);
 
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await trigger.click();
     await page.click('text="Polish"');
     await page.waitForSelector('button:has-text("Apply Changes")');
@@ -455,7 +477,9 @@ test.describe("Cross-Platform Consistency", () => {
     });
   });
 
-  test("should provide consistent behavior across platforms", async ({ page }) => {
+  test("should provide consistent behavior across platforms", async ({
+    page,
+  }) => {
     const platforms: ("chatgpt" | "claude" | "gemini")[] = [
       "chatgpt",
       "claude",
@@ -467,7 +491,7 @@ test.describe("Cross-Platform Consistency", () => {
       const selectors = {
         chatgpt: '[contenteditable="true"][data-id="root"]',
         claude: '[contenteditable="true"].ProseMirror',
-        gemini: 'textarea#chat-input',
+        gemini: "textarea#chat-input",
       };
       const selector = selectors[platform];
 
@@ -476,7 +500,9 @@ test.describe("Cross-Platform Consistency", () => {
       await selectTextInArea(page, selector);
       await waitForTriggerInjection(page);
 
-      const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+      const trigger = page.locator(
+        `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+      );
       await expect(trigger).toBeVisible();
       await trigger.click();
 
@@ -494,7 +520,9 @@ test.describe("Cross-Platform Consistency", () => {
     // ChatGPT: contenteditable with data-id="root"
     await createMockChatPage(page, "chatgpt");
     await page.waitForLoadState("domcontentloaded");
-    const chatgptTextarea = page.locator('[contenteditable="true"][data-id="root"]');
+    const chatgptTextarea = page.locator(
+      '[contenteditable="true"][data-id="root"]',
+    );
     await expect(chatgptTextarea).toBeVisible();
 
     // Claude: contenteditable with ProseMirror class
@@ -506,7 +534,9 @@ test.describe("Cross-Platform Consistency", () => {
     // Gemini: standard textarea
     await createMockChatPage(page, "gemini");
     await page.waitForLoadState("domcontentloaded");
-    const geminiTextarea = page.locator("textarea#chat-input, textarea[placeholder]");
+    const geminiTextarea = page.locator(
+      "textarea#chat-input, textarea[placeholder]",
+    );
     await expect(geminiTextarea.first()).toBeVisible();
   });
 });
@@ -538,7 +568,9 @@ test.describe("Edge Cases", () => {
     await selectTextInArea(page, selector);
     await waitForTriggerInjection(page);
 
-    const trigger = page.locator(`[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`);
+    const trigger = page.locator(
+      `[data-testid="${WIDGET_IDS.TRIGGER_BUTTON}"]`,
+    );
     await expect(trigger).toBeVisible();
   });
 
