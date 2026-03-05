@@ -21,7 +21,8 @@
 
 import { checkAIAvailability, optimizePromptStreaming } from "~lib/ai-engine";
 import { logger } from "~lib/logger";
-import { getRulesForPlatform } from "~lib/platform-rules";
+import { getFullRulesForPlatform } from "~lib/platform-rules";
+import { setKeepAlive } from "../index";
 import {
   type ErrorCode,
   type Platform,
@@ -123,7 +124,33 @@ async function handleOptimizationRequest(
 
   try {
     // Step 1: Get platform-specific rules
-    const rules = getRulesForPlatform(platform);
+    const allRules = getFullRulesForPlatform(platform);
+
+    // Dynamic Rule Routing: Filter rules based on the specific action selected
+    let activeRules = allRules;
+    if (request.action !== "optimize") {
+      const actionToTags: Record<string, string[]> = {
+        "few-shot": ["examples", "few-shot", "demonstration"],
+        "chain-of-thought": ["reasoning", "chain-of-thought", "steps"],
+        "assign-role": ["persona", "role", "context"],
+        "define-output": ["format", "output", "structure"],
+        "add-constraints": ["length", "detail", "constraints", "instructions"],
+      };
+
+      const relevantTags = actionToTags[request.action] ?? [];
+
+      activeRules = allRules.filter((r) => {
+        // ALWAYS include structural and formatting baselines
+        const isFoundational =
+          (r.tags?.includes("structure") ?? false) ||
+          (r.tags?.includes("clarity") ?? false);
+        const isRelevant =
+          r.tags?.some((tag) => relevantTags.includes(tag)) ?? false;
+        return isFoundational || isRelevant;
+      });
+    }
+
+    const ruleStrings = activeRules.map((r) => r.rule);
 
     // Step 2: Check AI availability
     const aiStatus = await checkAIAvailability();
@@ -141,14 +168,14 @@ async function handleOptimizationRequest(
     // Step 3: Stream optimization with token-by-token updates
     const optimizedPrompt = await optimizePromptStreaming(
       draft,
-      rules,
+      ruleStrings,
       (chunk: string) => {
         sendChunk(port, chunk);
       },
     );
 
     // Step 4: Send completion message
-    sendComplete(port, optimizedPrompt, rules);
+    sendComplete(port, optimizedPrompt, ruleStrings);
   } catch (error) {
     logger.error("Error during optimization:", error);
 
@@ -183,7 +210,7 @@ export function registerOptimizePortHandler(): void {
     }
 
     // Port connected (debug)
-    // console.log("[OptimizePort] Port connected");
+    // Port connected — keep-alive is activated above
 
     // Handle messages on this port
     port.onMessage.addListener((message: unknown) => {
@@ -212,10 +239,12 @@ export function registerOptimizePortHandler(): void {
 
     // Handle port disconnect
     port.onDisconnect.addListener(() => {
-      // Port disconnected (debug)
-      // console.log("[OptimizePort] Port disconnected");
-      // Cleanup if needed
+      // Deactivate keep-alive when port disconnects
+      setKeepAlive(false);
     });
+
+    // Activate keep-alive while port is connected
+    setKeepAlive(true);
   });
 }
 

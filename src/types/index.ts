@@ -68,11 +68,17 @@ export interface StartOptimizationMessage extends BaseMessage {
   payload: OptimizeRequest;
 }
 
+/** Request to refresh rules from remote source */
+export interface RefreshRulesMessage extends BaseMessage {
+  type: "REFRESH_RULES";
+}
+
 /** Union of all possible extension messages */
 export type ExtensionMessage =
   | ToggleOverlayMessage
   | StatusCheckMessage
-  | StartOptimizationMessage;
+  | StartOptimizationMessage
+  | RefreshRulesMessage;
 
 // =============================================================================
 // Port-based Streaming Types (optimize-port)
@@ -83,6 +89,7 @@ export interface OptimizePortRequest {
   type: "START_OPTIMIZATION";
   draft: string;
   platform: Platform;
+  action: string;
 }
 
 /** Streaming chunk message sent from background to overlay */
@@ -187,6 +194,10 @@ export interface ExtensionSettings {
   showWidget: boolean;
   /** Last update timestamp for rules */
   rulesLastUpdated?: number;
+  /** Default action to run on open (action ID) */
+  defaultAction?: string;
+  /** Whether to skip the palette and run the default action immediately */
+  runOnOpen?: boolean;
 }
 
 /** Default settings */

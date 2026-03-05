@@ -10,11 +10,18 @@
  */
 
 import { registerOptimizePortHandler } from "./messages/optimize-port";
-import { getRuleCount, initializeRules } from "~lib/platform-rules";
+import {
+  getRuleCount,
+  initializeRules,
+  refreshRules,
+} from "~lib/platform-rules";
 import { logger } from "~lib/logger";
-import { STORAGE_KEYS, MESSAGE_TYPES, ALARM_NAMES, COMMAND_IDS } from "~lib/constants";
-
-
+import {
+  STORAGE_KEYS,
+  MESSAGE_TYPES,
+  ALARM_NAMES,
+  COMMAND_IDS,
+} from "~lib/constants";
 
 // =============================================================================
 // Extension Lifecycle Events
@@ -35,13 +42,15 @@ chrome.runtime.onInstalled.addListener((details) => {
       });
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-        logger.info(
-          `Fresh installation - ${String(ruleCount)} rules loaded`,
-        );
+        logger.info(`Fresh installation - ${String(ruleCount)} rules loaded`);
+        void chrome.tabs.create({
+          url: chrome.runtime.getURL("tabs/setup.html"),
+        });
       } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-        logger.info(
-          `Extension updated - ${String(ruleCount)} rules loaded`,
-        );
+        logger.info(`Extension updated - ${String(ruleCount)} rules loaded`);
+        void chrome.tabs.create({
+          url: chrome.runtime.getURL("tabs/setup.html"),
+        });
       }
     } catch (error: unknown) {
       logger.error("Failed to initialize background script:", error);
@@ -74,6 +83,17 @@ chrome.runtime.onMessage.addListener(
         });
         return true;
 
+      case MESSAGE_TYPES.REFRESH_RULES:
+        void refreshRules()
+          .then(() => {
+            sendResponse({ success: true, ruleCount: getRuleCount() });
+          })
+          .catch((error: unknown) => {
+            logger.error("Failed to refresh rules:", error);
+            sendResponse({ success: false });
+          });
+        return true; // async response
+
       default:
         return false;
     }
@@ -86,12 +106,14 @@ chrome.runtime.onMessage.addListener(
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === COMMAND_IDS.TOGGLE_OVERLAY) {
-    void chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      const tabId = tabs[0]?.id;
-      if (tabId != null) {
-        void chrome.tabs.sendMessage(tabId, { type: "TOGGLE_OVERLAY" });
-      }
-    });
+    void chrome.tabs
+      .query({ active: true, currentWindow: true })
+      .then((tabs) => {
+        const tabId = tabs[0]?.id;
+        if (tabId != null) {
+          void chrome.tabs.sendMessage(tabId, { type: "TOGGLE_OVERLAY" });
+        }
+      });
   }
 });
 

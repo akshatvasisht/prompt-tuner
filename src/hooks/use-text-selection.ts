@@ -12,7 +12,9 @@ export function useTextSelection(): {
   selectionRect: SelectionRect | null;
 } {
   const [hasSelection, setHasSelection] = useState(false);
-  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
+    null,
+  );
 
   useEffect(() => {
     const handleSelectionChange = () => {

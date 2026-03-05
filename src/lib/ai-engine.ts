@@ -23,15 +23,9 @@ const CHROME_VERSION_INFO = "Requires Chrome 138+ with Gemini Nano enabled";
 
 /**
  * Gemini Nano has approximately 2K token context window
- * Set conservative limit to leave room for system prompt (~200 tokens)
+ * Set conservative limit for the system prompt
  */
 const MAX_INPUT_TOKENS = 1800;
-
-/**
- * Rough heuristic: 4 characters ≈ 1 token
- * This is conservative and works well for English text
- */
-const CHARS_PER_TOKEN = 4;
 
 // =============================================================================
 // Session Cache
@@ -106,34 +100,6 @@ function formatRulesForPrompt(rules: string[]): string {
     return "- Use clear, specific instructions\n- Be concise but complete";
   }
   return rules.map((rule, index) => `${String(index + 1)}. ${rule}`).join("\n");
-}
-
-/**
- * Estimates token count using character-based heuristic
- * Gemini Nano has ~2K token context window
- *
- * @param text - Input text to estimate tokens for
- * @returns Estimated token count
- */
-function estimateTokenCount(text: string): number {
-  return Math.ceil(text.length / CHARS_PER_TOKEN);
-}
-
-/**
- * Validates input length and throws error if too long
- * @param text - Input text to validate
- * @throws PromptTunerError with INPUT_TOO_LONG code if exceeds limit
- */
-function validateInputLength(text: string): void {
-  const estimatedTokens = estimateTokenCount(text);
-
-  if (estimatedTokens > MAX_INPUT_TOKENS) {
-    const maxChars = MAX_INPUT_TOKENS * CHARS_PER_TOKEN;
-    throw new PromptTunerError(
-      `Input too long (${String(text.length)} chars, ~${String(estimatedTokens)} tokens). Please shorten your prompt to ~${String(maxChars)} characters or less.`,
-      "INPUT_TOO_LONG",
-    );
-  }
 }
 
 /**
@@ -335,9 +301,6 @@ export async function optimizePrompt(
   rules: string[],
   options?: AIOptimizeOptions,
 ): Promise<string> {
-  // Validate input length first
-  validateInputLength(draft);
-
   // Check availability
   const availability = await checkAIAvailability();
   if (!availability.available) {
@@ -357,10 +320,29 @@ export async function optimizePrompt(
   try {
     const session = await getOrCreateSession(systemPrompt, options);
 
+    const userPrompt = `Please optimize this prompt:\n\n${draft}`;
+
+    // Utilize native session context counting for exact token bounds
+    let tokens = 0;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      if (typeof (session as any).countPromptTokens === "function") {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        tokens = Number(await (session as any).countPromptTokens(userPrompt));
+      }
+    } catch {
+      // Fallback if countPromptTokens fails
+    }
+
+    if (tokens > MAX_INPUT_TOKENS) {
+      throw new PromptTunerError(
+        `Input too long (${String(tokens)} tokens). Gemini Nano is limited to local context. Please shorten your prompt.`,
+        "INPUT_TOO_LONG",
+      );
+    }
+
     // Send the draft prompt for optimization
-    const optimizedPrompt = await session.prompt(
-      `Please optimize this prompt:\n\n${draft}`,
-    );
+    const optimizedPrompt = await session.prompt(userPrompt);
 
     // Clean up the response - extract from XML tags and strip meta-text
     const cleaned = cleanModelOutput(optimizedPrompt);
@@ -397,9 +379,6 @@ export async function optimizePromptStreaming(
   onChunk: (chunk: string) => void,
   options?: AIOptimizeOptions,
 ): Promise<string> {
-  // Validate input length first
-  validateInputLength(draft);
-
   const availability = await checkAIAvailability();
   if (!availability.available) {
     throw new PromptTunerError(
@@ -417,9 +396,27 @@ export async function optimizePromptStreaming(
   try {
     const session = await getOrCreateSession(systemPrompt, options);
 
-    const stream = session.promptStreaming(
-      `Please optimize this prompt:\n\n${draft}`,
-    );
+    const userPrompt = `Please optimize this prompt:\n\n${draft}`;
+
+    let tokens = 0;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      if (typeof (session as any).countPromptTokens === "function") {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+        tokens = Number(await (session as any).countPromptTokens(userPrompt));
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (tokens > MAX_INPUT_TOKENS) {
+      throw new PromptTunerError(
+        `Input too long (${String(tokens)} tokens). Gemini Nano is limited to local context. Please shorten your prompt.`,
+        "INPUT_TOO_LONG",
+      );
+    }
+
+    const stream = session.promptStreaming(userPrompt);
 
     const reader = stream.getReader();
     let result = "";
