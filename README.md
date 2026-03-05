@@ -1,4 +1,3 @@
-
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-18.3-20232A?logo=react&logoColor=61DAFB)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwindcss&logoColor=white)
@@ -27,9 +26,9 @@ Prompt Tuner is a Chrome extension for prompt optimization on sites like ChatGPT
 - **[SETUP.md](docs/SETUP.md):** Environment configuration and startup.
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md):** System design and data flow.
 - **[TESTING.md](docs/TESTING.md):** Testing guide.
-- **[STYLE.md](docs/STYLE.md):** Developer conventions.
+- **[STYLE.md](docs/STYLE.md):** Dev conventions.
 - **[PRIVACY.md](docs/PRIVACY.md):** Privacy policy.
 
 ## License
 
-MIT
+See **[LICENSE](LICENSE)** file for details.

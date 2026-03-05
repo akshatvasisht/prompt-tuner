@@ -8,7 +8,7 @@ This document details the architectural decisions, system components, and data f
 
 - **Optimization Heuristics:** Platform-specific principles extracted from official documentation and stored as compact JSON files optimized for Gemini Nano's context window.
 - **Scraping Pipeline:** An automated GitHub Actions workflow that fetches documentation via Playwright and Readability, distills it using Gemini Flash, and generates platform-specific rule files.
-- **Trigger & Overlay:** A UI consisting of a floating trigger element and a centered glassmorphism overlay (CMD-K) for prompt optimization, built with Framer Motion and Shadcn/ui.
+- **Trigger & Overlay:** A UI consisting of a floating trigger element and a centered overlay (CMD-K) for prompt optimization, built with Framer Motion and Shadcn/ui.
 
 ## System Overview
 
