@@ -22,7 +22,7 @@ export function KeyboardShortcut({
             {index > 0 && (
               <span className="text-[var(--pt-text-tertiary)] mx-2 text-sm font-medium">+</span>
             )}
-            <kbd className="font-mono text-3xl font-bold text-[var(--pt-text-primary)] tracking-widest bg-[var(--pt-hover-bg)] px-6 py-3 rounded-lg border border-[var(--pt-surface-border)]">
+            <kbd className="font-mono text-xl font-semibold text-[var(--pt-text-primary)] tracking-wide bg-[var(--pt-hover-bg)] px-4 py-2 rounded-[var(--pt-radius-md)] border border-[var(--pt-surface-border)]">
               {key}
             </kbd>
           </React.Fragment>
@@ -39,7 +39,7 @@ export function KeyboardShortcut({
             {index > 0 && (
               <span className="text-xs text-[var(--pt-text-tertiary)]">+</span>
             )}
-            <kbd className="font-mono font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] px-2 py-0.5 rounded border border-[var(--pt-surface-border)]">
+            <kbd className="font-mono text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] px-2 py-0.5 rounded-[var(--pt-radius-sm)] border border-[var(--pt-surface-border)]">
               {key}
             </kbd>
           </React.Fragment>
@@ -58,7 +58,7 @@ export function KeyboardShortcut({
             {index > 0 && (
               <span className="text-xs text-[var(--pt-text-tertiary)] mx-1">+</span>
             )}
-            <kbd className="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded">
+            <kbd className="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded-[var(--pt-radius-sm)]">
               {key}
             </kbd>
           </React.Fragment>

@@ -7,20 +7,16 @@
  * @see https://developer.chrome.com/docs/extensions/ai/prompt-api
  */
 
-import {
-  type AIAvailability,
-  type AIOptimizeOptions,
-  PromptTunerError,
-} from "~types";
+import { type AIOptimizeOptions, PromptTunerError } from "~types";
 
 import { logger } from "~lib/logger";
 import { fnv1a32 } from "~lib/hash";
+import {
+  checkAIAvailability,
+  isLanguageModelAvailable,
+} from "~lib/ai-availability";
 
-// =============================================================================
-// Constants
-// =============================================================================
-
-const CHROME_VERSION_INFO = "Requires Chrome 138+ with Gemini Nano enabled";
+export { checkAIAvailability, isLanguageModelAvailable } from "~lib/ai-availability";
 
 /**
  * Fallback input budget when session.inputQuota is unreadable.
@@ -91,10 +87,6 @@ export function clearSessionCache(): void {
 // =============================================================================
 // Helper Functions
 // =============================================================================
-
-function isLanguageModelAvailable(): boolean {
-  return typeof LanguageModel !== "undefined";
-}
 
 /**
  * Reads the session's reported input quota (Chrome 138+) with a safe fallback.
@@ -191,7 +183,7 @@ async function getSessionForRules(
 ): Promise<LanguageModel> {
   if (!isLanguageModelAvailable()) {
     throw new PromptTunerError(
-      `LanguageModel API not available. ${CHROME_VERSION_INFO}`,
+      "LanguageModel API not available. Requires Chrome 138+ with Gemini Nano enabled",
       "AI_UNAVAILABLE",
     );
   }
@@ -241,58 +233,6 @@ async function getSessionForRules(
 // =============================================================================
 // Public API
 // =============================================================================
-
-export async function checkAIAvailability(): Promise<AIAvailability> {
-  if (!isLanguageModelAvailable()) {
-    return {
-      available: false,
-      reason: `LanguageModel API not available. ${CHROME_VERSION_INFO}`,
-    };
-  }
-
-  try {
-    const availability = await LanguageModel.availability({
-      expectedOutputs: [{ type: "text", languages: ["en"] }],
-    });
-
-    switch (availability) {
-      case "available":
-        return { available: true };
-
-      case "downloadable":
-        return {
-          available: false,
-          needsDownload: true,
-          reason:
-            "Gemini Nano model can be downloaded. Visit chrome://components to trigger download.",
-        };
-
-      case "downloading":
-        return {
-          available: false,
-          needsDownload: true,
-          reason: "Gemini Nano model is currently downloading. Please wait.",
-        };
-
-      case "unavailable":
-      default:
-        return {
-          available: false,
-          reason:
-            "Gemini Nano is not supported on this device or browser configuration.",
-        };
-    }
-  } catch (error) {
-    logger.error("AI availability check failed", error);
-    return {
-      available: false,
-      reason:
-        error instanceof Error
-          ? error.message
-          : "Failed to check AI availability",
-    };
-  }
-}
 
 /**
  * Proactively warms up the AI engine by creating a base session (without

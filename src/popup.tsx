@@ -14,7 +14,7 @@ import { Switch } from "~components/ui/Switch";
 import { Tooltip } from "~components/ui/Tooltip";
 import { Skeleton } from "~components/ui/Skeleton";
 import { ErrorBoundary } from "~components/ErrorBoundary";
-import { checkAIAvailability } from "~lib/ai-engine";
+import { checkAIAvailability } from "~lib/ai-availability";
 import { ACTIONS } from "~lib/actions";
 import { STORAGE_KEYS } from "~lib/constants";
 import { logger } from "~lib/logger";
