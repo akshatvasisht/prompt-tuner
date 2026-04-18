@@ -121,7 +121,7 @@ const makeStream = (chunks: string[]): ReadableStream<string> => {
   return new ReadableStream<string>({
     pull(controller) {
       if (i < chunks.length) {
-        controller.enqueue(chunks[i] as string);
+        controller.enqueue(chunks[i]);
         i++;
       } else {
         controller.close();

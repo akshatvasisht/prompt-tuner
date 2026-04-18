@@ -2,7 +2,6 @@
 
 This document defines the coding standards, conventions, and best practices for the Prompt Tuner Chrome extension. All contributors must follow these guidelines to ensure code quality, maintainability, and consistency.
 
----
 
 ## Table of Contents
 
@@ -17,14 +16,12 @@ This document defines the coding standards, conventions, and best practices for 
 9. [Git Workflow](#git-workflow)
 10. [Code Review Checklist](#code-review-checklist)
 
----
 
 ## General Principles
 
 - **Terminology:** Use inclusive language (e.g., "allowlist/blocklist").
 - **Error Messages:** Must be actionable.
 
----
 
 ## TypeScript Guidelines
 
@@ -144,7 +141,6 @@ type ErrorCode =
   | "UNKNOWN_ERROR";
 ```
 
----
 
 ## React & Component Patterns
 
@@ -283,7 +279,6 @@ All components must be accessible:
 | Change            | `handle`       | `handleChange`, `handleInputChange` |
 | Callbacks (props) | `on`           | `onProcessingComplete`, `onChange`  |
 
----
 
 ## CSS & Styling
 
@@ -341,7 +336,6 @@ import { cn } from "~lib/utils"
 >
 ```
 
----
 
 ## Testing Standards
 
@@ -403,7 +397,6 @@ describe("module-name", () => {
 - Framework boilerplate.
 - TypeScript type checking (the compiler handles this).
 
----
 
 ## Chrome Extension Security
 
@@ -486,29 +479,9 @@ window.addEventListener("message", (event) => {
 });
 ```
 
-### Runtime Validation with Zod
+### Input Validation at Boundaries
 
-All external data (fetched rules, user input, storage) must be validated at runtime:
-
-```typescript
-import { z } from "zod";
-
-const RuleSchema = z.object({
-  id: z.string(),
-  platform: z.enum(["openai", "anthropic", "google"]),
-  rule: z.string(),
-  tags: z.array(z.string()),
-});
-
-const RulesArraySchema = z.array(RuleSchema);
-
-// Validate before use
-const result = RulesArraySchema.safeParse(jsonData);
-if (!result.success) {
-  // Fall back to bundled rules
-  return BUNDLED_RULES;
-}
-```
+The extension doesn't fetch remote data — optimization rules are bundled and trusted. Validation is required at other boundaries: messages from the host page (`window.postMessage`), values read from `chrome.storage.local`, and user input. Prefer narrow hand-written type guards over schema libraries for these small surfaces; see "Type Guards for Message Validation" below.
 
 ### Data Handling
 
@@ -535,7 +508,6 @@ const isExtensionContextValid = (): boolean => {
 };
 ```
 
----
 
 ## Performance Guidelines
 
@@ -639,7 +611,6 @@ async function optimizePromptStreaming(
 - Avoid large dependencies for simple functionality.
 - Analyze bundle size regularly with build tools.
 
----
 
 ## Documentation Standards
 
@@ -700,7 +671,6 @@ export function publicFunction() {}
 - Keep documentation up-to-date with code changes.
 - Use tables for structured information.
 
----
 
 ## Git Workflow
 
@@ -761,7 +731,6 @@ The following checks run automatically via Husky:
 2. **Prettier** — Code formatting
 3. **Type checking** — TypeScript compilation
 
----
 
 ## Code Review Checklist
 
@@ -786,7 +755,6 @@ The following checks run automatically via Husky:
 - [ ] Tests are meaningful and comprehensive
 - [ ] Documentation is accurate and complete
 
----
 
 ## Tool Configuration Reference
 
@@ -824,75 +792,24 @@ import { cn } from "~lib/utils"
 import { type Platform } from "~types"
 ```
 
----
 
 ## Extension-Specific Patterns
 
-### Hybrid Loading Strategy
+### Bundled Rule Loading
 
-For rules and configuration that need updates without Chrome Web Store review:
+Rules are bundled at build time — no runtime fetch. This keeps the extension fully offline and preserves the "zero network activity" privacy guarantee. Updates ship in each extension release; a quarterly CI job regenerates the JSON and commits it to the repo (see `.github/workflows/update-rules.yml`).
 
 ```typescript
-// 1. Bundle rules as fallback
-import bundledRules from "../../rules/platform.json";
+import UNIVERSAL from "../../rules/universal.json";
+import OVERRIDES from "../../rules/overrides.json";
 
-const BUNDLED_RULES = bundledRules as OptimizationRule[];
-
-// 2. Fetch remote rules with validation
-async function fetchRemoteRules(
-  platform: string,
-): Promise<OptimizationRule[] | null> {
-  try {
-    const response = await fetch(`${GITHUB_PAGES_URL}/rules/${platform}.json`);
-    const data = await response.json();
-
-    // Validate with Zod
-    const result = RulesArraySchema.safeParse(data);
-    if (!result.success) {
-      return null; // Fall back to bundled
-    }
-
-    return result.data;
-  } catch {
-    return null; // Fall back to bundled
-  }
-}
-
-// 3. Cache in chrome.storage.local with expiration
-const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-async function cacheRules(
-  platform: string,
-  rules: OptimizationRule[],
-): Promise<void> {
-  await chrome.storage.local.set({
-    [`rules_cache_${platform}`]: {
-      rules,
-      fetchedAt: Date.now(),
-      source: "remote",
-    },
-  });
-}
-
-// 4. Load with cache-first strategy
-async function loadRules(platform: string): Promise<OptimizationRule[]> {
-  // Try cache first
-  const cached = await getCachedRules(platform);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_DURATION_MS) {
-    return cached.rules;
-  }
-
-  // Try remote
-  const remote = await fetchRemoteRules(platform);
-  if (remote) {
-    await cacheRules(platform, remote);
-    return remote;
-  }
-
-  // Fall back to bundled
-  return BUNDLED_RULES;
+export function getRulesForPlatform(platform: Platform): string[] {
+  const override = OVERRIDES.filter((r) => r.platform === platform);
+  return [...UNIVERSAL, ...override].map((r) => r.rule);
 }
 ```
+
+A FNV-1a fingerprint of the bundled rule set is used in cache keys for optimization results, so bundled-rule changes invalidate stale cached outputs on first load after an update.
 
 ### Type Guards for Message Validation
 
@@ -964,7 +881,6 @@ function cleanModelOutput(rawOutput: string): string {
 }
 ```
 
----
 
 ## Architecture Patterns Summary
 
@@ -982,8 +898,8 @@ function cleanModelOutput(rawOutput: string): string {
 
 ### Phase 3: Data Patterns
 
-1. **Zod Validation** - Runtime validation for all external data
-2. **Hybrid Loading** - Bundled + Remote + Cache with fallback chain
+1. **Boundary Validation** - Type guards at extension boundaries (host-page messages, storage reads, user input)
+2. **Bundled Rules** - Optimization rules compiled into the build; no runtime fetch
 3. **Type Guards** - Validate messages before processing
 
 ### Phase 4: UI/UX Patterns

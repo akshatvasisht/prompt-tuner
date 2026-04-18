@@ -9,12 +9,12 @@ import { test, expect } from "@playwright/test";
  * finish before the snapshot fires.
  */
 
-type StoryCase = {
+interface StoryCase {
   slug: string;
   name: string;
   /** Extra ms to wait after load — streaming stories need the script to complete. */
   settleMs?: number;
-};
+}
 
 const STORIES: StoryCase[] = [
   { slug: "prompt-tuner-overlay--selection", name: "overlay-selection" },

@@ -11,20 +11,9 @@ The extension uses a strictly typed message passing system defined by the `Exten
 - `TOGGLE_OVERLAY`: Dispatched to content scripts to open/close the command palette.
 - `START_OPTIMIZATION`: (Legacy) Used for one-shot optimizations before streaming was introduced.
 - `REPLACE_TEXT`: Command sent from overlay to content script to replace DOM text.
-- `REFRESH_RULES`: Sent from popup to background to trigger a remote fetch of the latest optimization rules.
 
-### Message Payloads
+Optimization rules are bundled at build time (see `src/lib/platform-rules.ts`); there is no runtime rule-refresh message.
 
-```typescript
-// Example: Requesting a rules refresh
-chrome.runtime.sendMessage({ type: "REFRESH_RULES" }, (response) => {
-  if (response.success) {
-    console.log(`Updated rules count: ${response.ruleCount}`);
-  }
-});
-```
-
----
 
 ## 2. Port-Based Streaming (`chrome.runtime.connect`)
 
@@ -67,21 +56,28 @@ Streamed from background back to the overlay:
 { type: "ERROR", code: ErrorCode, message: string }
 ```
 
----
 
-## 3. Storage Keys (`chrome.storage.local`)
+## 3. Storage Keys
 
-Settings and cached rules are preserved locally.
+User settings live in `chrome.storage.local`; optimization result caching uses `chrome.storage.session` with key `optimize-result-cache`. Optimization rules are bundled at build time and not stored.
+
+**`chrome.storage.local`**:
 
 | Key                      | Purpose                                                                                             |
 | ------------------------ | --------------------------------------------------------------------------------------------------- |
-| `settings.enabled`       | Global on/off switch for the extension injections                                                   |
-| `settings.showWidget`    | Toggles the MiniPillTrigger                                                                         |
+| `installedAt`            | Timestamp of first install (ms since epoch)                                                         |
+| `lastUpdated`            | Timestamp of most recent extension update                                                           |
+| `version`                | Manifest version at last install/update                                                             |
 | `settings.defaultAction` | The `actionId` of the default transformation (e.g. `optimize`)                                      |
 | `settings.runOnOpen`     | Boolean: if true and defaultAction is set, bypasses palette and runs action immediately on shortcut |
-| `rules_cache_{platform}` | Locally cached Zod-validated rule objects fetched from the remote registry                          |
+| `onboardingComplete`     | Set to `true` after the setup wizard is dismissed                                                   |
 
----
+**`chrome.storage.session`** (cleared when Chrome closes):
+
+| Key                      | Purpose                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| `optimize-result-cache`  | Recent optimization results keyed by `FNV1a(draft + rulesVersion + action + platform)`              |
+
 
 ## 4. AI Engine Module (`~lib/ai-engine`)
 
@@ -99,7 +95,6 @@ Initializes a new `LanguageModel` session. If pre-warmed with specific rules in 
 
 The core generation function. Accepts the raw draft, an array of rule strings, an `onChunk` streaming callback, and optional `AIOptimizeOptions` (including `onTokenCount` for pre-stream token usage reporting). Emits tokens incrementally via `onChunk`.
 
----
 
 ## 5. Platform Detection & Injection
 

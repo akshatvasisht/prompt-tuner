@@ -53,6 +53,8 @@ export default tseslint.config(
       "dist/**",
       "build/**",
       ".plasmo/**",
+      ".claude/**",
+      ".ladle/**",
       "scripts/**",
       "*.config.js",
       "*.config.ts",

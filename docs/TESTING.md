@@ -2,7 +2,6 @@
 
 This document describes the testing strategy, frameworks, and practices for the Prompt Tuner Chrome extension.
 
----
 
 ## Frameworks
 
@@ -24,7 +23,6 @@ npm run test:e2e        # E2E tests
 - **dom-injector:** Text replacement logic.
 - **UI:** Main document overlay injection and streaming verification.
 
----
 
 ## E2E Test Suites
 
@@ -61,7 +59,6 @@ Tests cross-platform compatibility.
 - No console errors on any platform
 - Extension doesn't break page functionality
 
----
 
 ## Mocking Strategy
 
@@ -123,7 +120,6 @@ const mockLanguageModel = {
 
 **`resetLanguageModelMock()`**: Resets the LanguageModel mock to default state between tests.
 
----
 
 ## Coverage Requirements
 
@@ -150,7 +146,6 @@ Coverage output formats:
 - **json**: `coverage/coverage-final.json`
 - **html**: `coverage/index.html`
 
----
 
 ## Writing Tests
 
@@ -197,7 +192,6 @@ test("trigger button appears on ChatGPT", async ({ page }) => {
 });
 ```
 
----
 
 ## Continuous Integration
 
@@ -220,7 +214,6 @@ The CI pipeline runs:
 4. `npm run test:e2e` - E2E tests
 5. `npm run build` - Production build verification
 
----
 
 ## Troubleshooting
 
@@ -252,7 +245,6 @@ Run E2E tests with debug logging:
 DEBUG=pw:api npm run test:e2e
 ```
 
----
 
 ## Resources
 
@@ -261,7 +253,6 @@ DEBUG=pw:api npm run test:e2e
 - [Testing Library](https://testing-library.com/)
 - [Chrome Extension Testing](https://developer.chrome.com/docs/extensions/mv3/tut_debugging/)
 
----
 
 **Document Version**: 1.1  
-**Last Updated**: April 4, 2026
+**Last Updated**: April 18, 2026

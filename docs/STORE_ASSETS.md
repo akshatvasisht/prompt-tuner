@@ -2,10 +2,9 @@
 
 **Extension**: Prompt Tuner  
 **Version**: 0.1.0  
-**Submission Date**: February 17, 2026  
+**Submission Date**: TBD (pre-submission)  
 **Category**: Productivity
 
----
 
 ## Table of Contents
 
@@ -23,7 +22,6 @@
 12. [Reviewer Notes](#12-reviewer-notes-for-chrome-web-store-team)
 13. [Post-Submission Checklist](#13-post-submission-checklist)
 
----
 
 ## 1. Extension Description
 
@@ -42,8 +40,8 @@ KEY FEATURES
 - One-click prompt optimization with local AI processing
 - Platform-specific rules for ChatGPT, Claude, and Gemini
 - 100% private - all processing happens on your device
-- Works offline after initial setup
-- Automatically updates optimization strategies quarterly
+- Works fully offline — zero network activity at runtime
+- Optimization strategies updated quarterly via extension releases
 
 PRIVACY COMMITMENT
 All AI processing uses Chrome's built-in Gemini Nano model. No data leaves your device. No accounts, tracking, or data collection.
@@ -82,10 +80,10 @@ SECURITY AND PRIVACY
 - Regularly audited for security vulnerabilities
 - Full source code available on GitHub
 
-Open source and MIT licensed. View the code at: https://github.com/prompt-tuner/prompt-tuner
+Open source and MIT licensed. View the code at: https://github.com/akshatvasisht/prompt-tuner
 
-Need help? Visit our documentation: https://github.com/prompt-tuner/prompt-tuner/docs
-Report issues: https://github.com/prompt-tuner/prompt-tuner/issues
+Need help? Visit our documentation: https://github.com/akshatvasisht/prompt-tuner/docs
+Report issues: https://github.com/akshatvasisht/prompt-tuner/issues
 ```
 
 ### 1.3 Version Update Notes
@@ -106,12 +104,10 @@ Features:
 Privacy and Security:
 - 100% on-device processing via Gemini Nano
 - No data collection, tracking, or transmission
-- Content Security Policy restricts fetch origins
-- Zod schema validation on all remote rule data
-- Bundled fallback rules for offline operation
+- Strict Content Security Policy with no external `connect-src`
+- Optimization rules bundled with the extension — zero runtime network activity
 ```
 
----
 
 ## 2. Permissions Justification
 
@@ -119,8 +115,8 @@ Privacy and Security:
 
 | Permission  | Justification                                                                                                            | User-Facing Benefit                                                                    | Privacy Impact                                                                                               |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `storage`   | Cache platform-specific optimization rules locally to enable offline operation and reduce network requests               | Works offline, faster load times, reduced bandwidth usage                              | **Low** - Only stores non-personal data (optimization rules as JSON text). No user-generated content stored. |
-| `alarms`    | Schedule quarterly checks for updated optimization rules from GitHub Pages to keep strategies current                    | Always up-to-date with latest prompt engineering best practices without manual updates | **None** - No data collection. Only triggers periodic rule refresh check.                                    |
+| `storage`   | Cache optimization results (keyed by prompt hash + rules fingerprint) so repeated optimizations are instant               | Faster repeat optimizations, reduced AI compute                                        | **Low** - Only stores non-personal data (hashed inputs and model outputs). No account or identity data.     |
+| `alarms`    | Keep the background service worker alive during active streaming optimizations so long responses finish reliably          | Reliable completion of streaming optimizations without interrupted output              | **None** - No data collection. Scheduling only; no external calls.                                           |
 | `activeTab` | Detect which LLM platform (ChatGPT/Claude/Gemini) the user is currently on to apply platform-specific optimization rules | Tailored optimizations for each AI platform, better results                            | **Minimal** - Only reads current tab URL to detect platform. No content access.                              |
 
 ### 2.2 Host Permissions Table
@@ -133,7 +129,6 @@ Privacy and Security:
 | `https://bard.google.com/*`   | Inject optimization widget into Google Bard/Gemini interface (legacy domain)                | In-context prompt improvement without leaving Gemini  | **Low** - Only accesses DOM to inject UI and read draft prompts on user action. Does not access chat history. |
 | `https://gemini.google.com/*` | Inject optimization widget into Google Gemini interface                                     | Same as above                                         | Same as above                                                                                                 |
 
----
 
 ## 3. Host Permissions Technical Justification
 
@@ -211,7 +206,6 @@ User Reviews & Submits
 
 **Key Point**: All processing happens locally via Chrome's built-in AI. No data from `chat.openai.com`, `claude.ai`, or `gemini.google.com` is sent to external servers.
 
----
 
 ## 4. Single Purpose Statement
 
@@ -230,7 +224,6 @@ All features support this core function:
 | Platform Detection   | Determines which LLM is active, applies correct optimization rules |
 | Local AI Processing  | Processes prompts via Gemini Nano, generates optimized output      |
 | UI Widget            | Provides user control, initiates optimization on demand            |
-| Rule Updates         | Fetches latest strategies, keeps optimization current              |
 | Streaming Display    | Shows tokens as generated, improves perceived performance          |
 | Scoped CSS Overlay   | Isolates UI via `--pt-*` namespace, prevents conflicts with host page |
 | Main World Bridge    | Bypasses React Virtual DOM, ensures text replacement works         |
@@ -246,17 +239,16 @@ The extension intentionally excludes:
 - Social media integration
 - Unrelated productivity tools
 - Data collection or telemetry
-- Third-party service integrations (beyond static rule hosting)
+- Third-party service integrations of any kind
 
 **Compliance**: Meets Chrome Web Store Single Purpose Policy.
 
----
 
 ## 5. Privacy Practices
 
 ### 5.1 Privacy Policy
 
-**Full Policy URL**: https://prompt-tuner.github.io/prompt-tuner/docs/PRIVACY.html
+**Full Policy URL**: https://github.com/akshatvasisht/prompt-tuner/blob/main/docs/PRIVACY.md
 
 **Summary**:
 
@@ -264,7 +256,7 @@ The extension intentionally excludes:
 - No user tracking
 - No external AI APIs
 - All processing local (Chrome's Gemini Nano)
-- Optimization rules fetched from GitHub Pages (static JSON)
+- Optimization rules bundled with the extension (zero runtime network activity)
 - Open source for transparency
 
 ### 5.2 Data Handling Disclosure
@@ -307,7 +299,6 @@ including the User Data Privacy policy. This extension:
 - Processes all user data locally via Chrome's built-in AI
 ```
 
----
 
 ## 6. Store Listing Content
 
@@ -336,7 +327,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 
 **Localization Status**: Not yet localized (English only in v0.1.0)
 
----
 
 ## 7. Screenshots and Media
 
@@ -418,20 +408,19 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
   5. Submit and show better response
 - **Voiceover**: "Prompt Tuner - Optimize your AI prompts locally and privately"
 
----
 
 ## 8. Developer Information
 
 ### 8.1 Developer Account
 
-**Developer Name**: Prompt Tuner Team
-**Email**: team@prompttuner.ai
-**Website**: https://prompttuner.ai
+**Developer Name**: Akshat Vasisht
+**Email**: akshat2vasisht@gmail.com
+**Website**: https://github.com/akshatvasisht/prompt-tuner
 
 ### 8.2 Support Resources
 
-**Support URL**: https://github.com/prompt-tuner/prompt-tuner
-**Support Email**: support@prompttuner.ai
+**Support URL**: https://github.com/akshatvasisht/prompt-tuner/issues
+**Support Email**: akshat2vasisht@gmail.com
 
 **Documentation**:
 
@@ -448,11 +437,10 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 ### 8.3 Update Frequency
 
 **Extension Updates**: As needed (bug fixes, security patches)  
-**Rule Updates**: Quarterly (via GitHub Pages, no store submission required)
+**Rule Updates**: Quarterly, bundled into each extension release (rules are regenerated by CI and committed to the repo)
 
-**Notification**: Users automatically receive updated rules without reinstalling.
+**Notification**: Users receive updated rules through normal Chrome Web Store extension updates.
 
----
 
 ## 9. Technical Requirements
 
@@ -488,7 +476,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - No user accounts
 - No paid subscriptions
 
----
 
 ## 10. Compliance Checklist
 
@@ -508,8 +495,8 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - **No Remote Code**: All code bundled in extension - PASS
 - **No Obfuscation**: Source code readable, open source - PASS
 - **CSP Configured**: Restrictive Content Security Policy - PASS
-- **Secure Communication**: HTTPS only (GitHub Pages) - PASS
-- **Data Validation**: Rules validated with Zod schemas - PASS
+- **Secure Communication**: No runtime network activity - PASS
+- **Data Validation**: Rules are bundled static JSON, reviewed in-repo before each release - PASS
 
 ### 10.3 Quality Guidelines
 
@@ -519,7 +506,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - **Documentation**: Comprehensive docs provided - PASS
 - **Support**: GitHub issues for support - PASS
 
----
 
 ## 11. Frequently Asked Questions
 
@@ -545,19 +531,18 @@ Yes. After inserting an optimized prompt, a toast notification appears with an "
 To inject the optimization UI overlay and replace text in the platform's textarea. No chat history or page content is read — only the text you've selected when you click optimize.
 
 **Q: How often are optimization rules updated?**
-Rules are cached locally for 7 days. After expiry, the extension fetches updated rules from GitHub Pages. You can force a refresh from the popup settings. Bundled fallback rules are always available offline.
+Rules are bundled with the extension and refreshed in each release. A quarterly GitHub Actions job regenerates the rule files from source documentation and commits them to the repository; users receive updates via normal Chrome Web Store extension updates.
 
 **Q: Does it work offline?**
-Yes, after the initial Gemini Nano model download and first rule fetch. Cached rules and the local AI model don't need network access.
+Yes, fully. After Gemini Nano is downloaded by Chrome, the extension makes zero network requests. All rules are bundled and the AI runs entirely on-device.
 
 **Q: Is it open source?**
 Yes. The full source code is available on GitHub under the MIT License.
 
----
 
 ## 12. Reviewer Notes (for Chrome Web Store team)
 
-### 11.1 Testing Instructions
+### 12.1 Testing Instructions
 
 **For Chrome Web Store Reviewers:**
 
@@ -594,8 +579,7 @@ Yes. The full source code is available on GitHub under the MIT License.
 6. **Verify Privacy**:
    - Open DevTools, then Network tab
    - Perform optimization
-   - Verify NO network requests except:
-     - Initial rule fetch from `*.github.io` (first use only)
+   - Verify **zero network requests** after extension load — all processing is local
    - Verify no analytics beacons
    - Verify no third-party API calls
 
@@ -604,7 +588,7 @@ Yes. The full source code is available on GitHub under the MIT License.
    - No permission escalation prompts
    - Storage usage minimal (<1MB)
 
-### 11.2 Common Issues and Solutions
+### 12.2 Common Issues and Solutions
 
 **Issue**: "Gemini Nano not available" error  
 **Solution**: Ensure Chrome 138+ and Gemini Nano installed at `chrome://components`
@@ -615,15 +599,15 @@ Yes. The full source code is available on GitHub under the MIT License.
 **Issue**: Text replacement doesn't work  
 **Solution**: Main World injector requires page reload after installation
 
-### 11.3 Source Code Review
+### 12.3 Source Code Review
 
-**Open Source Repository**: https://github.com/prompt-tuner/prompt-tuner
+**Open Source Repository**: https://github.com/akshatvasisht/prompt-tuner
 
 **Key Files for Review**:
 
 - `src/contents/Overlay.tsx` - UI injection
 - `src/lib/ai-engine.ts` - Local AI processing
-- `src/lib/platform-rules.ts` - Rule fetching with validation
+- `src/lib/platform-rules.ts` - Bundled rule loader
 - `docs/PRIVACY.md` - Privacy policy
 
 **Build Verification**:
@@ -636,11 +620,10 @@ npm run build
 # Compare build/chrome-mv3-prod with submitted CRX
 ```
 
----
 
 ## 13. Post-Submission Checklist
 
-### 12.1 After Approval
+### 13.1 After Approval
 
 - Update GitHub README with Chrome Web Store link
 - Create release tag (v0.1.0)
@@ -649,7 +632,7 @@ npm run build
 - Set up GitHub Issues templates
 - Update CHANGELOG.md with release date
 
-### 12.2 Marketing
+### 13.2 Marketing
 
 - Social media announcement (Twitter, LinkedIn)
 - Product Hunt submission
@@ -657,14 +640,13 @@ npm run build
 - Share on Reddit (r/chrome_extensions, r/ChatGPT)
 - Submit to extension directories (alternativeto.net, etc.)
 
-### 12.3 Monitoring
+### 13.3 Monitoring
 
 - Track Chrome Web Store reviews
 - Monitor GitHub Issues for bugs
 - Set up quarterly rule update schedule
 - Plan next version features based on feedback
 
----
 
 ## Appendix A: Submission Form Answers
 
@@ -684,15 +666,16 @@ npm run build
 **Why does your extension need 'storage' permission?**
 
 ```
-To cache platform-specific optimization rules locally, enabling offline operation
-and reducing network requests. Only stores non-user data (JSON rule files).
+To cache optimization results locally, keyed by a hash of the user's prompt and
+the bundled rules fingerprint, so repeated optimizations return instantly and
+avoid redundant AI compute. No personal or account data is stored.
 ```
 
 **Why does your extension need 'alarms' permission?**
 
 ```
-To schedule quarterly checks for updated optimization rules from GitHub Pages,
-keeping the extension's strategies current without manual user updates.
+To keep Chrome's MV3 service worker alive during active streaming optimizations,
+preventing the worker from being terminated mid-stream and truncating output.
 ```
 
 **Why does your extension need 'activeTab' permission?**
@@ -721,11 +704,10 @@ rule updates.
 **Remote Code**:
 
 ```
-No remote code is used. Optimization rules are static JSON data files (not executable code),
-validated with Zod schemas before use, with bundled fallbacks.
+No remote code is used. Optimization rules are static JSON data files bundled
+inside the extension; the extension makes no network requests at runtime.
 ```
 
----
 
 ## Appendix B: Certification Statement
 
@@ -742,11 +724,10 @@ I certify that:
 7. Extension does not contain malicious code or vulnerabilities
 8. I will maintain the extension and respond to security issues promptly
 
-**Date**: February 17, 2026  
-**Signature**: Prompt Tuner Lead Developer
+**Date**: 2026-04-18  
+**Signature**: Akshat Vasisht
 
----
 
 **Document Version**: 1.2  
-**Last Updated**: April 12, 2026  
+**Last Updated**: April 18, 2026  
 **Status**: Ready for Chrome Web Store Submission (pending 3 blockers: screenshots, promo tiles, dev account — see OPEN_ISSUES.md)

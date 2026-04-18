@@ -2,12 +2,11 @@
 
 This document details the architectural decisions, system components, and data flow for Prompt Tuner.
 
----
 
 ## Glossary
 
 - **Optimization Heuristics:** Platform-specific principles extracted from official documentation and stored as compact JSON files optimized for Gemini Nano's context window.
-- **Scraping Pipeline:** An automated GitHub Actions workflow that fetches documentation via Playwright and Readability, distills it using Gemini Flash, and generates platform-specific rule files.
+- **Scraping Pipeline:** An automated GitHub Actions workflow that fetches documentation via Playwright and Readability, distills it using Gemini Flash, and commits regenerated platform-specific rule files back to the repo (bundled into the next extension release).
 - **Trigger & Overlay:** A MiniPill floating trigger near selected text plus a centered command palette (⌘⇧K) for action selection, built on Radix primitives and Tailwind.
 
 ## System Overview
@@ -19,7 +18,7 @@ Prompt Tuner consists of a client-side Chrome extension and a background distill
 ```
 /root
 ├── pipeline/   # Tooling for rule distillation
-├── rules/      # Rule files hosted on GitHub Pages
+├── rules/      # Rule files bundled into the extension at build time
 ├── src/        # Extension source code
 │   ├── contents/   # Browser-injected UI and scripts
 │   ├── background/ # Service worker for AI processing
@@ -35,8 +34,7 @@ Prompt Tuner consists of a client-side Chrome extension and a background distill
 - **UI:** Radix primitives, Tailwind, CSS view-transitions
 - **AI:** Chrome Prompt API (Gemini Nano)
 - **Scraping:** Playwright, Mozilla Readability
-- **Distillation:** Gemini Flash
-- **Hosting:** GitHub Pages
+- **Distillation:** Gemini Flash (CI-only; output committed to repo and bundled with the extension)
 
 ## Data Flow
 
@@ -44,7 +42,7 @@ Prompt Tuner consists of a client-side Chrome extension and a background distill
 
 1. Documentation is fetched via Playwright and Readability.
 2. Gemini Flash distills content into rules.
-3. JSON rule files are deployed to GitHub Pages.
+3. JSON rule files are committed back to the repo and bundled into the next extension release. The extension performs no runtime rule fetch.
 
 ### Extension Runtime
 

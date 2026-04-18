@@ -4,7 +4,6 @@ All notable changes to Prompt Tuner will be documented in this file.
 
 This project is pre-release. Version 0.1.0 is the initial development milestone targeting Chrome Web Store submission.
 
----
 
 ## [0.1.0] - Unreleased
 
@@ -32,11 +31,11 @@ Initial development release. Privacy-first Chrome extension that optimizes promp
 
 ### Rule System
 
-- Hybrid rule loading: chrome.storage.local cache (7-day TTL) -> remote GitHub Pages fetch -> Zod-validated -> bundled fallback
+- Rules bundled at build time from `rules/universal.json` + `rules/overrides.json`; zero runtime network activity
 - Per-platform rules for OpenAI, Anthropic, and Google
 - Dynamic rule routing: filters rules by action-relevant tags (e.g., "few-shot" actions only see example/demonstration rules)
-- Strict Zod schema validation rejects extra fields from remote sources
-- Deduplicated concurrent fetches via in-flight promise map
+- Quarterly GitHub Actions job regenerates rule JSON files and commits them to the repo for the next release
+- FNV-1a fingerprint of the bundled rule set invalidates cached optimizations on rule changes
 
 ### UI / UX
 
@@ -60,11 +59,11 @@ Initial development release. Privacy-first Chrome extension that optimizes promp
 - Service worker keep-alive: alarm-based (active streaming) + PING interval (idle overlay), reference-counted for concurrent tabs
 - 60-second streaming timeout prevents hung ports
 - Port cleanup on overlay unmount and Cancel
-- CSP restricts fetch origins to `*.github.io` and `*.githubusercontent.com`
+- Strict CSP (`script-src 'self'; object-src 'self'`) with no external `connect-src` — the extension makes no network requests at runtime
 
 ### Developer Tooling
 
-- 78 unit tests (Vitest, jsdom) with Chrome API and LanguageModel mocks
+- Unit tests (Vitest, jsdom) with Chrome API and LanguageModel mocks
 - E2E test suite (Playwright) for trigger injection, optimization flow, platform compatibility
 - ESLint strict mode, Prettier formatting
 - Pipeline scripts for rule scraping (Playwright) and distillation (Gemini Flash)

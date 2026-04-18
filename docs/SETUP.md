@@ -160,10 +160,9 @@ npm run test:e2e
 2. Reload the extension
 3. Hard refresh the LLM site (Ctrl+Shift+R)
 
----
 
 For more information, see:
 
 - [Chrome Built-in AI Documentation](https://developer.chrome.com/docs/extensions/ai/prompt-api)
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design details
-- [TESTING.md](docs/TESTING.md) - Testing guidelines
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System design details
+- [TESTING.md](./TESTING.md) - Testing guidelines
