@@ -3,7 +3,7 @@
     "id": "override-anthropic",
     "platform": "anthropic",
     "title": "Use XML Tags for Structure",
-    "description": "Claude parses XML natively — prefer XML tags over markdown headers",
+    "description": "Claude parses XML natively - prefer XML tags over markdown headers",
     "rule": "Wrap prompt sections in XML tags for Claude: use <context> for background, <instructions> for the task, <example> for demonstrations, and <constraints> for limits. Claude parses XML natively and performs better with tagged structure than with markdown headers or triple-quoted blocks.",
     "tags": ["structure", "xml", "formatting"],
     "source": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices",
@@ -14,7 +14,7 @@
     "platform": "openai",
     "title": "Use Markdown Headers and Positive Framing",
     "description": "ChatGPT responds well to markdown structure and literal positive instructions",
-    "rule": "Use markdown headers (##) or triple-quoted blocks (\"\"\"...\"\"\") to delimit sections for ChatGPT. GPT-4+ models follow literal instructions closely — be precise. Frame all instructions positively ('be concise', 'only use provided context') rather than negatively ('don't be verbose', 'don't make things up').",
+    "rule": "Use markdown headers (##) or triple-quoted blocks (\"\"\"...\"\"\") to delimit sections for ChatGPT. GPT-4+ models follow literal instructions closely - be precise. Frame all instructions positively ('be concise', 'only use provided context') rather than negatively ('don't be verbose', 'don't make things up').",
     "tags": ["structure", "formatting", "instructions"],
     "source": "https://platform.openai.com/docs/guides/prompt-engineering",
     "createdAt": "2026-04-12T00:00:00.000Z"
@@ -24,7 +24,7 @@
     "platform": "google",
     "title": "Use Markdown and System Instructions",
     "description": "Gemini responds well to markdown formatting and front-loaded system instructions",
-    "rule": "Use markdown formatting for Gemini. Place background context and system-level instructions at the very beginning of the prompt — Gemini attends most strongly to content at the start. For multi-turn or long tasks, provide a completion prefix (a partial response) to guide the model's output format and tone.",
+    "rule": "Use markdown formatting for Gemini. Place background context and system-level instructions at the very beginning of the prompt - Gemini attends most strongly to content at the start. For multi-turn or long tasks, provide a completion prefix (a partial response) to guide the model's output format and tone.",
     "tags": ["structure", "formatting", "system-instructions"],
     "source": "https://ai.google.dev/gemini-api/docs/prompting-strategies",
     "createdAt": "2026-04-12T00:00:00.000Z"

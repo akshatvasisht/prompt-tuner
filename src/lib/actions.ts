@@ -28,7 +28,7 @@ export interface Action {
  * The primary registry of all AI optimization actions.
  *
  * Design Principle: Each action answers "what outcome are you trying
- * to unlock from the model?" — not "what is technically wrong with your text?"
+ * to unlock from the model?" - not "what is technically wrong with your text?"
  *
  * All actions are platform-agnostic. Platform-specific rule files inform
  * HOW the AI executes each action, but the labels are identical everywhere.

@@ -1,10 +1,45 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useRef, useState } from "react";
 import { CaretDown, Check } from "~lib/icons";
 import { cn } from "~lib/utils";
 
-export const Select = SelectPrimitive.Root;
+// Radix Select uses a press-drag-release gesture (radix-ui#3146): the same
+// gesture's pointerup outside content closes the menu. We guard close events
+// fired within this window of the open transition so click-to-toggle works.
+const OPEN_GUARD_MS = 800;
+
+export const Select: React.FC<
+  ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+> = ({ open, defaultOpen, onOpenChange, ...props }) => {
+  const isControlled = open !== undefined;
+  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
+  const openedAtRef = useRef(0);
+
+  const currentOpen = isControlled ? open : internalOpen;
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) {
+        openedAtRef.current = performance.now();
+      } else if (performance.now() - openedAtRef.current < OPEN_GUARD_MS) {
+        return;
+      }
+      if (!isControlled) setInternalOpen(next);
+      onOpenChange?.(next);
+    },
+    [isControlled, onOpenChange],
+  );
+
+  return (
+    <SelectPrimitive.Root
+      open={currentOpen}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  );
+};
 export const SelectValue = SelectPrimitive.Value;
 export const SelectGroup = SelectPrimitive.Group;
 
@@ -15,14 +50,18 @@ export const SelectTrigger = forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex h-5 items-center justify-between gap-1.5 bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded-[var(--pt-radius)] px-2 text-xs font-medium text-[var(--pt-text-primary)] outline-none cursor-pointer max-w-[140px] hover:bg-[var(--pt-active-bg)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--pt-accent)] focus-visible:ring-offset-1",
+      "inline-flex h-7 items-center justify-between gap-1.5 bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded-[var(--pt-radius)] px-2.5 text-xs font-medium text-[var(--pt-text-primary)] outline-none cursor-pointer hover:bg-[var(--pt-active-bg)] transition-colors",
       className,
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <CaretDown size={10} weight="bold" className="text-[var(--pt-text-quaternary)]" />
+      <CaretDown
+        size={10}
+        weight="bold"
+        className="text-[var(--pt-text-quaternary)]"
+      />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -31,26 +70,40 @@ SelectTrigger.displayName = "SelectTrigger";
 export const SelectContent = forwardRef<
   ElementRef<typeof SelectPrimitive.Content>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      position={position}
-      sideOffset={4}
-      className={cn(
-        "z-[var(--pt-z-dropdown)] min-w-[140px] overflow-hidden rounded-[var(--pt-radius-md)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)] text-[var(--pt-text-primary)]",
-        "shadow-[var(--pt-shadow)] p-1",
-        "data-[state=open]:animate-slideDownAndFade",
-        className,
-      )}
-      {...props}
-    >
-      <SelectPrimitive.Viewport className="p-0">
-        {children}
-      </SelectPrimitive.Viewport>
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
+>(
+  (
+    { className, children, position = "popper", onCloseAutoFocus, ...props },
+    ref,
+  ) => (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content
+        ref={ref}
+        position={position}
+        sideOffset={4}
+        onCloseAutoFocus={(e) => {
+          onCloseAutoFocus?.(e);
+          // Suppress focus return to the trigger on mouse-driven close so the
+          // focus-visible ring doesn't linger after a click. Keyboard close
+          // (Esc) still restores focus because Radix sets `e.detail` accordingly.
+          if (!e.defaultPrevented) {
+            e.preventDefault();
+          }
+        }}
+        className={cn(
+          "z-[var(--pt-z-dropdown)] min-w-[140px] outline-none overflow-hidden rounded-[var(--pt-radius-md)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)] text-[var(--pt-text-primary)]",
+          "shadow-[var(--pt-shadow)] p-1",
+          "data-[state=open]:animate-slideDownAndFade",
+          className,
+        )}
+        {...props}
+      >
+        <SelectPrimitive.Viewport className="p-0">
+          {children}
+        </SelectPrimitive.Viewport>
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  ),
+);
 SelectContent.displayName = "SelectContent";
 
 export const SelectItem = forwardRef<

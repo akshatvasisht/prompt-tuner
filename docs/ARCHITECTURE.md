@@ -2,7 +2,6 @@
 
 This document details the architectural decisions, system components, and data flow for Prompt Tuner.
 
-
 ## Glossary
 
 - **Optimization Heuristics:** Platform-specific principles extracted from official documentation and stored as compact JSON files optimized for Gemini Nano's context window.

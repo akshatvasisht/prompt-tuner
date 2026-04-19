@@ -35,6 +35,7 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system overview and [CLAUD
 ## Reporting Issues
 
 Use GitHub Issues. Include:
+
 - Chrome version and OS
 - Steps to reproduce
 - Expected vs actual behavior
@@ -42,7 +43,7 @@ Use GitHub Issues. Include:
 
 ## Pull Requests
 
-- Keep PRs focused — one feature or fix per PR
+- Keep PRs focused - one feature or fix per PR
 - Write descriptive commit messages
 - Add tests for new functionality
 - Update docs if you change user-facing behavior

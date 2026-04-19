@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-deprecated */
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useKeyboardList } from "~hooks/use-keyboard-list";
 import { Tooltip } from "~components/ui/Tooltip";
 import { toast } from "sonner";
@@ -19,8 +19,36 @@ import { WarningCircle, CheckCircle } from "~lib/icons";
 // Constants
 // =============================================================================
 
-const MAX_INPUT_CHARS = 7200;
 const MAX_PREVIEW_CHARS = 60;
+
+function TokenBadge({ count, limit }: { count: number; limit: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const duration = 400;
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(count * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, [count]);
+  return (
+    <Tooltip content="Input tokens consumed vs model limit">
+      <span
+        className="ml-auto font-sans text-[10px] font-semibold tracking-[0.18em] uppercase tabular-nums text-[var(--pt-text-tertiary)]"
+        tabIndex={0}
+      >
+        {display} / {limit}
+      </span>
+    </Tooltip>
+  );
+}
 
 const STAGE_LABELS: Record<string, string> = {
   drafting: "Drafting",
@@ -45,7 +73,7 @@ function humanizeStage(stage: string | null): string {
 }
 
 // =============================================================================
-// Module-level undo state (not persisted — cleared on navigation/reload)
+// Module-level undo state (not persisted - cleared on navigation/reload)
 // =============================================================================
 
 interface LastApply {
@@ -58,8 +86,16 @@ let lastApply: LastApply | null = null;
 function restoreOriginal(): void {
   if (!lastApply) return;
   const success = replaceSelectedText(lastApply.originalText);
-  if (!success) {
-    toast.error("Couldn't restore — the input is no longer active.");
+  if (success) {
+    toast.success("Original restored", {
+      icon: (
+        <span className="pt-check-pop inline-flex text-[var(--pt-status-success)]">
+          ↶
+        </span>
+      ),
+    });
+  } else {
+    toast.error("Couldn't restore - the input is no longer active.");
   }
   lastApply = null;
 }
@@ -87,16 +123,27 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [selectionError, setSelectionError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState(false);
-  const [tokenInfo, setTokenInfo] = useState<{ count: number; limit: number } | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<{
+    count: number;
+    limit: number;
+  } | null>(null);
   const [stage, setStage] = useState<string | null>(null);
 
   const portRef = useRef<chrome.runtime.Port | null>(null);
   const streamRef = useRef<HTMLDivElement>(null);
   const chunkBufferRef = useRef<string>("");
   const rafIdRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const applyTimersRef = useRef<{ flash: number | null; close: number | null }>(
+    {
+      flash: null,
+      close: null,
+    },
+  );
 
-  // Cleanup port and RAF on unmount
+  // Cleanup port, RAF, and pending timers on unmount
   useEffect(() => {
+    const timers = applyTimersRef.current;
     return () => {
       portRef.current?.disconnect();
       portRef.current = null;
@@ -104,6 +151,10 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
       }
+      if (timers.flash !== null) clearTimeout(timers.flash);
+      if (timers.close !== null) clearTimeout(timers.close);
+      timers.flash = null;
+      timers.close = null;
     };
   }, []);
 
@@ -200,7 +251,7 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
       const selectedText = getSelectedText();
       if (!selectedText?.trim()) {
         setSelectionError(
-          "No text selected — highlight the text you want to transform first.",
+          "No text selected - highlight the text you want to transform first.",
         );
         return;
       }
@@ -241,25 +292,39 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
     if (success) {
       // Trigger success animation
       setApplySuccess(true);
-      setTimeout(() => {
+      const timers = applyTimersRef.current;
+      timers.flash = window.setTimeout(() => {
         setApplySuccess(false);
+        timers.flash = null;
       }, 600);
 
-      // Enhanced toast with success icon
-      toast.success("Prompt inserted", {
+      // Inline-action toast: Undo lives inside the description copy so the
+      // affordance reads as part of the sentence rather than a separate chip.
+      const toastId = toast.success("Prompt inserted", {
         icon: <CheckCircle weight="fill" className="pt-status-success" />,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            restoreOriginal();
-          },
-        },
+        description: (
+          <>
+            Press{" "}
+            <button
+              type="button"
+              className="pt-toast-inline-action"
+              onClick={() => {
+                restoreOriginal();
+                toast.dismiss(toastId);
+              }}
+            >
+              Undo
+            </button>{" "}
+            to restore your original text.
+          </>
+        ),
         duration: 8000,
       });
 
       // Smooth close transition
-      setTimeout(() => {
+      timers.close = window.setTimeout(() => {
         onClose();
+        timers.close = null;
       }, 300);
     } else {
       lastApply = null;
@@ -272,17 +337,20 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
+    if (status !== "complete") return;
+    const root = containerRef.current;
+    if (!root) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && status === "complete") {
-        e.preventDefault();
-        e.stopPropagation();
-        handleApply();
-      }
+      if (e.key !== "Enter") return;
+      const target = e.target as Node | null;
+      if (target && !root.contains(target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      handleApply();
     };
-
-    document.addEventListener("keydown", handleKeyDown, true);
+    root.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("keydown", handleKeyDown, true);
+      root.removeEventListener("keydown", handleKeyDown);
     };
   }, [status, handleApply]);
 
@@ -302,15 +370,47 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
 
   const allActions = ACTIONS;
   const [showTechniques, setShowTechniques] = useState(false);
-  const primaryCount = allActions.filter((a) => a.type === "primary").length;
+
+  const primaryActions = useMemo(
+    () => allActions.filter((a) => a.type === "primary"),
+    [allActions],
+  );
+  const secondaryActions = useMemo(
+    () => allActions.filter((a) => a.type === "secondary"),
+    [allActions],
+  );
+  const primaryCount = primaryActions.length;
   const navigableCount = showTechniques ? allActions.length : primaryCount;
-  const { activeIndex, setActiveIndex, handleKeyDown: handleListKeyDown } = useKeyboardList({
+  const {
+    activeIndex,
+    setActiveIndex,
+    handleKeyDown: handleListKeyDown,
+  } = useKeyboardList({
     count: navigableCount,
-    onSelect: (idx) => { handleAction(allActions[idx].id); },
+    onSelect: (idx) => {
+      handleAction(allActions[idx].id);
+    },
   });
 
+  const insertButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const retryButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Focus handoff on status transitions
+  useEffect(() => {
+    if (status === "complete") {
+      insertButtonRef.current?.focus();
+    } else if (status === "streaming") {
+      cancelButtonRef.current?.focus();
+    } else if (status === "error") {
+      retryButtonRef.current?.focus();
+    }
+  }, [status]);
+
   const handleItemHover = useCallback(
-    (idx: number) => () => { setActiveIndex(idx); },
+    (idx: number) => () => {
+      setActiveIndex(idx);
+    },
     [setActiveIndex],
   );
 
@@ -325,18 +425,16 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         : originalText
       : "";
 
-    const isLongInput = originalText
-      ? originalText.length > MAX_INPUT_CHARS
-      : false;
-
     return (
-      <div className="flex flex-col h-full">
+      <div ref={containerRef} className="flex flex-col h-full">
         {/* Header with selection preview */}
-        <div className="flex items-start gap-2.5 border-b border-[var(--pt-surface-border)] px-4 py-2.5">
+        <div className="flex items-center gap-2.5 border-b border-[var(--pt-surface-border)] px-4 py-2.5">
           <span
+            key={status === "complete" ? "settled" : "active"}
             className={cn(
               "text-base leading-tight",
-              status === "streaming" && "animate-pulse",
+              status === "streaming" && "pt-pulse",
+              status === "complete" && "pt-glyph-settle",
             )}
             aria-hidden="true"
             style={{ color: "var(--pt-accent)" }}
@@ -349,14 +447,16 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                 {activeAction}
               </span>
               {status === "streaming" ? (
-                <span className="ml-auto font-sans text-[10px] font-semibold tracking-[0.22em] uppercase text-[var(--pt-text-tertiary)]">
+                <span
+                  key={stage}
+                  className="ml-auto font-sans text-[10px] font-semibold tracking-[0.22em] uppercase text-[var(--pt-text-tertiary)] pt-stage-fade"
+                >
                   {humanizeStage(stage)}
                 </span>
               ) : (
-                tokenInfo && tokenInfo.count > 0 && (
-                  <span className="ml-auto font-sans text-[10px] font-semibold tracking-[0.18em] uppercase tabular-nums text-[var(--pt-text-tertiary)]" title="Input tokens consumed vs model limit">
-                    {tokenInfo.count} / {tokenInfo.limit}
-                  </span>
+                tokenInfo &&
+                tokenInfo.count > 0 && (
+                  <TokenBadge count={tokenInfo.count} limit={tokenInfo.limit} />
                 )
               )}
             </div>
@@ -364,12 +464,6 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
             <span className="text-xs text-[var(--pt-text-secondary)] truncate leading-snug">
               {previewText}
             </span>
-            {/* Long input warning */}
-            {isLongInput && (
-              <span className="text-xs font-medium pt-status-warning">
-                Long input — model may truncate
-              </span>
-            )}
           </div>
         </div>
 
@@ -381,7 +475,10 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
             aria-live="assertive"
             className="flex items-start gap-3 px-4 py-3"
           >
-            <WarningCircle className="h-4 w-4 mt-0.5 shrink-0 pt-status-error" weight="fill" />
+            <WarningCircle
+              className="h-4 w-4 mt-0.5 shrink-0 pt-status-error"
+              weight="fill"
+            />
             <div className="min-w-0 flex-1 flex flex-col gap-2">
               <p className="text-sm text-[var(--pt-text-primary)] leading-snug">
                 {ERROR_MESSAGES[errorCode ?? "UNKNOWN_ERROR"] ??
@@ -389,12 +486,15 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
               </p>
               <div className="flex items-center gap-3">
                 <button
+                  ref={retryButtonRef}
                   onClick={handleRetry}
                   className="-mx-1 -my-1.5 px-1 py-1.5 text-sm font-semibold text-[var(--pt-accent)] hover:text-[var(--pt-accent-hover)] transition-colors"
                 >
                   Try again
                 </button>
-                <span aria-hidden className="text-[var(--pt-text-tertiary)]">·</span>
+                <span aria-hidden className="text-[var(--pt-text-tertiary)]">
+                  ·
+                </span>
                 <button
                   onClick={() => {
                     portRef.current?.disconnect();
@@ -420,7 +520,10 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
             <p className="whitespace-pre-wrap text-sm leading-normal text-[var(--pt-text-primary)] font-normal">
               {streamBuffer}
               {status === "streaming" && (
-                <span className="ml-1 inline-block h-[0.9lh] w-[3px] bg-[var(--pt-accent)] align-middle opacity-80" />
+                <span
+                  aria-hidden="true"
+                  className="ml-1 inline-block h-[0.9lh] w-[3px] bg-[var(--pt-accent)] align-middle opacity-80"
+                />
               )}
             </p>
           </div>
@@ -430,6 +533,7 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         {status !== "error" && (
           <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--pt-surface-border)]">
             <button
+              ref={cancelButtonRef}
               onClick={() => {
                 portRef.current?.disconnect();
                 portRef.current = null;
@@ -438,7 +542,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
               }}
               className="-mx-1 -my-1.5 px-1 py-1.5 text-sm font-medium text-[var(--pt-text-secondary)] hover:text-[var(--pt-text-primary)] transition-colors"
             >
-              {status === "streaming" ? "Stop" : "Cancel"}
+              <span aria-live="polite">
+                {status === "streaming" ? "Stop" : "Cancel"}
+              </span>
             </button>
 
             {status === "complete" && (
@@ -451,16 +557,18 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                     Retry
                   </button>
                 </Tooltip>
-                <span aria-hidden className="text-[var(--pt-text-tertiary)]">·</span>
+                <span aria-hidden className="text-[var(--pt-text-tertiary)]">
+                  ·
+                </span>
                 <Tooltip content="Insert optimized prompt (↵)">
                   <button
+                    ref={insertButtonRef}
                     onClick={handleApply}
-                    aria-label="Insert optimized prompt into text field"
                     className={cn(
                       "-mx-1 -my-1.5 flex items-center gap-2 px-1 py-1.5 text-sm font-semibold leading-none transition-colors",
                       applySuccess
                         ? "pt-status-success"
-                        : "text-[var(--pt-accent)] hover:text-[var(--pt-accent-hover)]"
+                        : "text-[var(--pt-accent)] hover:text-[var(--pt-accent-hover)]",
                     )}
                   >
                     {applySuccess ? (
@@ -471,7 +579,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                     ) : (
                       <>
                         Insert
-                        <span aria-hidden className="font-sans text-sm">↵</span>
+                        <span aria-hidden className="font-sans text-sm">
+                          ↵
+                        </span>
                       </>
                     )}
                   </button>
@@ -506,7 +616,7 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         onKeyDown={handleListKeyDown}
         className="max-h-[var(--pt-list-max-h)] overflow-y-hidden py-2 outline-none"
       >
-        {allActions.filter((a) => a.type === "primary").map((action, idx) => {
+        {primaryActions.map((action, idx) => {
           const selected = activeIndex === idx;
           return (
             <li
@@ -522,16 +632,18 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
               onMouseEnter={handleItemHover(idx)}
               className={cn(
                 "pt-action-item mx-2 flex cursor-pointer items-center gap-2.5 rounded-[var(--pt-radius-sm)] px-3 py-2",
-                "transition-colors duration-100",
+                "transition-colors duration-200 ease-out",
                 selected
-                  ? "bg-[var(--pt-accent)] text-white"
+                  ? "bg-[var(--pt-accent)] text-[var(--pt-on-accent-primary)]"
                   : "text-[var(--pt-text-primary)] hover:bg-[var(--pt-hover-bg)]",
               )}
             >
               <span
                 className={cn(
                   "text-base leading-none",
-                  selected ? "text-white" : "text-[var(--pt-accent)]",
+                  selected
+                    ? "text-[var(--pt-on-accent-primary)]"
+                    : "text-[var(--pt-accent)]",
                 )}
                 aria-hidden="true"
               >
@@ -544,7 +656,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                 <div
                   className={cn(
                     "truncate text-xs leading-snug",
-                    selected ? "text-white/80" : "text-[var(--pt-text-secondary)]",
+                    selected
+                      ? "text-[var(--pt-on-accent-secondary)]"
+                      : "text-[var(--pt-text-secondary)]",
                   )}
                 >
                   {action.description}
@@ -553,7 +667,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
               <span
                 className={cn(
                   "shrink-0 font-sans text-xs leading-none",
-                  selected ? "text-white/70" : "text-[var(--pt-text-tertiary)]",
+                  selected
+                    ? "text-[var(--pt-on-accent-secondary)]"
+                    : "text-[var(--pt-text-tertiary)]",
                 )}
                 aria-hidden="true"
               >
@@ -566,7 +682,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
         <li role="presentation" className="mt-1.5 mb-0.5 px-2">
           <button
             type="button"
-            onClick={() => { setShowTechniques((v) => !v); }}
+            onClick={() => {
+              setShowTechniques((v) => !v);
+            }}
             aria-expanded={showTechniques}
             aria-controls="pt-techniques-list"
             className="group flex w-full items-center gap-2 px-1 py-2 text-left transition-colors hover:text-[var(--pt-accent)]"
@@ -590,10 +708,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
           </button>
         </li>
 
-        {showTechniques && allActions
-          .filter((a) => a.type === "secondary")
-          .map((action, i) => {
-            const idx = i + allActions.filter((a) => a.type === "primary").length;
+        {showTechniques &&
+          secondaryActions.map((action, i) => {
+            const idx = i + primaryCount;
             const selected = activeIndex === idx;
             return (
               <li
@@ -609,16 +726,18 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                 onMouseEnter={handleItemHover(idx)}
                 className={cn(
                   "pt-action-item mx-2 flex cursor-pointer items-baseline gap-2.5 rounded-[var(--pt-radius-sm)] px-3 py-2",
-                  "transition-colors duration-100",
+                  "transition-colors duration-200 ease-out",
                   selected
-                    ? "bg-[var(--pt-accent)] text-white"
+                    ? "bg-[var(--pt-accent)] text-[var(--pt-on-accent-primary)]"
                     : "text-[var(--pt-text-primary)] hover:bg-[var(--pt-hover-bg)]",
                 )}
               >
                 <span
                   className={cn(
                     "w-4 shrink-0 text-xs font-semibold leading-none tabular-nums",
-                    selected ? "text-white/70" : "text-[var(--pt-accent)]",
+                    selected
+                      ? "text-[var(--pt-on-accent-secondary)]"
+                      : "text-[var(--pt-accent)]",
                   )}
                   aria-hidden="true"
                 >
@@ -631,7 +750,9 @@ export function CommandPaletteContent({ onClose }: CommandPaletteContentProps) {
                   <span
                     className={cn(
                       "ml-2 text-xs leading-snug",
-                      selected ? "text-white/70" : "text-[var(--pt-text-tertiary)]",
+                      selected
+                        ? "text-[var(--pt-on-accent-secondary)]"
+                        : "text-[var(--pt-text-tertiary)]",
                     )}
                   >
                     {action.description}

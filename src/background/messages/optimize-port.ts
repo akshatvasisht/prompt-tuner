@@ -204,9 +204,7 @@ async function writeCache(entries: CacheEntry[]): Promise<void> {
   }
 }
 
-async function getCachedResult(
-  key: string,
-): Promise<CacheEntry | undefined> {
+async function getCachedResult(key: string): Promise<CacheEntry | undefined> {
   const entries = await readCache();
   return entries.find((e) => e.key === key);
 }
@@ -233,7 +231,11 @@ async function handleOptimizationRequest(
 ): Promise<void> {
   const timeout = setTimeout(() => {
     sendError(port, "UNKNOWN_ERROR", "Optimization timed out after 60 seconds");
-    try { port.disconnect(); } catch { /* already disconnected */ }
+    try {
+      port.disconnect();
+    } catch {
+      /* already disconnected */
+    }
   }, STREAM_TIMEOUT_MS);
 
   const { draft, platform } = request;
@@ -334,7 +336,7 @@ async function handleOptimizationRequest(
         baseOptions,
       );
     } else {
-      // Prompt-engine path — decide by token size using Nano's native tokenizer.
+      // Prompt-engine path - decide by token size using Nano's native tokenizer.
       const limit = await resolveContextLimit();
       const tokens = await measureDraft(draft);
       sendTokenInfo(port, tokens, limit);
@@ -448,7 +450,7 @@ export function registerOptimizePortHandler(): void {
     });
 
     port.onDisconnect.addListener(() => {
-      // A disconnect mid-stream is a cancel signal — abort any in-flight work.
+      // A disconnect mid-stream is a cancel signal - abort any in-flight work.
       controller?.abort();
       setKeepAlive(false);
     });

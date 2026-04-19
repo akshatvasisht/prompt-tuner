@@ -22,7 +22,11 @@ export function detectPlatform(): Platform {
   const hostname = window.location.hostname.toLowerCase();
 
   for (const [platform, patterns] of Object.entries(PLATFORM_PATTERNS)) {
-    if (patterns.some((pattern) => hostname === pattern || hostname.endsWith("." + pattern))) {
+    if (
+      patterns.some(
+        (pattern) => hostname === pattern || hostname.endsWith("." + pattern),
+      )
+    ) {
       return platform as Platform;
     }
   }

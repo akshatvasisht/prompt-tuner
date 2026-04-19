@@ -2,7 +2,6 @@
 
 This document defines the coding standards, conventions, and best practices for the Prompt Tuner Chrome extension. All contributors must follow these guidelines to ensure code quality, maintainability, and consistency.
 
-
 ## Table of Contents
 
 1. [General Principles](#general-principles)
@@ -16,12 +15,10 @@ This document defines the coding standards, conventions, and best practices for 
 9. [Git Workflow](#git-workflow)
 10. [Code Review Checklist](#code-review-checklist)
 
-
 ## General Principles
 
 - **Terminology:** Use inclusive language (e.g., "allowlist/blocklist").
 - **Error Messages:** Must be actionable.
-
 
 ## TypeScript Guidelines
 
@@ -72,11 +69,11 @@ import { type OptimizeRequest, PromptTunerError } from "~types";
 
 ### Type Safety Rules
 
-1. **Never use `any`** — Use `unknown` and narrow with type guards if needed.
-2. **Avoid type assertions** — Prefer type guards or generics over `as` casts.
-3. **Explicit return types** — Public functions must have explicit return type annotations.
-4. **Null checks** — Use optional chaining (`?.`) and nullish coalescing (`??`) appropriately.
-5. **Index signatures** — Always handle potentially undefined values from index access.
+1. **Never use `any`** - Use `unknown` and narrow with type guards if needed.
+2. **Avoid type assertions** - Prefer type guards or generics over `as` casts.
+3. **Explicit return types** - Public functions must have explicit return type annotations.
+4. **Null checks** - Use optional chaining (`?.`) and nullish coalescing (`??`) appropriately.
+5. **Index signatures** - Always handle potentially undefined values from index access.
 
 ```typescript
 // Bad: Unsafe index access
@@ -95,7 +92,7 @@ if (value !== undefined) {
 - **Prefer `async/await`** over raw Promises or callbacks.
 - **Always handle errors** in async functions with try/catch.
 - **Use `Promise.all()`** for concurrent operations when appropriate.
-- **Never ignore Promise rejections** — Handle or explicitly void them.
+- **Never ignore Promise rejections** - Handle or explicitly void them.
 
 ```typescript
 // ✅ Good: Proper async error handling
@@ -140,7 +137,6 @@ type ErrorCode =
   | "DATABASE_ERROR"
   | "UNKNOWN_ERROR";
 ```
-
 
 ## React & Component Patterns
 
@@ -227,7 +223,7 @@ export default function ContentScript() {
 
 ### Hook Rules
 
-1. **Follow Rules of Hooks** — Only call hooks at the top level of components.
+1. **Follow Rules of Hooks** - Only call hooks at the top level of components.
 2. **Use `useCallback`** for functions passed to child components.
 3. **Use `useMemo`** for expensive computations.
 4. **Use `useRef`** for mutable values that shouldn't trigger re-renders.
@@ -253,11 +249,11 @@ const combinedStyles = useMemo(
 
 All components must be accessible:
 
-1. **Use semantic HTML** — `<button>`, `<nav>`, `<main>`, etc.
-2. **ARIA labels** — Provide `aria-label` for icon-only buttons.
-3. **ARIA states** — Use `aria-busy`, `aria-disabled`, `aria-expanded`.
-4. **Keyboard support** — All interactive elements must be keyboard accessible.
-5. **Focus management** — Visible focus indicators, logical focus order.
+1. **Use semantic HTML** - `<button>`, `<nav>`, `<main>`, etc.
+2. **ARIA labels** - Provide `aria-label` for icon-only buttons.
+3. **ARIA states** - Use `aria-busy`, `aria-disabled`, `aria-expanded`.
+4. **Keyboard support** - All interactive elements must be keyboard accessible.
+5. **Focus management** - Visible focus indicators, logical focus order.
 
 ```tsx
 <button
@@ -278,7 +274,6 @@ All components must be accessible:
 | Click             | `handle`       | `handleClick`, `handleSubmit`       |
 | Change            | `handle`       | `handleChange`, `handleInputChange` |
 | Callbacks (props) | `on`           | `onProcessingComplete`, `onChange`  |
-
 
 ## CSS & Styling
 
@@ -314,7 +309,7 @@ Use `@apply` for reusable component styles:
     @apply rounded-full shadow-lg;
     @apply transition-all duration-200 ease-out;
     @apply hover:shadow-xl hover:scale-105;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring;
+    @apply outline-none;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 }
@@ -335,7 +330,6 @@ import { cn } from "~lib/utils"
   )}
 >
 ```
-
 
 ## Testing Standards
 
@@ -396,7 +390,6 @@ describe("module-name", () => {
 - Third-party library internals.
 - Framework boilerplate.
 - TypeScript type checking (the compiler handles this).
-
 
 ## Chrome Extension Security
 
@@ -481,12 +474,12 @@ window.addEventListener("message", (event) => {
 
 ### Input Validation at Boundaries
 
-The extension doesn't fetch remote data — optimization rules are bundled and trusted. Validation is required at other boundaries: messages from the host page (`window.postMessage`), values read from `chrome.storage.local`, and user input. Prefer narrow hand-written type guards over schema libraries for these small surfaces; see "Type Guards for Message Validation" below.
+The extension doesn't fetch remote data - optimization rules are bundled and trusted. Validation is required at other boundaries: messages from the host page (`window.postMessage`), values read from `chrome.storage.local`, and user input. Prefer narrow hand-written type guards over schema libraries for these small surfaces; see "Type Guards for Message Validation" below.
 
 ### Data Handling
 
 - **Never store sensitive data** in `chrome.storage.local` unencrypted.
-- **Minimize permissions** — Only request necessary permissions.
+- **Minimize permissions** - Only request necessary permissions.
 - **Validate all user input** before processing.
 - **Sanitize data** before DOM insertion.
 
@@ -508,7 +501,6 @@ const isExtensionContextValid = (): boolean => {
 };
 ```
 
-
 ## Performance Guidelines
 
 ### React Performance
@@ -521,9 +513,9 @@ const isExtensionContextValid = (): boolean => {
 
 ### Resource Management
 
-1. **Clean up effects** — Return cleanup functions from `useEffect`.
-2. **Abort pending requests** — Use `AbortController` for cancellable operations.
-3. **Destroy AI sessions** — Always call `session.destroy()` in finally blocks.
+1. **Clean up effects** - Return cleanup functions from `useEffect`.
+2. **Abort pending requests** - Use `AbortController` for cancellable operations.
+3. **Destroy AI sessions** - Always call `session.destroy()` in finally blocks.
 
 ```typescript
 useEffect(() => {
@@ -611,7 +603,6 @@ async function optimizePromptStreaming(
 - Avoid large dependencies for simple functionality.
 - Analyze bundle size regularly with build tools.
 
-
 ## Documentation Standards
 
 ### JSDoc Comments
@@ -671,7 +662,6 @@ export function publicFunction() {}
 - Keep documentation up-to-date with code changes.
 - Use tables for structured information.
 
-
 ## Git Workflow
 
 ### Branch Naming
@@ -698,13 +688,13 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 **Types:**
 
-- `feat` — New feature
-- `fix` — Bug fix
-- `docs` — Documentation only
-- `style` — Formatting, no code change
-- `refactor` — Code change that neither fixes bug nor adds feature
-- `test` — Adding or updating tests
-- `chore` — Build process, dependencies, tooling
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation only
+- `style` - Formatting, no code change
+- `refactor` - Code change that neither fixes bug nor adds feature
+- `test` - Adding or updating tests
+- `chore` - Build process, dependencies, tooling
 
 **Examples:**
 
@@ -727,10 +717,9 @@ refactor(types): consolidate error code definitions
 
 The following checks run automatically via Husky:
 
-1. **ESLint** — TypeScript linting with strict rules
-2. **Prettier** — Code formatting
-3. **Type checking** — TypeScript compilation
-
+1. **ESLint** - TypeScript linting with strict rules
+2. **Prettier** - Code formatting
+3. **Type checking** - TypeScript compilation
 
 ## Code Review Checklist
 
@@ -754,7 +743,6 @@ The following checks run automatically via Husky:
 - [ ] Accessibility requirements met
 - [ ] Tests are meaningful and comprehensive
 - [ ] Documentation is accurate and complete
-
 
 ## Tool Configuration Reference
 
@@ -792,12 +780,11 @@ import { cn } from "~lib/utils"
 import { type Platform } from "~types"
 ```
 
-
 ## Extension-Specific Patterns
 
 ### Bundled Rule Loading
 
-Rules are bundled at build time — no runtime fetch. This keeps the extension fully offline and preserves the "zero network activity" privacy guarantee. Updates ship in each extension release; a quarterly CI job regenerates the JSON and commits it to the repo (see `.github/workflows/update-rules.yml`).
+Rules are bundled at build time - no runtime fetch. This keeps the extension fully offline and preserves the "zero network activity" privacy guarantee. Updates ship in each extension release; a quarterly CI job regenerates the JSON and commits it to the repo (see `.github/workflows/update-rules.yml`).
 
 ```typescript
 import UNIVERSAL from "../../rules/universal.json";
@@ -880,7 +867,6 @@ function cleanModelOutput(rawOutput: string): string {
   return cleaned || rawOutput.trim();
 }
 ```
-
 
 ## Architecture Patterns Summary
 

@@ -4,20 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-[var(--pt-radius)] text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pt-accent)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-[var(--pt-radius)] text-sm font-semibold transition-[color,background-color,box-shadow,transform] duration-150 ease-out outline-none disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
           "bg-[var(--pt-accent)] text-white shadow-[var(--pt-shadow)] hover:bg-[var(--pt-accent-hover)]",
         destructive:
-          "text-white shadow-[var(--pt-shadow)] bg-[var(--pt-status-error)] hover:opacity-90",
+          "text-white shadow-[var(--pt-shadow)] bg-[var(--pt-status-error)] hover:bg-[var(--pt-status-error-hover)]",
         outline:
           "border border-[var(--pt-surface-border)] bg-transparent hover:bg-[var(--pt-hover-bg)] hover:text-[var(--pt-text-primary)]",
         secondary:
           "bg-[var(--pt-hover-bg)] text-[var(--pt-text-primary)] hover:bg-[var(--pt-active-bg)]",
-        ghost: "hover:bg-[var(--pt-hover-bg)] hover:text-[var(--pt-text-primary)]",
-        link: "text-[var(--pt-accent)] underline-offset-4 hover:underline",
+        ghost:
+          "hover:bg-[var(--pt-hover-bg)] hover:text-[var(--pt-text-primary)]",
+        link: "text-[var(--pt-accent)] underline underline-offset-4 decoration-1 decoration-[var(--pt-text-tertiary)] hover:decoration-[var(--pt-accent)]",
       },
       size: {
         default: "h-10 px-4 py-2",

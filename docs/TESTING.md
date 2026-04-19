@@ -2,7 +2,6 @@
 
 This document describes the testing strategy, frameworks, and practices for the Prompt Tuner Chrome extension.
 
-
 ## Frameworks
 
 - **Unit:** Vitest (jsdom)
@@ -23,7 +22,6 @@ npm run test:e2e        # E2E tests
 - **dom-injector:** Text replacement logic.
 - **UI:** Main document overlay injection and streaming verification.
 
-
 ## E2E Test Suites
 
 ### trigger-injection.spec.ts
@@ -34,7 +32,7 @@ Tests MiniPill trigger injection on supported LLM platforms.
 
 - Pill appears on ChatGPT, Claude, and Gemini
 - Pill anchors to the current text selection
-- Style isolation — `--pt-*` variables do not leak to host page
+- Style isolation - `--pt-*` variables do not leak to host page
 - Selection change and scroll reposition handling
 
 ### optimization-flow.spec.ts
@@ -58,7 +56,6 @@ Tests cross-platform compatibility.
 - Different textarea implementations handled
 - No console errors on any platform
 - Extension doesn't break page functionality
-
 
 ## Mocking Strategy
 
@@ -120,7 +117,6 @@ const mockLanguageModel = {
 
 **`resetLanguageModelMock()`**: Resets the LanguageModel mock to default state between tests.
 
-
 ## Coverage Requirements
 
 ### Minimum Coverage Targets
@@ -145,7 +141,6 @@ Coverage output formats:
 - **text**: Console output
 - **json**: `coverage/coverage-final.json`
 - **html**: `coverage/index.html`
-
 
 ## Writing Tests
 
@@ -192,7 +187,6 @@ test("trigger button appears on ChatGPT", async ({ page }) => {
 });
 ```
 
-
 ## Continuous Integration
 
 ### Pre-commit Hooks
@@ -213,7 +207,6 @@ The CI pipeline runs:
 3. `npm test` - Unit tests with coverage
 4. `npm run test:e2e` - E2E tests
 5. `npm run build` - Production build verification
-
 
 ## Troubleshooting
 
@@ -245,14 +238,12 @@ Run E2E tests with debug logging:
 DEBUG=pw:api npm run test:e2e
 ```
 
-
 ## Resources
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Playwright Documentation](https://playwright.dev/)
 - [Testing Library](https://testing-library.com/)
 - [Chrome Extension Testing](https://developer.chrome.com/docs/extensions/mv3/tut_debugging/)
-
 
 **Document Version**: 1.1  
 **Last Updated**: April 18, 2026

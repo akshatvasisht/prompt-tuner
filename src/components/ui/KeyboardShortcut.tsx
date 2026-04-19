@@ -1,5 +1,26 @@
 import * as React from "react";
+import { Command } from "~lib/icons";
 import { cn } from "~lib/utils";
+
+const MODIFIER_LABELS: Record<string, string> = {
+  "⌘": "Command",
+  "⇧": "Shift",
+  "⌥": "Option",
+  "⌃": "Control",
+};
+
+function KeyGlyph({ keyName }: { keyName: string }): React.ReactNode {
+  if (keyName === "⌘") return <Command weight="bold" aria-label="Command" />;
+  const label = MODIFIER_LABELS[keyName];
+  if (label) {
+    return (
+      <abbr title={label} aria-label={label} className="no-underline">
+        {keyName}
+      </abbr>
+    );
+  }
+  return <>{keyName}</>;
+}
 
 interface KeyboardShortcutProps {
   keys: string[];
@@ -20,10 +41,15 @@ export function KeyboardShortcut({
         {keys.map((key, index) => (
           <React.Fragment key={index}>
             {index > 0 && (
-              <span className="text-[var(--pt-text-tertiary)] mx-2 text-sm font-medium">+</span>
+              <span
+                aria-hidden="true"
+                className="text-[var(--pt-text-tertiary)] mx-2 text-sm font-medium"
+              >
+                +
+              </span>
             )}
-            <kbd className="font-mono text-xl font-semibold text-[var(--pt-text-primary)] tracking-wide bg-[var(--pt-hover-bg)] px-4 py-2 rounded-[var(--pt-radius-md)] border border-[var(--pt-surface-border)]">
-              {key}
+            <kbd className="inline-flex items-center justify-center min-w-[2.5em] font-sans text-base font-semibold text-[var(--pt-text-primary)] tracking-wide bg-[var(--pt-hover-bg)] px-3 py-1.5 rounded-[var(--pt-radius-md)] border border-[var(--pt-surface-border)]">
+              <KeyGlyph keyName={key} />
             </kbd>
           </React.Fragment>
         ))}
@@ -33,14 +59,19 @@ export function KeyboardShortcut({
 
   if (variant === "inline") {
     return (
-      <span className={cn("inline-flex items-center gap-1", className)}>
+      <span className={cn("inline-flex items-center gap-1.5", className)}>
         {keys.map((key, index) => (
           <React.Fragment key={index}>
             {index > 0 && (
-              <span className="text-xs text-[var(--pt-text-tertiary)]">+</span>
+              <span
+                aria-hidden="true"
+                className="text-xs text-[var(--pt-text-tertiary)] px-0.5"
+              >
+                +
+              </span>
             )}
-            <kbd className="font-mono text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] px-2 py-0.5 rounded-[var(--pt-radius-sm)] border border-[var(--pt-surface-border)]">
-              {key}
+            <kbd className="inline-flex items-center justify-center font-sans text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] px-2 py-0.5 rounded-[var(--pt-radius-sm)] border border-[var(--pt-surface-border)]">
+              <KeyGlyph keyName={key} />
             </kbd>
           </React.Fragment>
         ))}
@@ -49,17 +80,34 @@ export function KeyboardShortcut({
   }
 
   // default
+  const groupLabel = description
+    ? `${description}: ${keys.join(" plus ")}`
+    : undefined;
   return (
-    <div className={cn("flex items-center justify-between py-2", className)}>
-      <span className="text-sm text-[var(--pt-text-secondary)]">{description}</span>
-      <div className="flex items-center gap-1">
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 py-1.5",
+        className,
+      )}
+      role="group"
+      aria-label={groupLabel}
+    >
+      <span className="text-[13px] text-[var(--pt-text-secondary)] leading-snug">
+        {description}
+      </span>
+      <div
+        className="flex items-center gap-0.5 shrink-0"
+        aria-hidden="true"
+      >
         {keys.map((key, index) => (
           <React.Fragment key={index}>
             {index > 0 && (
-              <span className="text-xs text-[var(--pt-text-tertiary)] mx-1">+</span>
+              <span className="text-[10px] text-[var(--pt-text-quaternary)] mx-0.5">
+                +
+              </span>
             )}
-            <kbd className="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded-[var(--pt-radius-sm)]">
-              {key}
+            <kbd className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 text-[11px] font-semibold text-[var(--pt-text-primary)] bg-[var(--pt-hover-bg)] border border-[var(--pt-surface-border)] rounded-[var(--pt-radius-sm)]">
+              <KeyGlyph keyName={key} />
             </kbd>
           </React.Fragment>
         ))}
@@ -80,15 +128,15 @@ export function KeyboardShortcutsCard({
   return (
     <div
       className={cn(
-        "rounded-[var(--pt-radius-lg)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)] p-5",
+        "rounded-[var(--pt-radius-lg)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)] px-4 pt-3 pb-2.5",
         "shadow-[var(--pt-shadow)]",
-        className
+        className,
       )}
     >
-      <h3 className="text-sm font-semibold text-[var(--pt-text-primary)] mb-3">
+      <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--pt-text-tertiary)] mb-2 pb-2 border-b border-[var(--pt-surface-border)]">
         {title}
       </h3>
-      <div className="space-y-1">
+      <div className="flex flex-col">
         {shortcuts.map((shortcut, index) => (
           <KeyboardShortcut
             key={index}

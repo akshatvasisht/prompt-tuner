@@ -9,7 +9,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
  * Ladle global wrapper.
  *
  * Ladle renders each story inside an iframe, so anything we stub has to
- * live on the iframe's window — not the parent. Two things matter:
+ * live on the iframe's window - not the parent. Two things matter:
  *
  * 1. chrome.runtime fake Port, driven by window.__ptMockScript, so the
  *    overlay's port-streaming path works offline.
@@ -17,8 +17,8 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
  *    returning our sample even after the user (or a programmatic click)
  *    collapses the live DOM selection.
  *
- * Both stubs are installed at module-evaluation time — before React
- * mounts the first story — so the overlay never sees an empty chrome
+ * Both stubs are installed at module-evaluation time - before React
+ * mounts the first story - so the overlay never sees an empty chrome
  * or null selection during its initial render.
  */
 
@@ -64,15 +64,22 @@ function installChromeStub() {
       if (msg?.type !== "START_OPTIMIZATION") return;
       const script = window.__ptMockScript ?? {
         messages: [
-          { type: "COMPLETE", optimizedPrompt: "(no mock script set — check the story's window.__ptMockScript)" },
+          {
+            type: "COMPLETE",
+            optimizedPrompt:
+              "(no mock script set - check the story's window.__ptMockScript)",
+          },
         ],
         intervalMs: 40,
       };
       const interval = script.intervalMs ?? 40;
       script.messages.forEach((m, i) => {
-        setTimeout(() => {
-          listeners.forEach((l) => l(m));
-        }, interval * (i + 1));
+        setTimeout(
+          () => {
+            listeners.forEach((l) => l(m));
+          },
+          interval * (i + 1),
+        );
       });
     },
     disconnect: () => {
@@ -87,7 +94,10 @@ function installChromeStub() {
       connect: () => fakePort,
       getURL: (p: string) => p,
       sendMessage: () => Promise.resolve(),
-      onMessage: { addListener: () => undefined, removeListener: () => undefined },
+      onMessage: {
+        addListener: () => undefined,
+        removeListener: () => undefined,
+      },
     },
     storage: {
       local: {
@@ -101,7 +111,7 @@ function installChromeStub() {
 /**
  * Overrides window.getSelection so getSelectedText() always sees our
  * sample text, regardless of DOM click events. This is safer than
- * maintaining a live Range — clicking anywhere in the overlay would
+ * maintaining a live Range - clicking anywhere in the overlay would
  * otherwise collapse the live selection and strand the overlay in
  * "no text selected" state.
  */
@@ -138,7 +148,7 @@ function installAll() {
   installSelectionStub();
 }
 
-// Run at module load — before any Story function body executes.
+// Run at module load - before any Story function body executes.
 installAll();
 
 export const Provider: GlobalProvider = ({ children }) => {

@@ -1,27 +1,16 @@
 import { useState, useEffect } from "react";
 
-export interface SelectionRect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
 /**
- * Tracks the user's text selection on the page, debounced via requestAnimationFrame.
- * Reports whether text is selected and the bounding rect of the selection.
+ * Tracks whether the user currently has non-empty text selected on the page.
+ * Debounced via requestAnimationFrame so rapid selectionchange bursts collapse
+ * to at most one state update per frame.
  *
- * @returns `hasSelection` — whether non-empty text is currently selected,
- *          `selectionRect` — viewport-relative bounding rect, or null when nothing is selected
+ * Callers that need the selection geometry should read it themselves via
+ * `window.getSelection()` inside their own rAF loop - piping a rect through
+ * React state just to mutate a transform would cause needless re-renders.
  */
-export function useTextSelection(): {
-  hasSelection: boolean;
-  selectionRect: SelectionRect | null;
-} {
+export function useTextSelection(): { hasSelection: boolean } {
   const [hasSelection, setHasSelection] = useState(false);
-  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(
-    null,
-  );
 
   useEffect(() => {
     let rafId: number | null = null;
@@ -32,24 +21,7 @@ export function useTextSelection(): {
         rafId = null;
         const selection = window.getSelection();
         const selectedText = selection?.toString().trim();
-
-        if (selectedText && selectedText.length > 0) {
-          const range = selection?.getRangeAt(0);
-          const rect = range?.getBoundingClientRect();
-
-          if (rect) {
-            setHasSelection(true);
-            setSelectionRect({
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-            });
-          }
-        } else {
-          setHasSelection(false);
-          setSelectionRect(null);
-        }
+        setHasSelection(Boolean(selectedText && selectedText.length > 0));
       });
     };
 
@@ -60,5 +32,5 @@ export function useTextSelection(): {
     };
   }, []);
 
-  return { hasSelection, selectionRect };
+  return { hasSelection };
 }

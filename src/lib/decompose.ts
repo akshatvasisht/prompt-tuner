@@ -1,5 +1,5 @@
 /**
- * Decomposition primitives — pure, Nano-independent orchestration helpers.
+ * Decomposition primitives - pure, Nano-independent orchestration helpers.
  *
  * These functions take injected `map`/`reduce`/`expand`/`compose` callables,
  * so they can be unit-tested against synthetic stubs without spinning up a
@@ -16,7 +16,7 @@ export type MeasureFn = (text: string) => Promise<number> | number;
  *   2. For any paragraph that still exceeds the cap, split on sentence
  *      boundaries ([.!?] followed by whitespace).
  *   3. For sentences that still exceed the cap, fall back to character-cap
- *      slicing (degenerate case — a single unbreakable run of text).
+ *      slicing (degenerate case - a single unbreakable run of text).
  *
  * The measureFn is async to accommodate Nano's `session.measureInputUsage`.
  */
@@ -55,7 +55,10 @@ export async function chunkByParagraphs(
     // Degenerate path: single unbreakable sentence. Slice by characters using
     // a proportional heuristic derived from the measurement ratio.
     const ratio = blockSize / block.length;
-    const charCap = Math.max(1, Math.floor(maxChunkTokens / Math.max(ratio, 0.001)));
+    const charCap = Math.max(
+      1,
+      Math.floor(maxChunkTokens / Math.max(ratio, 0.001)),
+    );
     const pieces: string[] = [];
     for (let i = 0; i < block.length; i += charCap) {
       pieces.push(block.slice(i, i + charCap));
@@ -101,7 +104,7 @@ export interface MapReduceArgs<T> {
   reduce: (mappedChunks: string[]) => Promise<string>;
   signal?: AbortSignal;
   /**
-   * Maximum number of `map` calls in flight concurrently. Default 2 —
+   * Maximum number of `map` calls in flight concurrently. Default 2 -
    * each Nano session holds a KV-cache that can cost tens of MB; high
    * parallelism risks OOMing the service worker on constrained devices.
    * Pass 1 for strictly sequential execution.

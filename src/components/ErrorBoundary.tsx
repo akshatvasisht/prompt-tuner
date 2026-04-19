@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Logo } from "~components/Logo";
+import { Button } from "~components/ui/Button";
 import { logger } from "~lib/logger";
 
 interface Props {
@@ -28,25 +29,29 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center bg-[var(--pt-surface)] text-[var(--pt-text-primary)] rounded-[var(--pt-radius-lg)] border border-[var(--pt-surface-border)] shadow-[var(--pt-shadow-lg)]">
+          <div
+            role="alert"
+            className="flex w-full flex-col items-center gap-2 px-6 py-5 text-center text-[var(--pt-text-primary)]"
+          >
             <Logo
               aria-label="Prompt Tuner"
-              className="h-12 w-12 mb-4 opacity-40 text-[var(--pt-accent)]"
+              className="h-8 w-8 opacity-40 text-[var(--pt-accent)]"
             />
-            <h2 className="text-lg font-semibold mb-2 text-[var(--pt-text-primary)]">
+            <h2 className="text-sm font-semibold text-[var(--pt-text-primary)]">
               Something went wrong
             </h2>
-            <p className="text-sm text-[var(--pt-text-secondary)] mb-6 max-w-sm">
-              The Command Palette encountered an unexpected error. Please try again.
+            <p className="max-w-xs text-xs text-[var(--pt-text-secondary)]">
+              The Command Palette hit an unexpected error.
             </p>
-            <button
+            <Button
+              size="sm"
+              className="mt-1"
               onClick={() => {
                 this.setState({ hasError: false });
               }}
-              className="px-4 py-2 bg-[var(--pt-accent)] hover:bg-[var(--pt-accent-hover)] text-white rounded-[var(--pt-radius-md)] text-sm font-semibold transition-all shadow-[var(--pt-shadow)] active:scale-[0.98]"
             >
               Try again
-            </button>
+            </Button>
           </div>
         )
       );

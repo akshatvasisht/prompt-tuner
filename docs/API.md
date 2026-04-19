@@ -14,7 +14,6 @@ The extension uses a strictly typed message passing system defined by the `Exten
 
 Optimization rules are bundled at build time (see `src/lib/platform-rules.ts`); there is no runtime rule-refresh message.
 
-
 ## 2. Port-Based Streaming (`chrome.runtime.connect`)
 
 Long-lived operations like AI optimization use `chrome.runtime.Port` to stream chunks back to the UI incrementally and avoid service worker termination.
@@ -43,7 +42,7 @@ Sent from the overlay component to the background service worker:
 Streamed from background back to the overlay:
 
 ```typescript
-// Emitted once before generation starts — token usage of the input
+// Emitted once before generation starts - token usage of the input
 { type: "TOKEN_INFO", count: number, limit: number }
 
 // Emitted repeatedly during generation
@@ -55,7 +54,6 @@ Streamed from background back to the overlay:
 // Emitted if an error halts generation
 { type: "ERROR", code: ErrorCode, message: string }
 ```
-
 
 ## 3. Storage Keys
 
@@ -74,10 +72,9 @@ User settings live in `chrome.storage.local`; optimization result caching uses `
 
 **`chrome.storage.session`** (cleared when Chrome closes):
 
-| Key                      | Purpose                                                                                             |
-| ------------------------ | --------------------------------------------------------------------------------------------------- |
-| `optimize-result-cache`  | Recent optimization results keyed by `FNV1a(draft + rulesVersion + action + platform)`              |
-
+| Key                     | Purpose                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `optimize-result-cache` | Recent optimization results keyed by `FNV1a(draft + rulesVersion + action + platform)` |
 
 ## 4. AI Engine Module (`~lib/ai-engine`)
 
@@ -94,7 +91,6 @@ Initializes a new `LanguageModel` session. If pre-warmed with specific rules in 
 ### `optimizePromptStreaming(draft, rules, onChunk, options?)`
 
 The core generation function. Accepts the raw draft, an array of rule strings, an `onChunk` streaming callback, and optional `AIOptimizeOptions` (including `onTokenCount` for pre-stream token usage reporting). Emits tokens incrementally via `onChunk`.
-
 
 ## 5. Platform Detection & Injection
 

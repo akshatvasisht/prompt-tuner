@@ -97,7 +97,11 @@ async function tryMainWorldReplacement(
 
         const handler = (event: MessageEvent): void => {
           const data: unknown = event.data;
-          if (typeof data !== "object" || data === null || event.source !== window) {
+          if (
+            typeof data !== "object" ||
+            data === null ||
+            event.source !== window
+          ) {
             return;
           }
           const record = data as Record<string, unknown>;

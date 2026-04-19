@@ -237,26 +237,21 @@ describe("ai-engine", () => {
   describe("optimizeWithWriter", () => {
     it("uses the Writer API when available", async () => {
       const chunks: string[] = [];
-      const result = await optimizeWithWriter(
-        "draft",
-        ["rule"],
-        (c) => chunks.push(c),
+      const result = await optimizeWithWriter("draft", ["rule"], (c) =>
+        chunks.push(c),
       );
       expect(result).toContain("Written");
     });
 
     it("falls back to prompt engine when Writer unavailable", async () => {
-      const originalWriter = (
-        globalThis as unknown as { Writer?: unknown }
-      ).Writer;
+      const originalWriter = (globalThis as unknown as { Writer?: unknown })
+        .Writer;
       // @ts-expect-error intentional
       globalThis.Writer = undefined;
       try {
         const chunks: string[] = [];
-        const result = await optimizeWithWriter(
-          "draft",
-          [],
-          (c) => chunks.push(c),
+        const result = await optimizeWithWriter("draft", [], (c) =>
+          chunks.push(c),
         );
         expect(result).toContain("Optimized");
       } finally {
@@ -268,10 +263,8 @@ describe("ai-engine", () => {
   describe("optimizeWithRewriter", () => {
     it("uses the Rewriter API when available", async () => {
       const chunks: string[] = [];
-      const result = await optimizeWithRewriter(
-        "draft",
-        ["rule"],
-        (c) => chunks.push(c),
+      const result = await optimizeWithRewriter("draft", ["rule"], (c) =>
+        chunks.push(c),
       );
       expect(result).toContain("Rewritten");
     });
@@ -299,10 +292,8 @@ describe("ai-engine", () => {
       });
 
       const chunks: string[] = [];
-      const result = await optimizeWithDecomposition(
-        "my task",
-        [],
-        (c) => chunks.push(c),
+      const result = await optimizeWithDecomposition("my task", [], (c) =>
+        chunks.push(c),
       );
 
       expect(result).toContain("Phase A");

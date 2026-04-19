@@ -16,7 +16,10 @@ import {
   isLanguageModelAvailable,
 } from "~lib/ai-availability";
 
-export { checkAIAvailability, isLanguageModelAvailable } from "~lib/ai-availability";
+export {
+  checkAIAvailability,
+  isLanguageModelAvailable,
+} from "~lib/ai-availability";
 
 /**
  * Fallback input budget when session.inputQuota is unreadable.
@@ -26,7 +29,7 @@ export { checkAIAvailability, isLanguageModelAvailable } from "~lib/ai-availabil
 const MAX_INPUT_TOKENS = 4096;
 
 /**
- * Base system prompt — generic checklist + output contract, platform rules
+ * Base system prompt - generic checklist + output contract, platform rules
  * appended per-clone via `session.append()`. Keeping the base prompt generic
  * lets us reuse the warmed KV-cache across rule sets.
  */
@@ -43,14 +46,14 @@ Improvement Checklist:
 
 Instructions:
 1. Analyze the original prompt
-2. Apply only the checklist items that are relevant — do NOT pad or over-engineer
+2. Apply only the checklist items that are relevant - do NOT pad or over-engineer
 3. Maintain the user's original intent and voice
 4. Keep improvements proportional to the input length
 
 CRITICAL: Return ONLY the improved prompt. No preamble, no commentary, no surrounding tags or quotes.`;
 
 // =============================================================================
-// Session Cache — clone pool
+// Session Cache - clone pool
 // =============================================================================
 
 let baseSession: LanguageModel | null = null;
@@ -113,7 +116,7 @@ async function measureTokens(
 
 /**
  * AbortError (user-cancelled a stream) should not tear down the cached
- * session — the Prompt API preserves context across aborts.
+ * session - the Prompt API preserves context across aborts.
  */
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
@@ -222,7 +225,7 @@ async function getSessionForRules(
     return clone;
   } catch (error) {
     logger.warn(
-      "Session clone/append failed — falling back to per-rule-set sessions",
+      "Session clone/append failed - falling back to per-rule-set sessions",
       error,
     );
     appendSupported = false;
@@ -262,7 +265,7 @@ export function isWarmed(): boolean {
 }
 
 /**
- * RAF-batching stream reader — forwards delta tokens to onChunk while
+ * RAF-batching stream reader - forwards delta tokens to onChunk while
  * amortising high-frequency bursts over animation frames. Returns the full
  * concatenated string.
  */
@@ -420,8 +423,8 @@ export async function optimizePromptStreaming(
 /**
  * Refine chain (Draft → Critique-silently → Polish).
  *
- * Turn 1: silent, non-streaming — model lists 2-3 improvements.
- * Turn 2: streaming — model applies the improvements and returns the final prompt.
+ * Turn 1: silent, non-streaming - model lists 2-3 improvements.
+ * Turn 2: streaming - model applies the improvements and returns the final prompt.
  *
  * Used for the `optimize` action where quality matters more than latency.
  */
@@ -520,7 +523,7 @@ export async function measureDraft(draft: string): Promise<number> {
 }
 
 // =============================================================================
-// Phase 3 — Map-Reduce for long inputs
+// Phase 3 - Map-Reduce for long inputs
 // =============================================================================
 
 import {
@@ -557,8 +560,10 @@ export async function optimizeWithMapReduce(
     const chunks = await chunkByParagraphs(draft, chunkCap, measure);
 
     if (chunks.length <= 1) {
-      // Input fits — degrade to single-shot.
-      const stream = session.promptStreaming(draft, { signal: options?.signal });
+      // Input fits - degrade to single-shot.
+      const stream = session.promptStreaming(draft, {
+        signal: options?.signal,
+      });
       const result = await streamToChunks(stream, onChunk);
       return cleanModelOutput(result) || draft;
     }
@@ -592,14 +597,16 @@ export async function optimizeWithMapReduce(
     if (!isAbortError(error)) clearSessionCache();
     if (error instanceof PromptTunerError) throw error;
     throw new PromptTunerError(
-      error instanceof Error ? error.message : "Failed to generate optimized prompt",
+      error instanceof Error
+        ? error.message
+        : "Failed to generate optimized prompt",
       "AI_GENERATION_FAILED",
     );
   }
 }
 
 // =============================================================================
-// Phase 4 — Writer / Rewriter engine routing
+// Phase 4 - Writer / Rewriter engine routing
 // =============================================================================
 
 function isWriterAvailable(): boolean {
@@ -611,7 +618,8 @@ function isRewriterAvailable(): boolean {
 }
 
 function buildSharedContext(rules: string[]): string {
-  if (rules.length === 0) return "Focus on clarity, specificity, and structure.";
+  if (rules.length === 0)
+    return "Focus on clarity, specificity, and structure.";
   return `Apply these guidelines when relevant:\n${formatRulesForPrompt(rules)}`;
 }
 
@@ -622,7 +630,7 @@ export async function optimizeWithWriter(
   options?: AIOptimizeOptions,
 ): Promise<string> {
   if (!isWriterAvailable()) {
-    logger.info("Writer API unavailable — falling back to prompt engine");
+    logger.info("Writer API unavailable - falling back to prompt engine");
     return optimizePromptStreaming(draft, rules, onChunk, options);
   }
 
@@ -630,7 +638,7 @@ export async function optimizeWithWriter(
     const availability = await Writer.availability();
     if (availability !== "available") {
       logger.info(
-        `Writer API not ready (${availability}) — falling back to prompt engine`,
+        `Writer API not ready (${availability}) - falling back to prompt engine`,
       );
       return await optimizePromptStreaming(draft, rules, onChunk, options);
     }
@@ -650,11 +658,15 @@ export async function optimizeWithWriter(
       const result = await streamToChunks(stream, onChunk);
       return cleanModelOutput(result) || draft;
     } finally {
-      try { writer.destroy(); } catch { /* best-effort */ }
+      try {
+        writer.destroy();
+      } catch {
+        /* best-effort */
+      }
     }
   } catch (error) {
     if (isAbortError(error)) throw error;
-    logger.warn("Writer API failed — falling back to prompt engine", error);
+    logger.warn("Writer API failed - falling back to prompt engine", error);
     return optimizePromptStreaming(draft, rules, onChunk, options);
   }
 }
@@ -666,7 +678,7 @@ export async function optimizeWithRewriter(
   options?: AIOptimizeOptions,
 ): Promise<string> {
   if (!isRewriterAvailable()) {
-    logger.info("Rewriter API unavailable — falling back to prompt engine");
+    logger.info("Rewriter API unavailable - falling back to prompt engine");
     return optimizePromptStreaming(draft, rules, onChunk, options);
   }
 
@@ -674,7 +686,7 @@ export async function optimizeWithRewriter(
     const availability = await Rewriter.availability();
     if (availability !== "available") {
       logger.info(
-        `Rewriter API not ready (${availability}) — falling back to prompt engine`,
+        `Rewriter API not ready (${availability}) - falling back to prompt engine`,
       );
       return await optimizePromptStreaming(draft, rules, onChunk, options);
     }
@@ -690,21 +702,27 @@ export async function optimizeWithRewriter(
     });
 
     try {
-      const stream = rewriter.rewriteStreaming(draft, { signal: options?.signal });
+      const stream = rewriter.rewriteStreaming(draft, {
+        signal: options?.signal,
+      });
       const result = await streamToChunks(stream, onChunk);
       return cleanModelOutput(result) || draft;
     } finally {
-      try { rewriter.destroy(); } catch { /* best-effort */ }
+      try {
+        rewriter.destroy();
+      } catch {
+        /* best-effort */
+      }
     }
   } catch (error) {
     if (isAbortError(error)) throw error;
-    logger.warn("Rewriter API failed — falling back to prompt engine", error);
+    logger.warn("Rewriter API failed - falling back to prompt engine", error);
     return optimizePromptStreaming(draft, rules, onChunk, options);
   }
 }
 
 // =============================================================================
-// Phase 5 — Recursive decomposition
+// Phase 5 - Recursive decomposition
 // =============================================================================
 
 const PHASE_ARRAY_SCHEMA = {
@@ -768,7 +786,7 @@ export async function optimizeWithDecomposition(
             responseConstraint: PHASE_ARRAY_SCHEMA,
           });
         } catch {
-          // responseConstraint unsupported — retry unconstrained.
+          // responseConstraint unsupported - retry unconstrained.
           raw = await session.prompt(query, { signal: options?.signal });
         }
         return extractStringArray(raw);
@@ -800,14 +818,16 @@ export async function optimizeWithDecomposition(
     if (!isAbortError(error)) clearSessionCache();
     if (error instanceof PromptTunerError) throw error;
     throw new PromptTunerError(
-      error instanceof Error ? error.message : "Failed to generate optimized prompt",
+      error instanceof Error
+        ? error.message
+        : "Failed to generate optimized prompt",
       "AI_GENERATION_FAILED",
     );
   }
 }
 
 // =============================================================================
-// Phase 6 — Hierarchical summarisation fallback
+// Phase 6 - Hierarchical summarisation fallback
 // =============================================================================
 
 function isSummarizerAvailable(): boolean {
@@ -864,12 +884,18 @@ export async function optimizeWithHierarchical(
       const summaries: string[] = [];
       for (const chunk of chunks) {
         options?.signal?.throwIfAborted();
-        const s = await summarizer.summarize(chunk, { signal: options?.signal });
+        const s = await summarizer.summarize(chunk, {
+          signal: options?.signal,
+        });
         summaries.push(s);
       }
       compressed = summaries.join("\n\n");
     } finally {
-      try { summarizer.destroy(); } catch { /* best-effort */ }
+      try {
+        summarizer.destroy();
+      } catch {
+        /* best-effort */
+      }
     }
 
     // After compression, run the normal map-reduce pipeline on the compressed
@@ -880,7 +906,9 @@ export async function optimizeWithHierarchical(
     if (!isAbortError(error)) clearSessionCache();
     if (error instanceof PromptTunerError) throw error;
     throw new PromptTunerError(
-      error instanceof Error ? error.message : "Failed to generate optimized prompt",
+      error instanceof Error
+        ? error.message
+        : "Failed to generate optimized prompt",
       "AI_GENERATION_FAILED",
     );
   }

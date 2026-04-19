@@ -14,8 +14,11 @@ export function useKeyboardShortcut(
 ): void {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const nav = navigator as unknown as { userAgentData?: { platform?: string } };
-      const platformStr = (nav.userAgentData?.platform ?? navigator.platform) || "";
+      const nav = navigator as unknown as {
+        userAgentData?: { platform?: string };
+      };
+      const platformStr =
+        (nav.userAgentData?.platform ?? navigator.platform) || "";
       const isMac = /mac/i.test(platformStr);
       const keys = keyCombo.split("+");
 

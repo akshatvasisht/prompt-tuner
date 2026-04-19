@@ -7,7 +7,7 @@ import { Toaster } from "./ui/Toaster";
  * Stories for the overlay's four UI states.
  *
  * window.__ptMockScript is assigned at the top of each Story function
- * body — synchronously, during render — so the value is in place before
+ * body - synchronously, during render - so the value is in place before
  * CommandPaletteContent mounts and opens its port. Assigning inside a
  * useEffect would race the mount order and strand the overlay.
  */
@@ -61,8 +61,8 @@ function StartupHint({ enabled = true }: { enabled?: boolean }) {
     let attempts = 0;
     const tick = () => {
       const iframeDoc =
-        (document.querySelector<HTMLIFrameElement>(".ladle-iframe")?.contentDocument) ??
-        document;
+        document.querySelector<HTMLIFrameElement>(".ladle-iframe")
+          ?.contentDocument ?? document;
       const first = iframeDoc.querySelector<HTMLElement>(
         '[role="option"][id="pt-action-0"]',
       );
@@ -73,7 +73,9 @@ function StartupHint({ enabled = true }: { enabled?: boolean }) {
       if (attempts++ < 30) window.setTimeout(tick, 30);
     };
     const id = window.setTimeout(tick, 30);
-    return () => { window.clearTimeout(id); };
+    return () => {
+      window.clearTimeout(id);
+    };
   }, [enabled]);
   return null;
 }
@@ -140,18 +142,3 @@ export const ErrorState: Story = () => {
   );
 };
 ErrorState.storyName = "Error";
-
-export const LongInputWarning: Story = () => {
-  window.__ptMockSelectedText = "x".repeat(8000);
-  window.__ptMockScript = {
-    intervalMs: 30,
-    messages: [{ type: "COMPLETE", optimizedPrompt: SAMPLE_OUTPUT }],
-  };
-  return (
-    <Frame>
-      <CommandPaletteContent onClose={() => undefined} />
-      <StartupHint />
-    </Frame>
-  );
-};
-LongInputWarning.storyName = "Long input warning";

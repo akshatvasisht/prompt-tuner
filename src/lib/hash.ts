@@ -1,6 +1,6 @@
 /**
  * Non-cryptographic hash utilities for cache keys and fingerprints.
- * FNV-1a 32-bit — fast, zero-dependency, collision-resistant enough for
+ * FNV-1a 32-bit - fast, zero-dependency, collision-resistant enough for
  * the handful of cache keys this extension maintains.
  */
 

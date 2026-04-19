@@ -7,7 +7,7 @@ import {
   recursiveDecompose,
 } from "~lib/decompose";
 
-// Synthetic tokenizer: 1 token per character — deterministic for testing.
+// Synthetic tokenizer: 1 token per character - deterministic for testing.
 const charTokenizer = (s: string): number => s.length;
 
 describe("decompose.chunkByParagraphs", () => {
@@ -36,7 +36,8 @@ describe("decompose.chunkByParagraphs", () => {
   });
 
   it("splits an oversized paragraph on sentence boundaries", async () => {
-    const input = "First sentence here. Second sentence is longer and has content. Third.";
+    const input =
+      "First sentence here. Second sentence is longer and has content. Third.";
     const chunks = await chunkByParagraphs(input, 40, charTokenizer);
     expect(chunks.length).toBeGreaterThan(1);
     for (const c of chunks) {
@@ -120,11 +121,7 @@ describe("decompose.refineChain", () => {
     const controller = new AbortController();
     controller.abort();
     await expect(
-      refineChain(
-        "seed",
-        [(s) => Promise.resolve(`${s}!`)],
-        controller.signal,
-      ),
+      refineChain("seed", [(s) => Promise.resolve(`${s}!`)], controller.signal),
     ).rejects.toThrow();
   });
 });

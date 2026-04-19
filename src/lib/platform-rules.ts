@@ -51,7 +51,7 @@ export function getRuleCount(): number {
  * cache keys so bundled-rule changes invalidate cached optimizations on the
  * first load after an extension update.
  *
- * FNV-1a 32-bit over each rule's id+platform+rule fields — stable across runs,
+ * FNV-1a 32-bit over each rule's id+platform+rule fields - stable across runs,
  * no crypto dependency.
  */
 let cachedRulesVersion: string | null = null;
@@ -69,8 +69,5 @@ export function getRulesVersion(): string {
  * Gets all rules. Universal rules are returned without a platform field.
  */
 export function getAllRules(): OptimizationRule[] {
-  return [
-    ...(UNIVERSAL as OptimizationRule[]),
-    ...OVERRIDES,
-  ];
+  return [...(UNIVERSAL as OptimizationRule[]), ...OVERRIDES];
 }

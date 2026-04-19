@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Visual regression config — separate from the extension e2e config.
+ * Visual regression config - separate from the extension e2e config.
  *
  * Boots Ladle's dev server on :61000, then iterates through story URLs
  * and diffs each against a committed PNG baseline under

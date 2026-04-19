@@ -19,7 +19,10 @@ interface UseKeyboardListResult {
  * @param onSelect - Called with the index of the selected item on Enter
  * @returns Active index state, setter, and keydown handler
  */
-export function useKeyboardList({ count, onSelect }: UseKeyboardListOptions): UseKeyboardListResult {
+export function useKeyboardList({
+  count,
+  onSelect,
+}: UseKeyboardListOptions): UseKeyboardListResult {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handleKeyDown = useCallback(

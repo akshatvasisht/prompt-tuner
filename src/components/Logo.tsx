@@ -3,7 +3,7 @@ import type { SVGProps } from "react";
 /**
  * Prompt Tuner brand mark. Path extracted from src/assets/logo.svg with
  * fill hoisted to currentColor so the mark can recolor via `color` /
- * `text-*` classes — e.g. white on ultramarine for the pill, ultramarine
+ * `text-*` classes - e.g. white on ultramarine for the pill, ultramarine
  * on cream for the popup.
  */
 export function Logo(props: SVGProps<SVGSVGElement>) {

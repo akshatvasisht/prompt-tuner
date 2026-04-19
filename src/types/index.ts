@@ -239,4 +239,3 @@ export interface ReplaceTextResult {
 
 /** Valid text input element types */
 export type TextInputElement = HTMLTextAreaElement | HTMLDivElement;
-

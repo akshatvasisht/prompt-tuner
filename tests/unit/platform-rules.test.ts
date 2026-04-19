@@ -32,13 +32,17 @@ describe("platform-rules", () => {
 
     it("should include google-specific markdown guidance for google", () => {
       const rules = getRulesForPlatform("google");
-      const hasMarkdown = rules.some((r) => r.toLowerCase().includes("markdown"));
+      const hasMarkdown = rules.some((r) =>
+        r.toLowerCase().includes("markdown"),
+      );
       expect(hasMarkdown).toBe(true);
     });
 
     it("should include openai-specific framing guidance for openai", () => {
       const rules = getRulesForPlatform("openai");
-      const hasPositive = rules.some((r) => r.toLowerCase().includes("positive"));
+      const hasPositive = rules.some((r) =>
+        r.toLowerCase().includes("positive"),
+      );
       expect(hasPositive).toBe(true);
     });
 
@@ -115,7 +119,9 @@ describe("platform-rules", () => {
 
     it("should include platform-specific override rules for all three platforms", () => {
       const allRules = getAllRules();
-      const platforms = new Set(allRules.map((r) => r.platform).filter(Boolean));
+      const platforms = new Set(
+        allRules.map((r) => r.platform).filter(Boolean),
+      );
       expect(platforms.has("openai")).toBe(true);
       expect(platforms.has("anthropic")).toBe(true);
       expect(platforms.has("google")).toBe(true);

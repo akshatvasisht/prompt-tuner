@@ -129,7 +129,9 @@ export function setKeepAlive(active: boolean): void {
   if (active) {
     activePortCount++;
     if (activePortCount === 1) {
-      void chrome.alarms.create(ALARM_NAMES.KEEP_ALIVE, { periodInMinutes: 0.5 });
+      void chrome.alarms.create(ALARM_NAMES.KEEP_ALIVE, {
+        periodInMinutes: 0.5,
+      });
     }
   } else {
     activePortCount = Math.max(0, activePortCount - 1);

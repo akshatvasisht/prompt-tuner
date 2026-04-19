@@ -5,7 +5,6 @@
 **Submission Date**: TBD (pre-submission)  
 **Category**: Productivity
 
-
 ## Table of Contents
 
 1. [Extension Description](#1-extension-description)
@@ -21,7 +20,6 @@
 11. [Frequently Asked Questions](#11-frequently-asked-questions)
 12. [Reviewer Notes](#12-reviewer-notes-for-chrome-web-store-team)
 13. [Post-Submission Checklist](#13-post-submission-checklist)
-
 
 ## 1. Extension Description
 
@@ -40,7 +38,7 @@ KEY FEATURES
 - One-click prompt optimization with local AI processing
 - Platform-specific rules for ChatGPT, Claude, and Gemini
 - 100% private - all processing happens on your device
-- Works fully offline — zero network activity at runtime
+- Works fully offline - zero network activity at runtime
 - Optimization strategies updated quarterly via extension releases
 
 PRIVACY COMMITMENT
@@ -105,19 +103,18 @@ Privacy and Security:
 - 100% on-device processing via Gemini Nano
 - No data collection, tracking, or transmission
 - Strict Content Security Policy with no external `connect-src`
-- Optimization rules bundled with the extension — zero runtime network activity
+- Optimization rules bundled with the extension - zero runtime network activity
 ```
-
 
 ## 2. Permissions Justification
 
 ### 2.1 Permissions Table
 
-| Permission  | Justification                                                                                                            | User-Facing Benefit                                                                    | Privacy Impact                                                                                               |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `storage`   | Cache optimization results (keyed by prompt hash + rules fingerprint) so repeated optimizations are instant               | Faster repeat optimizations, reduced AI compute                                        | **Low** - Only stores non-personal data (hashed inputs and model outputs). No account or identity data.     |
-| `alarms`    | Keep the background service worker alive during active streaming optimizations so long responses finish reliably          | Reliable completion of streaming optimizations without interrupted output              | **None** - No data collection. Scheduling only; no external calls.                                           |
-| `activeTab` | Detect which LLM platform (ChatGPT/Claude/Gemini) the user is currently on to apply platform-specific optimization rules | Tailored optimizations for each AI platform, better results                            | **Minimal** - Only reads current tab URL to detect platform. No content access.                              |
+| Permission  | Justification                                                                                                            | User-Facing Benefit                                                       | Privacy Impact                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `storage`   | Cache optimization results (keyed by prompt hash + rules fingerprint) so repeated optimizations are instant              | Faster repeat optimizations, reduced AI compute                           | **Low** - Only stores non-personal data (hashed inputs and model outputs). No account or identity data. |
+| `alarms`    | Keep the background service worker alive during active streaming optimizations so long responses finish reliably         | Reliable completion of streaming optimizations without interrupted output | **None** - No data collection. Scheduling only; no external calls.                                      |
+| `activeTab` | Detect which LLM platform (ChatGPT/Claude/Gemini) the user is currently on to apply platform-specific optimization rules | Tailored optimizations for each AI platform, better results               | **Minimal** - Only reads current tab URL to detect platform. No content access.                         |
 
 ### 2.2 Host Permissions Table
 
@@ -128,7 +125,6 @@ Privacy and Security:
 | `https://claude.ai/*`         | Inject optimization widget into Claude interface to enhance user prompts before submission  | In-context prompt improvement without leaving Claude  | **Low** - Only accesses DOM to inject UI and read draft prompts on user action. Does not access chat history. |
 | `https://bard.google.com/*`   | Inject optimization widget into Google Bard/Gemini interface (legacy domain)                | In-context prompt improvement without leaving Gemini  | **Low** - Only accesses DOM to inject UI and read draft prompts on user action. Does not access chat history. |
 | `https://gemini.google.com/*` | Inject optimization widget into Google Gemini interface                                     | Same as above                                         | Same as above                                                                                                 |
-
 
 ## 3. Host Permissions Technical Justification
 
@@ -206,7 +202,6 @@ User Reviews & Submits
 
 **Key Point**: All processing happens locally via Chrome's built-in AI. No data from `chat.openai.com`, `claude.ai`, or `gemini.google.com` is sent to external servers.
 
-
 ## 4. Single Purpose Statement
 
 ### 4.1 Primary Purpose
@@ -219,14 +214,14 @@ User Reviews & Submits
 
 All features support this core function:
 
-| Feature              | Purpose Alignment                                                  |
-| -------------------- | ------------------------------------------------------------------ |
-| Platform Detection   | Determines which LLM is active, applies correct optimization rules |
-| Local AI Processing  | Processes prompts via Gemini Nano, generates optimized output      |
-| UI Widget            | Provides user control, initiates optimization on demand            |
-| Streaming Display    | Shows tokens as generated, improves perceived performance          |
-| Scoped CSS Overlay   | Isolates UI via `--pt-*` namespace, prevents conflicts with host page |
-| Main World Bridge    | Bypasses React Virtual DOM, ensures text replacement works         |
+| Feature             | Purpose Alignment                                                     |
+| ------------------- | --------------------------------------------------------------------- |
+| Platform Detection  | Determines which LLM is active, applies correct optimization rules    |
+| Local AI Processing | Processes prompts via Gemini Nano, generates optimized output         |
+| UI Widget           | Provides user control, initiates optimization on demand               |
+| Streaming Display   | Shows tokens as generated, improves perceived performance             |
+| Scoped CSS Overlay  | Isolates UI via `--pt-*` namespace, prevents conflicts with host page |
+| Main World Bridge   | Bypasses React Virtual DOM, ensures text replacement works            |
 
 **Conclusion**: Every component serves the single purpose of prompt optimization.
 
@@ -242,7 +237,6 @@ The extension intentionally excludes:
 - Third-party service integrations of any kind
 
 **Compliance**: Meets Chrome Web Store Single Purpose Policy.
-
 
 ## 5. Privacy Practices
 
@@ -299,7 +293,6 @@ including the User Data Privacy policy. This extension:
 - Processes all user data locally via Chrome's built-in AI
 ```
 
-
 ## 6. Store Listing Content
 
 ### 6.1 Primary Category
@@ -326,7 +319,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 **Primary**: English (US)
 
 **Localization Status**: Not yet localized (English only in v0.1.0)
-
 
 ## 7. Screenshots and Media
 
@@ -408,7 +400,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
   5. Submit and show better response
 - **Voiceover**: "Prompt Tuner - Optimize your AI prompts locally and privately"
 
-
 ## 8. Developer Information
 
 ### 8.1 Developer Account
@@ -440,7 +431,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 **Rule Updates**: Quarterly, bundled into each extension release (rules are regenerated by CI and committed to the repo)
 
 **Notification**: Users receive updated rules through normal Chrome Web Store extension updates.
-
 
 ## 9. Technical Requirements
 
@@ -476,7 +466,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - No user accounts
 - No paid subscriptions
 
-
 ## 10. Compliance Checklist
 
 ### 10.1 Chrome Web Store Policies
@@ -506,7 +495,6 @@ local AI, privacy, productivity, prompt helper, AI tools, writing assistant
 - **Documentation**: Comprehensive docs provided - PASS
 - **Support**: GitHub issues for support - PASS
 
-
 ## 11. Frequently Asked Questions
 
 **Q: Does Prompt Tuner send my prompts to a server?**
@@ -528,7 +516,7 @@ Optimize (general improvement), Few-Shot (add examples), Chain of Thought (step-
 Yes. After inserting an optimized prompt, a toast notification appears with an "Undo" button for 8 seconds. Click it to restore your original text.
 
 **Q: Why does the extension need host permissions for ChatGPT/Claude/Gemini?**
-To inject the optimization UI overlay and replace text in the platform's textarea. No chat history or page content is read — only the text you've selected when you click optimize.
+To inject the optimization UI overlay and replace text in the platform's textarea. No chat history or page content is read - only the text you've selected when you click optimize.
 
 **Q: How often are optimization rules updated?**
 Rules are bundled with the extension and refreshed in each release. A quarterly GitHub Actions job regenerates the rule files from source documentation and commits them to the repository; users receive updates via normal Chrome Web Store extension updates.
@@ -538,7 +526,6 @@ Yes, fully. After Gemini Nano is downloaded by Chrome, the extension makes zero 
 
 **Q: Is it open source?**
 Yes. The full source code is available on GitHub under the MIT License.
-
 
 ## 12. Reviewer Notes (for Chrome Web Store team)
 
@@ -579,7 +566,7 @@ Yes. The full source code is available on GitHub under the MIT License.
 6. **Verify Privacy**:
    - Open DevTools, then Network tab
    - Perform optimization
-   - Verify **zero network requests** after extension load — all processing is local
+   - Verify **zero network requests** after extension load - all processing is local
    - Verify no analytics beacons
    - Verify no third-party API calls
 
@@ -620,7 +607,6 @@ npm run build
 # Compare build/chrome-mv3-prod with submitted CRX
 ```
 
-
 ## 13. Post-Submission Checklist
 
 ### 13.1 After Approval
@@ -646,7 +632,6 @@ npm run build
 - Monitor GitHub Issues for bugs
 - Set up quarterly rule update schedule
 - Plan next version features based on feedback
-
 
 ## Appendix A: Submission Form Answers
 
@@ -708,7 +693,6 @@ No remote code is used. Optimization rules are static JSON data files bundled
 inside the extension; the extension makes no network requests at runtime.
 ```
 
-
 ## Appendix B: Certification Statement
 
 **Developer Certification**:
@@ -727,7 +711,6 @@ I certify that:
 **Date**: 2026-04-18  
 **Signature**: Akshat Vasisht
 
-
 **Document Version**: 1.2  
 **Last Updated**: April 18, 2026  
-**Status**: Ready for Chrome Web Store Submission (pending 3 blockers: screenshots, promo tiles, dev account — see OPEN_ISSUES.md)
+**Status**: Ready for Chrome Web Store Submission (pending 3 blockers: screenshots, promo tiles, dev account - see OPEN_ISSUES.md)

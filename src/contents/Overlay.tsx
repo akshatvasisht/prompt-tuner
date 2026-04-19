@@ -4,12 +4,9 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Toaster } from "~components/ui/Toaster";
 import { CommandPaletteContent } from "~components/PromptTunerOverlay";
-import { MiniPillTrigger } from "~components/MiniPillTrigger";
+import { SelectionTrigger } from "~components/SelectionTrigger";
 import { useKeyboardShortcut } from "~hooks/use-keyboard-shortcut";
-import type {
-  PlasmoCSConfig,
-  PlasmoGetRootContainer,
-} from "plasmo";
+import type { PlasmoCSConfig, PlasmoGetRootContainer } from "plasmo";
 
 import "@fontsource-variable/inter";
 import cssText from "data-text:~styles/globals.css";
@@ -27,14 +24,14 @@ export const config: PlasmoCSConfig = {
 /**
  * Mount overlay directly to document.body (outside Shadow DOM).
  * Style isolation is achieved via the `--pt-*` CSS variable prefix,
- * not shadow encapsulation — see CLAUDE.md gotcha #1.
+ * not shadow encapsulation - see CLAUDE.md gotcha #1.
  */
 export const getRootContainer: PlasmoGetRootContainer = () => {
   const container = document.createElement("div");
   container.id = "prompt-tuner-root";
   document.body.appendChild(container);
 
-  // Inject CSS variables + extension styles into main document — guarded so
+  // Inject CSS variables + extension styles into main document - guarded so
   // HMR re-invocations don't stack duplicate <style> blocks in <head>.
   if (!document.getElementById("prompt-tuner-styles")) {
     const ptStyle = document.createElement("style");
@@ -56,6 +53,8 @@ import { getRulesForPlatform } from "~lib/platform-rules";
 import { detectPlatform } from "~lib/platform-detector";
 import { warmup, shutdown, isWarmed } from "~lib/ai-engine";
 import { getSelectedText } from "~lib/text-replacer";
+import { observeElements } from "~lib/element-observer";
+import { PLATFORM_INPUT_SELECTORS } from "~lib/platforms";
 
 import { ErrorBoundary } from "~components/ErrorBoundary";
 
@@ -98,7 +97,7 @@ function PromptTunerOverlay() {
     if (runOnOpenEnabled && defaultAction) {
       const selectedText = getSelectedText();
       if (selectedText?.trim()) {
-        // Open directly into streaming mode — the CommandPaletteContent
+        // Open directly into streaming mode - the CommandPaletteContent
         // will receive the action via props and start streaming
         openOverlay();
         return true; // Signal event handled
@@ -113,7 +112,7 @@ function PromptTunerOverlay() {
   // ---------------------------------------------------------------------------
 
   useKeyboardShortcut(KEYBOARD_SHORTCUTS.TOGGLE_OVERLAY, () => {
-    // Warm on first shortcut press — hides 2–3s cold start behind user intent
+    // Warm on first shortcut press - hides 2–3s cold start behind user intent
     if (!hasWarmedRef.current && !isWarmed()) {
       hasWarmedRef.current = true;
       const platform = detectPlatform();
@@ -130,6 +129,36 @@ function PromptTunerOverlay() {
       });
     }
   });
+
+  // ---------------------------------------------------------------------------
+  // Proactive warmup when the host platform's input element appears in the DOM.
+  // Beats the cold-start latency on the first ⌘⇧K press by ~150ms - the model
+  // is already loaded by the time the user makes a selection. Guarded by
+  // hasWarmedRef so the SW only spins up a base session once per content-script
+  // lifetime.
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const platform = detectPlatform();
+    if (platform === "unknown") return;
+    if (hasWarmedRef.current) return;
+
+    const controller = new AbortController();
+    const triggerWarm = () => {
+      if (hasWarmedRef.current || isWarmed()) return;
+      hasWarmedRef.current = true;
+      controller.abort();
+      void warmup(getRulesForPlatform(platform));
+    };
+
+    for (const selector of PLATFORM_INPUT_SELECTORS[platform]) {
+      observeElements(selector, triggerWarm, controller.signal);
+    }
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Message listener (toggle overlay from background)
@@ -218,55 +247,60 @@ function PromptTunerOverlay() {
 
   return (
     <TooltipPrimitive.Provider delayDuration={600}>
-    <div id={WIDGET_IDS.OVERLAY_CONTAINER}>
-      <Toaster />
-      <MiniPillTrigger onOpen={openOverlay} />
-      <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => { if (!open) closeOverlay(); }}>
-        {isOpen && (
-          <>
-            {/* Ink scrim — no blur, quiet dim */}
-            <div
-              className="pt-backdrop fixed inset-0 z-[var(--pt-z-backdrop)]"
-              style={{ backgroundColor: "rgba(17, 16, 16, 0.15)" }}
-              onClick={closeOverlay}
-              aria-hidden
-            />
-            {/* Dialog - Radix FocusTrap via asChild */}
-            <DialogPrimitive.Content
-              asChild
-              onEscapeKeyDown={(e) => {
-                e.preventDefault();
-                closeOverlay();
-              }}
-              onCloseAutoFocus={(e) => {
-                e.preventDefault();
-                previouslyFocused.current?.focus();
-                previouslyFocused.current = null;
-              }}
-              aria-label="Prompt Tuner"
-            >
+      <div id={WIDGET_IDS.OVERLAY_CONTAINER}>
+        <Toaster />
+        <SelectionTrigger onOpen={openOverlay} />
+        <DialogPrimitive.Root
+          open={isOpen}
+          onOpenChange={(open) => {
+            if (!open) closeOverlay();
+          }}
+        >
+          {isOpen && (
+            <>
+              {/* Ink scrim - no blur, quiet dim */}
               <div
-                ref={overlayRef}
-                className="pt-dialog-motion fixed left-1/2 top-1/2 z-[var(--pt-z-dialog)] w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4 outline-none"
+                className="pt-backdrop fixed inset-0 z-[var(--pt-z-backdrop)]"
+                style={{ backgroundColor: "rgba(17, 16, 16, 0.15)" }}
+                onClick={closeOverlay}
+                aria-hidden
+              />
+              {/* Dialog - Radix FocusTrap via asChild */}
+              <DialogPrimitive.Content
+                asChild
+                onEscapeKeyDown={(e) => {
+                  e.preventDefault();
+                  closeOverlay();
+                }}
+                onCloseAutoFocus={(e) => {
+                  e.preventDefault();
+                  previouslyFocused.current?.focus();
+                  previouslyFocused.current = null;
+                }}
+                aria-label="Prompt Tuner"
               >
                 <div
-                  className="overflow-hidden rounded-[var(--pt-radius-lg)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)]"
-                  style={{
-                    boxShadow: "var(--pt-shadow-lg)",
-                  }}
+                  ref={overlayRef}
+                  className="pt-dialog-motion fixed left-1/2 top-1/2 z-[var(--pt-z-dialog)] w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4 outline-none"
                 >
-                  <ErrorBoundary>
-                    <div className="flex h-full w-full flex-col overflow-hidden">
-                      <CommandPaletteContent onClose={closeOverlay} />
-                    </div>
-                  </ErrorBoundary>
+                  <div
+                    className="overflow-hidden rounded-[var(--pt-radius-lg)] border border-[var(--pt-surface-border)] bg-[var(--pt-surface)]"
+                    style={{
+                      boxShadow: "var(--pt-shadow-lg)",
+                    }}
+                  >
+                    <ErrorBoundary>
+                      <div className="flex h-full w-full flex-col overflow-hidden">
+                        <CommandPaletteContent onClose={closeOverlay} />
+                      </div>
+                    </ErrorBoundary>
+                  </div>
                 </div>
-              </div>
-            </DialogPrimitive.Content>
-          </>
-        )}
-      </DialogPrimitive.Root>
-    </div>
+              </DialogPrimitive.Content>
+            </>
+          )}
+        </DialogPrimitive.Root>
+      </div>
     </TooltipPrimitive.Provider>
   );
 }

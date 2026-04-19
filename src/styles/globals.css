@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ============================================================
-   Prompt Tuner — Klein Editorial design tokens
+   Prompt Tuner - Klein Editorial design tokens
    Ultramarine #2C35EA (logo) on warm ivory paper.
    Solid surfaces, ultramarine-tinted shadows, derived status
    colors, real type and radius scales. No frosted glass.
@@ -12,28 +12,28 @@
 @layer base {
   :root,
   :host {
-    /* Brand accent — logo ultramarine */
-    --pt-accent: #2C35EA;
-    --pt-accent-hover: #1F28C4;
-    --pt-accent-light: rgba(44, 53, 234, 0.10);
+    /* Brand accent - logo ultramarine */
+    --pt-accent: #2c35ea;
+    --pt-accent-hover: #1f28c4;
+    --pt-accent-light: rgba(44, 53, 234, 0.1);
 
     /* Paper surfaces */
-    --pt-surface: #FAF7EF;
-    --pt-surface-elevated: #FFFDF7;
+    --pt-surface: #faf7ef;
+    --pt-surface-elevated: #fffdf7;
     --pt-surface-border: rgba(44, 53, 234, 0.15);
 
     /* Warm ink text */
     --pt-text-primary: #111010;
-    --pt-text-secondary: #5C564E;
-    --pt-text-tertiary: #6B6457;
-    /* Decorative chrome only — carets, dividers, purely ornamental ink.
+    --pt-text-secondary: #5c564e;
+    --pt-text-tertiary: #6b6457;
+    /* Decorative chrome only - carets, dividers, purely ornamental ink.
        Fails body-text contrast intentionally; never use for meaningful copy. */
-    --pt-text-quaternary: #857E73;
-    /* Off-state track for toggles — bumped above surface-border so it reads
+    --pt-text-quaternary: #857e73;
+    /* Off-state track for toggles - bumped above surface-border so it reads
        on both cream and ink without ever looking active. */
     --pt-switch-off: rgba(44, 53, 234, 0.28);
 
-    /* Interaction wash — tinted with accent */
+    /* Interaction wash - tinted with accent */
     --pt-hover-bg: rgba(44, 53, 234, 0.06);
     --pt-active-bg: rgba(44, 53, 234, 0.12);
 
@@ -45,43 +45,64 @@
 
     /* Ultramarine-tinted shadows */
     --pt-shadow:
-      0 2px 8px rgba(44, 53, 234, 0.08),
-      0 8px 24px rgba(44, 53, 234, 0.06);
+      0 2px 8px rgba(44, 53, 234, 0.08), 0 8px 24px rgba(44, 53, 234, 0.06);
     --pt-shadow-lg:
-      0 8px 32px rgba(44, 53, 234, 0.12),
-      0 24px 64px rgba(44, 53, 234, 0.08);
+      0 8px 32px rgba(44, 53, 234, 0.12), 0 24px 64px rgba(44, 53, 234, 0.08);
 
     /* Modal scrim */
     --pt-scrim: rgba(17, 16, 16, 0.35);
 
-    /* Semantic z-index scale — avoid arbitrary 99998/99999 collisions */
+    /* Semantic z-index scale - avoid arbitrary 99998/99999 collisions */
     --pt-z-dropdown: 1000;
     --pt-z-backdrop: 99998;
-    --pt-z-dialog:   99999;
-    --pt-z-toast:    100000;
-    --pt-z-tooltip:  100001;
+    --pt-z-dialog: 99999;
+    --pt-z-toast: 100000;
+    --pt-z-tooltip: 100001;
 
-    /* Overlay dimension tokens — keep dense layouts anchored */
+    /* Overlay dimension tokens - keep dense layouts anchored */
     --pt-panel-min-h: 220px;
-    --pt-list-max-h:  380px;
+    --pt-list-max-h: 380px;
     --pt-error-max-w: clamp(220px, 40vw, 320px);
 
     /* Base / elevated page backgrounds */
-    --pt-bg-base: #F4F1EA;
+    --pt-bg-base: #f4f1ea;
     --pt-bg-elevated: var(--pt-surface-elevated);
 
-    --pt-font-body: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont,
-      "Segoe UI", sans-serif;
+    --pt-font-body:
+      "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
 
     /* Brand-derived status colors */
-    --pt-status-error: #A8261F;
+    --pt-status-error: #a8261f;
+    --pt-status-error-hover: #8e1f19;
     --pt-status-error-bg: rgba(168, 38, 31, 0.08);
-    --pt-status-warning: #B8791F;
-    --pt-status-warning-bg: rgba(184, 121, 31, 0.10);
-    --pt-status-success: #1F7A6B;
-    --pt-status-success-bg: rgba(31, 122, 107, 0.10);
+    --pt-status-warning: #b8791f;
+    --pt-status-warning-bg: rgba(184, 121, 31, 0.1);
+    --pt-status-success: #1f7a6b;
+    --pt-status-success-bg: rgba(31, 122, 107, 0.1);
 
-    /* Shadcn/Tailwind bridge — mapped to paper + ink */
+    /* Tooltip - inverse-surface, intentionally constant across themes
+       so the pill always lifts off any host page or app surface. */
+    --pt-tooltip-bg: #111010;
+    --pt-tooltip-fg: #faf7ef;
+
+    /* On-accent text - for text/icons sitting on top of --pt-accent fills.
+       Kept theme-aware so dark-mode accent tints don't drop secondary text
+       below WCAG AA contrast. */
+    --pt-on-accent-primary: #ffffff;
+    --pt-on-accent-secondary: rgba(255, 255, 255, 0.82);
+
+    /* Motion - single source of truth for durations + easings.
+       Keep additions disciplined: fast (microinteractions), base (UI
+       transitions), slow (delight). Easings: out (default), settle (overshoot
+       reserved for delight beats only). */
+    --pt-duration-fast: 100ms;
+    --pt-duration-base: 200ms;
+    --pt-duration-slow: 360ms;
+    --pt-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --pt-ease-settle: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Shadcn/Tailwind bridge - mapped to paper + ink */
     --background: 42 33% 93%;
     --foreground: 30 7% 7%;
     --muted: 42 25% 90%;
@@ -97,45 +118,53 @@
 
   .dark,
   [data-theme="dark"] {
-    /* Ink-paper inversion — deep warm black surface, cream text, same ultramarine.
+    /* Ink-paper inversion - deep warm black surface, cream text, same ultramarine.
        `[data-theme="dark"]` matches Ladle's theme addon so stories switch correctly
        without relying on the Provider's class-toggle bridging globalState. */
-    --pt-accent: #4752F0;
-    --pt-accent-hover: #6A73F5;
+    --pt-accent: #4752f0;
+    --pt-accent-hover: #6a73f5;
     --pt-accent-light: rgba(71, 82, 240, 0.18);
 
-    --pt-surface: #1A1815;
+    --pt-surface: #1a1815;
     --pt-surface-elevated: #222019;
     --pt-surface-border: rgba(71, 82, 240, 0.22);
 
-    --pt-text-primary: #F4F0E6;
-    --pt-text-secondary: #B8B0A0;
-    --pt-text-tertiary: #7E7668;
-    --pt-text-quaternary: #5F584D;
+    --pt-text-primary: #f4f0e6;
+    --pt-text-secondary: #b8b0a0;
+    --pt-text-tertiary: #7e7668;
+    --pt-text-quaternary: #5f584d;
     --pt-switch-off: rgba(71, 82, 240, 0.38);
 
-    --pt-hover-bg: rgba(71, 82, 240, 0.10);
+    --pt-hover-bg: rgba(71, 82, 240, 0.1);
     --pt-active-bg: rgba(71, 82, 240, 0.18);
 
     --pt-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.5),
-      0 8px 24px rgba(71, 82, 240, 0.10);
+      0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(71, 82, 240, 0.1);
     --pt-shadow-lg:
-      0 8px 32px rgba(0, 0, 0, 0.6),
-      0 24px 64px rgba(71, 82, 240, 0.14);
+      0 8px 32px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(71, 82, 240, 0.14);
 
-    /* Dark-mode scrim — lighter alpha on dark ground */
+    /* Dark-mode scrim - lighter alpha on dark ground */
     --pt-scrim: rgba(0, 0, 0, 0.55);
 
     --pt-bg-base: #141210;
     --pt-bg-elevated: var(--pt-surface-elevated);
 
-    --pt-status-error: #E26A61;
+    --pt-status-error: #e26a61;
+    --pt-status-error-hover: #c5584f;
     --pt-status-error-bg: rgba(226, 106, 97, 0.12);
-    --pt-status-warning: #E0A653;
+    --pt-status-warning: #e0a653;
     --pt-status-warning-bg: rgba(224, 166, 83, 0.12);
-    --pt-status-success: #4AB5A2;
+    --pt-status-success: #4ab5a2;
     --pt-status-success-bg: rgba(74, 181, 162, 0.12);
+
+    /* Tooltip - flip to cream on dark so it still lifts off the deep ink ground */
+    --pt-tooltip-bg: #f4f0e6;
+    --pt-tooltip-fg: #1a1815;
+
+    /* On-accent - accent in dark mode is brighter so secondary needs more
+       opacity to keep contrast against the lifted accent fill. */
+    --pt-on-accent-primary: #ffffff;
+    --pt-on-accent-secondary: rgba(255, 255, 255, 0.88);
 
     --background: 30 7% 7%;
     --foreground: 42 33% 93%;
@@ -153,33 +182,36 @@
   @media (prefers-color-scheme: dark) {
     :root:not(.light):not([data-theme="light"]),
     :host(:not(.light)) {
-      --pt-accent: #4752F0;
-      --pt-accent-hover: #6A73F5;
+      --pt-accent: #4752f0;
+      --pt-accent-hover: #6a73f5;
       --pt-accent-light: rgba(71, 82, 240, 0.18);
-      --pt-surface: #1A1815;
+      --pt-surface: #1a1815;
       --pt-surface-elevated: #222019;
       --pt-surface-border: rgba(71, 82, 240, 0.22);
-      --pt-text-primary: #F4F0E6;
-      --pt-text-secondary: #B8B0A0;
-      --pt-text-tertiary: #7E7668;
-      --pt-text-quaternary: #5F584D;
+      --pt-text-primary: #f4f0e6;
+      --pt-text-secondary: #b8b0a0;
+      --pt-text-tertiary: #7e7668;
+      --pt-text-quaternary: #5f584d;
       --pt-switch-off: rgba(71, 82, 240, 0.38);
-      --pt-hover-bg: rgba(71, 82, 240, 0.10);
+      --pt-hover-bg: rgba(71, 82, 240, 0.1);
       --pt-active-bg: rgba(71, 82, 240, 0.18);
       --pt-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.5),
-        0 8px 24px rgba(71, 82, 240, 0.10);
+        0 2px 8px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(71, 82, 240, 0.1);
       --pt-shadow-lg:
-        0 8px 32px rgba(0, 0, 0, 0.6),
-        0 24px 64px rgba(71, 82, 240, 0.14);
+        0 8px 32px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(71, 82, 240, 0.14);
       --pt-scrim: rgba(0, 0, 0, 0.55);
       --pt-bg-base: #141210;
-      --pt-status-error: #E26A61;
+      --pt-status-error: #e26a61;
+      --pt-status-error-hover: #c5584f;
       --pt-status-error-bg: rgba(226, 106, 97, 0.12);
-      --pt-status-warning: #E0A653;
+      --pt-status-warning: #e0a653;
       --pt-status-warning-bg: rgba(224, 166, 83, 0.12);
-      --pt-status-success: #4AB5A2;
+      --pt-status-success: #4ab5a2;
       --pt-status-success-bg: rgba(74, 181, 162, 0.12);
+      --pt-tooltip-bg: #f4f0e6;
+      --pt-tooltip-fg: #1a1815;
+      --pt-on-accent-primary: #ffffff;
+      --pt-on-accent-secondary: rgba(255, 255, 255, 0.88);
     }
   }
 }
@@ -205,6 +237,13 @@
     font-feature-settings: "cv11", "ss01", "ss03";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Toggled by Overlay.tsx while the command palette is open: prevents the
+     host page from scrolling behind the modal. The class is added/removed
+     on document.body. */
+  body.prompt-tuner-overlay-open {
+    overflow: hidden;
   }
 }
 
@@ -234,41 +273,97 @@
 
 @layer components {
   @keyframes slideUpAndFade {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   @keyframes slideDownAndFade {
-    from { opacity: 0; transform: translateY(-4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   @keyframes slideLeftAndFade {
-    from { opacity: 0; transform: translateX(4px); }
-    to   { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
   @keyframes slideRightAndFade {
-    from { opacity: 0; transform: translateX(-4px); }
-    to   { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   @keyframes glow {
-    0%, 100% { box-shadow: 0 0 8px var(--pt-accent); }
-    50%      { box-shadow: 0 0 16px var(--pt-accent); }
+    0%,
+    100% {
+      box-shadow: 0 0 8px var(--pt-accent);
+    }
+    50% {
+      box-shadow: 0 0 16px var(--pt-accent);
+    }
   }
 
-  .animate-slideUpAndFade    { animation: slideUpAndFade    200ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .animate-slideDownAndFade  { animation: slideDownAndFade  200ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .animate-slideLeftAndFade  { animation: slideLeftAndFade  200ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .animate-slideRightAndFade { animation: slideRightAndFade 200ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .animate-glow              { animation: glow 2s ease-in-out infinite; }
+  .animate-slideUpAndFade {
+    animation: slideUpAndFade 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-slideDownAndFade {
+    animation: slideDownAndFade 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-slideLeftAndFade {
+    animation: slideLeftAndFade 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-slideRightAndFade {
+    animation: slideRightAndFade 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
 
   @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position:  200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  /* Skeleton shimmer - gated behind no-preference so reduced-motion users
+     get a static placeholder instead of a moving gradient. */
+  @media (prefers-reduced-motion: no-preference) {
+    .pt-skeleton {
+      animation: shimmer 2s linear infinite;
+    }
   }
 
   @keyframes ripple {
-    0%   { transform: scale(0); opacity: 0.6; }
-    100% { transform: scale(4); opacity: 0; }
+    0% {
+      transform: scale(0);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
   }
   .animate-ripple {
     animation: ripple 0.6s ease-out;
@@ -276,17 +371,41 @@
   }
 
   @keyframes icon-bounce {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.1); }
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
   }
-  .icon-hover:hover { animation: icon-bounce 0.3s ease-in-out; }
+  .icon-hover:hover {
+    animation: icon-bounce var(--pt-duration-base) var(--pt-ease-out);
+  }
 
   .focus-visible-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pt-accent)] focus-visible:ring-offset-2;
   }
 
   .hover-lift {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
+    @apply transition-all hover:-translate-y-0.5 hover:shadow-lg;
+    transition-duration: var(--pt-duration-base);
+    transition-timing-function: var(--pt-ease-out);
+  }
+
+  /* Unified pulse - replaces ad-hoc Tailwind animate-pulse on status dots
+     and overlay glyph. Single keyframe, single tempo, single gate. */
+  @keyframes pt-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  .pt-pulse {
+    animation: pt-pulse 1.6s var(--pt-ease-out) infinite;
   }
 
   .active-scale {
@@ -303,7 +422,9 @@
   transition:
     opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
     display 0.2s allow-discrete;
-  @starting-style { opacity: 0; }
+  @starting-style {
+    opacity: 0;
+  }
 }
 
 .pt-dialog-motion {
@@ -319,62 +440,331 @@
   }
 }
 
-.pt-pill-motion {
-  opacity: 1;
-  scale: 1;
-  translate: 0 0;
-  transition:
-    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    scale   0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    translate 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  @starting-style {
+@keyframes pt-trigger-enter {
+  from {
     opacity: 0;
-    scale: 0.92;
-    translate: 0 8px;
+    scale: 0.82;
+    translate: 0 6px;
   }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+.pt-trigger-motion {
+  animation: pt-trigger-enter 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes pt-fade-up {
-  from { opacity: 0; translate: 0 10px; }
-  to   { opacity: 1; translate: 0 0; }
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* --- Delight layer: one-shot animations for punctuated moments --- */
+
+@keyframes pt-glyph-settle {
+  0% {
+    transform: scale(1.25);
+    opacity: 0.6;
+  }
+  55% {
+    transform: scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pt-glyph-settle {
+  animation: pt-glyph-settle 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  display: inline-block;
+  transform-origin: center;
+}
+
+@keyframes pt-stage-fade {
+  from {
+    opacity: 0;
+    translate: 0 -3px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+.pt-stage-fade {
+  animation: pt-stage-fade 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pt-check-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  80% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.pt-check-pop {
+  animation: pt-check-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  display: inline-flex;
+}
+
+@keyframes pt-ping-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+.pt-ping-ring {
+  position: relative;
+}
+.pt-ping-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: pt-ping-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* Close button: pinned top-right INSIDE the toast card (not in Sonner's default
+   top-left floating-pill corner). Compound .pt-toast selector beats Sonner's
+   own single-class rules for non-!important props; left/top/transform need
+   !important because Sonner hardcodes them. */
+[data-sonner-toast].pt-toast {
+  /* Sonner's --width var isn't honored across all builds; force width here
+     so toasts don't stretch to the viewport. */
+  width: clamp(240px, 85vw, 288px) !important;
+  padding: 10px 40px 10px 14px;
+  gap: 8px;
+}
+/* Inline action button rendered inside the description (e.g. "Press [Undo]
+   to restore..."). Mimics a quiet underlined link but is a real <button>
+   for proper semantics, focus, and keyboard activation. */
+.pt-toast-inline-action {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: var(--pt-text-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--pt-text-tertiary);
+  cursor: pointer;
+  transition:
+    text-decoration-color 120ms ease-out,
+    color 120ms ease-out;
+}
+.pt-toast-inline-action:hover {
+  text-decoration-color: var(--pt-text-primary);
+}
+.pt-toast-inline-action:focus-visible {
+  outline: none;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--pt-accent);
+  color: var(--pt-accent);
+}
+
+[data-sonner-toast].pt-toast [data-close-button] {
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  transform: none !important;
+  opacity: 1 !important; /* Sonner's default fades in on hover - reads as size change */
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  color: var(--pt-text-tertiary);
+  transition: color 120ms ease-out;
+}
+[data-sonner-toast].pt-toast [data-close-button]:hover {
+  color: var(--pt-text-primary);
+}
+[data-sonner-toast].pt-toast [data-close-button]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--pt-accent);
+}
+
+@keyframes pt-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+[data-sonner-toast].pt-toast {
+  position: relative;
+}
+[data-sonner-toast].pt-toast::before {
+  content: "";
+  position: absolute;
+  /* Inset by the card's corner radius so the bar's straight edges stop
+     where the card's curve begins - at 2px height, rounding the bar itself
+     is imperceptible, so matching the curve this way is the clean fix. */
+  left: var(--pt-radius-md);
+  right: var(--pt-radius-md);
+  bottom: 0;
+  height: 2px;
+  background: var(--pt-accent);
+  opacity: 0.55;
+  transform-origin: 0 50%;
+  animation: pt-toast-countdown var(--pt-toast-dur, 5000ms) linear forwards;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Keep the bar in sync with Sonner's dismiss timer, which pauses on hover
+   ([data-expanded]) and on tab hide. CSS animations otherwise keep ticking
+   in background tabs and finish before the toast actually dismisses. */
+[data-sonner-toast].pt-toast[data-expanded="true"]::before,
+.pt-page-hidden [data-sonner-toast].pt-toast::before {
+  animation-play-state: paused;
+}
+/* Sonner reuses ::before for its swipe/remove ghost (inset:0; scaleY(2))
+   and for stacked-toast height expansion. Those rules out-specific our
+   countdown bar (3 attrs vs 2 attrs + class), so during dismiss the 2px
+   colored bar gets stretched to fill the toast - a tinted "square flash."
+   Hide our bar during those Sonner states; the toast is leaving anyway. */
+[data-sonner-toast].pt-toast[data-removed="true"]::before,
+[data-sonner-toast].pt-toast[data-swiping="true"]::before,
+[data-sonner-toast].pt-toast[data-swipe-out="true"]::before {
+  display: none;
+}
+[data-sonner-toast].pt-toast[data-type="success"]::before {
+  background: var(--pt-status-success);
+}
+[data-sonner-toast].pt-toast[data-type="error"]::before {
+  background: var(--pt-status-error);
+}
+[data-sonner-toast].pt-toast[data-type="warning"]::before {
+  background: var(--pt-status-warning);
 }
 
 .pt-action-item {
   animation: pt-fade-up 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.pt-action-item:nth-child(1) { animation-delay: 0ms; }
-.pt-action-item:nth-child(2) { animation-delay: 50ms; }
-.pt-action-item:nth-child(3) { animation-delay: 100ms; }
-.pt-action-item:nth-child(4) { animation-delay: 150ms; }
-.pt-action-item:nth-child(5) { animation-delay: 200ms; }
-.pt-action-item:nth-child(6) { animation-delay: 250ms; }
-.pt-action-item:nth-child(7) { animation-delay: 300ms; }
-.pt-action-item:nth-child(8) { animation-delay: 350ms; }
-.pt-action-item:nth-child(9) { animation-delay: 400ms; }
+.pt-action-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+.pt-action-item:nth-child(2) {
+  animation-delay: 50ms;
+}
+.pt-action-item:nth-child(3) {
+  animation-delay: 100ms;
+}
+.pt-action-item:nth-child(4) {
+  animation-delay: 150ms;
+}
+.pt-action-item:nth-child(5) {
+  animation-delay: 200ms;
+}
+.pt-action-item:nth-child(6) {
+  animation-delay: 250ms;
+}
+.pt-action-item:nth-child(7) {
+  animation-delay: 300ms;
+}
+.pt-action-item:nth-child(8) {
+  animation-delay: 350ms;
+}
+.pt-action-item:nth-child(9) {
+  animation-delay: 400ms;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .pt-backdrop,
   .pt-dialog-motion,
-  .pt-pill-motion { transition: none; }
-  .pt-action-item { animation: none; }
+  .pt-trigger-motion {
+    animation: none;
+    transition: none;
+  }
+  .pt-action-item,
+  .pt-glyph-settle,
+  .pt-stage-fade,
+  .pt-check-pop {
+    animation: none;
+  }
+  .pt-ping-ring::after {
+    animation: none;
+    opacity: 0;
+  }
+  [data-sonner-toast].pt-toast::before {
+    animation: none;
+  }
+  .pt-pulse {
+    animation: none;
+  }
+  .icon-hover:hover {
+    animation: none;
+  }
+  .hover-lift {
+    transition: none;
+  }
+  .hover-lift:hover {
+    transform: none;
+  }
 }
 
 /* ============================================================
-   Status utility classes — keeps markup clean and tokens central
+   Status utility classes - keeps markup clean and tokens central
    ============================================================ */
 
 @layer utilities {
-  .pt-status-error   { color: var(--pt-status-error); }
-  .pt-status-warning { color: var(--pt-status-warning); }
-  .pt-status-success { color: var(--pt-status-success); }
+  .pt-status-error {
+    color: var(--pt-status-error);
+  }
+  .pt-status-warning {
+    color: var(--pt-status-warning);
+  }
+  .pt-status-success {
+    color: var(--pt-status-success);
+  }
 
-  .pt-status-error-bg   { background-color: var(--pt-status-error-bg); }
-  .pt-status-warning-bg { background-color: var(--pt-status-warning-bg); }
-  .pt-status-success-bg { background-color: var(--pt-status-success-bg); }
+  .pt-status-error-bg {
+    background-color: var(--pt-status-error-bg);
+  }
+  .pt-status-warning-bg {
+    background-color: var(--pt-status-warning-bg);
+  }
+  .pt-status-success-bg {
+    background-color: var(--pt-status-success-bg);
+  }
 
-  .pt-status-dot-error   { background-color: var(--pt-status-error); }
-  .pt-status-dot-warning { background-color: var(--pt-status-warning); }
-  .pt-status-dot-success { background-color: var(--pt-status-success); }
+  .pt-status-dot-error {
+    background-color: var(--pt-status-error);
+  }
+  .pt-status-dot-warning {
+    background-color: var(--pt-status-warning);
+  }
+  .pt-status-dot-success {
+    background-color: var(--pt-status-success);
+  }
 }
 
 /* Scrollbar Styling */
@@ -383,7 +773,9 @@
     width: 8px;
     height: 8px;
   }
-  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: var(--pt-surface-border);
     border-radius: var(--pt-radius-sm);
@@ -396,5 +788,7 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }

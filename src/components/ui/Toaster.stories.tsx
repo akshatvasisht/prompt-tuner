@@ -19,41 +19,83 @@ function Frame({ children }: { children: React.ReactNode }) {
 
 export const Default: Story = () => {
   useEffect(() => {
-    toast("Prompt inserted", {
-      description: "Undo to restore your original text.",
-      action: {
-        label: "Undo",
-        onClick: () => undefined,
-      },
+    const id = toast("Prompt inserted", {
+      description: (
+        <>
+          Press{" "}
+          <button
+            type="button"
+            className="pt-toast-inline-action"
+            onClick={() => {
+              toast.dismiss(id);
+            }}
+          >
+            Undo
+          </button>{" "}
+          to restore your original text.
+        </>
+      ),
     });
   }, []);
-  return <Frame><span /></Frame>;
+  return (
+    <Frame>
+      <span />
+    </Frame>
+  );
 };
 
 export const Success: Story = () => {
   useEffect(() => {
-    toast.success("Prompt inserted", {
-      description: "Press Undo to restore your original text.",
+    const id = toast.success("Prompt inserted", {
+      description: (
+        <>
+          Press{" "}
+          <button
+            type="button"
+            className="pt-toast-inline-action"
+            onClick={() => {
+              toast.dismiss(id);
+            }}
+          >
+            Undo
+          </button>{" "}
+          to restore your original text.
+        </>
+      ),
     });
   }, []);
-  return <Frame><span /></Frame>;
+  return (
+    <Frame>
+      <span />
+    </Frame>
+  );
 };
 
 export const ErrorToast: Story = () => {
   useEffect(() => {
     toast.error("Gemini Nano unavailable", {
-      description: "Enable the optimization-guide-on-device flag in chrome://flags.",
+      description:
+        "Enable the optimization-guide-on-device flag in chrome://flags.",
     });
   }, []);
-  return <Frame><span /></Frame>;
+  return (
+    <Frame>
+      <span />
+    </Frame>
+  );
 };
 ErrorToast.storyName = "Error";
 
 export const Warning: Story = () => {
   useEffect(() => {
     toast.warning("Input is long", {
-      description: "Output may be truncated — consider shortening your selection.",
+      description:
+        "Output may be truncated - consider shortening your selection.",
     });
   }, []);
-  return <Frame><span /></Frame>;
+  return (
+    <Frame>
+      <span />
+    </Frame>
+  );
 };
